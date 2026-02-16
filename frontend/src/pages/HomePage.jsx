@@ -69,7 +69,7 @@ const HomePage = () => {
   return (
     <div>
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-amber-800 to-amber-600 text-white py-20 overflow-hidden">
+      <section className="relative bg-gradient-to-r from-red-800 to-red-600 text-white py-20 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
@@ -85,7 +85,7 @@ const HomePage = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link to="/products">
-                <Button size="lg" className="bg-white text-amber-800 hover:bg-amber-100 font-semibold" data-testid="shop-now-btn">
+                <Button size="lg" className="bg-white text-red-800 hover:bg-amber-100 font-semibold" data-testid="shop-now-btn">
                   Shop Now
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
@@ -105,19 +105,19 @@ const HomePage = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <p className="text-3xl md:text-4xl font-bold text-amber-600">{stats.total_vendors}+</p>
+              <p className="text-3xl md:text-4xl font-bold text-red-600">{stats.total_vendors}+</p>
               <p className="text-gray-600 mt-1">Verified Vendors</p>
             </div>
             <div>
-              <p className="text-3xl md:text-4xl font-bold text-amber-600">{stats.total_products}+</p>
+              <p className="text-3xl md:text-4xl font-bold text-red-600">{stats.total_products}+</p>
               <p className="text-gray-600 mt-1">Products</p>
             </div>
             <div>
-              <p className="text-3xl md:text-4xl font-bold text-amber-600">{stats.countries_served}+</p>
+              <p className="text-3xl md:text-4xl font-bold text-red-600">{stats.countries_served}+</p>
               <p className="text-gray-600 mt-1">African Countries</p>
             </div>
             <div>
-              <p className="text-3xl md:text-4xl font-bold text-amber-600">50K+</p>
+              <p className="text-3xl md:text-4xl font-bold text-red-600">50K+</p>
               <p className="text-gray-600 mt-1">Happy Customers</p>
             </div>
           </div>
@@ -129,7 +129,7 @@ const HomePage = () => {
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Shop by Category</h2>
-            <Link to="/products" className="text-amber-600 hover:text-amber-700 font-medium flex items-center">
+            <Link to="/products" className="text-red-600 hover:text-red-700 font-medium flex items-center">
               View All <ChevronRight className="h-4 w-4 ml-1" />
             </Link>
           </div>
@@ -143,7 +143,7 @@ const HomePage = () => {
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                   <CardContent className="p-6 text-center">
                     <span className="text-4xl mb-3 block">{categoryIcons[category.name] || '📦'}</span>
-                    <p className="font-medium text-gray-900 group-hover:text-amber-600 transition-colors">
+                    <p className="font-medium text-gray-900 group-hover:text-red-600 transition-colors">
                       {category.name}
                     </p>
                   </CardContent>
@@ -155,11 +155,11 @@ const HomePage = () => {
       </section>
 
       {/* Service Categories Section */}
-      <section className="py-16 bg-amber-50">
+      <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Browse Services</h2>
-            <Link to="/services" className="text-amber-600 hover:text-amber-700 font-medium flex items-center">
+            <Link to="/services" className="text-red-600 hover:text-red-700 font-medium flex items-center">
               View All <ChevronRight className="h-4 w-4 ml-1" />
             </Link>
           </div>
@@ -173,7 +173,7 @@ const HomePage = () => {
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-white">
                   <CardContent className="p-6 text-center">
                     <span className="text-4xl mb-3 block">{categoryIcons[category.name] || '🛠️'}</span>
-                    <p className="font-medium text-gray-900 group-hover:text-amber-600 transition-colors text-sm">
+                    <p className="font-medium text-gray-900 group-hover:text-red-600 transition-colors text-sm">
                       {category.name}
                     </p>
                   </CardContent>
@@ -189,7 +189,7 @@ const HomePage = () => {
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Featured Products</h2>
-            <Link to="/products" className="text-amber-600 hover:text-amber-700 font-medium flex items-center">
+            <Link to="/products" className="text-red-600 hover:text-red-700 font-medium flex items-center">
               View All <ChevronRight className="h-4 w-4 ml-1" />
             </Link>
           </div>
@@ -230,7 +230,7 @@ const HomePage = () => {
                     </div>
                     <CardContent className="p-4">
                       <p className="text-sm text-gray-500 mb-1">{product.vendor_name}</p>
-                      <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-amber-600 transition-colors">
+                      <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-red-600 transition-colors">
                         {product.name}
                       </h3>
                       <div className="flex items-center gap-1 mt-2">
@@ -240,7 +240,7 @@ const HomePage = () => {
                         </span>
                       </div>
                       <div className="flex items-baseline gap-2 mt-2">
-                        <span className="text-lg font-bold text-amber-600">${product.price}</span>
+                        <span className="text-lg font-bold text-red-600">${product.price}</span>
                         {product.compare_price && product.compare_price > product.price && (
                           <span className="text-sm text-gray-400 line-through">${product.compare_price}</span>
                         )}
@@ -255,7 +255,7 @@ const HomePage = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 bg-amber-50">
+      <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-12">
             Why Choose AfroVending?
@@ -263,28 +263,28 @@ const HomePage = () => {
           <div className="grid md:grid-cols-4 gap-8">
             <div className="text-center">
               <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Shield className="h-8 w-8 text-amber-600" />
+                <Shield className="h-8 w-8 text-red-600" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Secure Payments</h3>
               <p className="text-gray-600">Protected transactions with escrow for services</p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Truck className="h-8 w-8 text-amber-600" />
+                <Truck className="h-8 w-8 text-red-600" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Global Shipping</h3>
               <p className="text-gray-600">Worldwide delivery from African vendors</p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Star className="h-8 w-8 text-amber-600" />
+                <Star className="h-8 w-8 text-red-600" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Verified Vendors</h3>
               <p className="text-gray-600">Quality assured by our verification process</p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Clock className="h-8 w-8 text-amber-600" />
+                <Clock className="h-8 w-8 text-red-600" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">24/7 Support</h3>
               <p className="text-gray-600">Always here to help you</p>
@@ -298,7 +298,7 @@ const HomePage = () => {
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Top Vendors</h2>
-            <Link to="/vendors" className="text-amber-600 hover:text-amber-700 font-medium flex items-center">
+            <Link to="/vendors" className="text-red-600 hover:text-red-700 font-medium flex items-center">
               View All <ChevronRight className="h-4 w-4 ml-1" />
             </Link>
           </div>
@@ -312,7 +312,7 @@ const HomePage = () => {
                         {vendor.logo_url ? (
                           <img src={vendor.logo_url} alt={vendor.store_name} className="w-full h-full rounded-full object-cover" />
                         ) : (
-                          <span className="text-2xl font-bold text-amber-600">{vendor.store_name?.[0]}</span>
+                          <span className="text-2xl font-bold text-red-600">{vendor.store_name?.[0]}</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -345,14 +345,14 @@ const HomePage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-amber-600 to-amber-800 text-white">
+      <section className="py-16 bg-gradient-to-r from-red-600 to-red-800 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Start Selling?</h2>
           <p className="text-xl text-amber-100 mb-8 max-w-2xl mx-auto">
             Join thousands of African vendors and reach customers worldwide. It's free to get started.
           </p>
           <Link to="/register">
-            <Button size="lg" className="bg-white text-amber-800 hover:bg-amber-100 font-semibold">
+            <Button size="lg" className="bg-white text-red-800 hover:bg-amber-100 font-semibold">
               Become a Vendor Today
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>

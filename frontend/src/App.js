@@ -36,6 +36,7 @@ import VendorProducts from './pages/vendor/VendorProducts';
 import VendorServices from './pages/vendor/VendorServices';
 import VendorOrders from './pages/vendor/VendorOrders';
 import VendorBookings from './pages/vendor/VendorBookings';
+import VendorSubscription from './pages/vendor/VendorSubscription';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';

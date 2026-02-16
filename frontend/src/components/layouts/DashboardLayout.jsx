@@ -16,6 +16,7 @@ import {
   Home,
   Briefcase,
   CheckCircle,
+  CreditCard,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 

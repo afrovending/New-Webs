@@ -238,7 +238,7 @@ const MainLayout = () => {
                     
                     {/* Products Section */}
                     <div className="border-b pb-4">
-                      <Link to="/products" onClick={() => setMobileMenuOpen(false)} className="text-lg font-semibold text-amber-800 mb-2 block">
+                      <Link to="/products" onClick={() => setMobileMenuOpen(false)} className="text-lg font-semibold text-red-800 mb-2 block">
                         🛍️ Products
                       </Link>
                       <div className="grid grid-cols-2 gap-2 mt-2">
@@ -247,7 +247,7 @@ const MainLayout = () => {
                             key={cat.id}
                             to={`/products?category=${cat.id}`} 
                             onClick={() => setMobileMenuOpen(false)}
-                            className="text-sm text-gray-600 hover:text-amber-600 flex items-center gap-1"
+                            className="text-sm text-gray-600 hover:text-red-600 flex items-center gap-1"
                           >
                             <span>{categoryIcons[cat.name] || '📦'}</span>
                             {cat.name}
@@ -258,7 +258,7 @@ const MainLayout = () => {
 
                     {/* Services Section */}
                     <div className="border-b pb-4">
-                      <Link to="/services" onClick={() => setMobileMenuOpen(false)} className="text-lg font-semibold text-amber-800 mb-2 block">
+                      <Link to="/services" onClick={() => setMobileMenuOpen(false)} className="text-lg font-semibold text-red-800 mb-2 block">
                         🛠️ Services
                       </Link>
                       <div className="grid grid-cols-1 gap-2 mt-2">
@@ -267,7 +267,7 @@ const MainLayout = () => {
                             key={cat.id}
                             to={`/services?category=${cat.id}`} 
                             onClick={() => setMobileMenuOpen(false)}
-                            className="text-sm text-gray-600 hover:text-amber-600 flex items-center gap-1"
+                            className="text-sm text-gray-600 hover:text-red-600 flex items-center gap-1"
                           >
                             <span>{categoryIcons[cat.name] || '🔧'}</span>
                             {cat.name}
@@ -286,7 +286,7 @@ const MainLayout = () => {
                           <Button variant="outline" className="w-full">Login</Button>
                         </Link>
                         <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
-                          <Button className="w-full bg-amber-600 hover:bg-amber-700">Sign Up</Button>
+                          <Button className="w-full bg-red-600 hover:bg-red-700">Sign Up</Button>
                         </Link>
                       </div>
                     )}
@@ -364,7 +364,7 @@ const MainLayout = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-amber-900 text-amber-100 py-12 mt-16">
+      <footer className="bg-gray-900 text-amber-100 py-12 mt-16">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
@@ -393,13 +393,13 @@ const MainLayout = () => {
               <h4 className="font-semibold text-white mb-4">Become a Vendor</h4>
               <p className="text-amber-200 mb-4">Start selling your African products to customers worldwide.</p>
               <Link to="/register">
-                <Button variant="outline" className="border-amber-200 text-amber-200 hover:bg-amber-800">
+                <Button variant="outline" className="border-amber-200 text-amber-200 hover:bg-red-800">
                   Start Selling
                 </Button>
               </Link>
             </div>
           </div>
-          <div className="border-t border-amber-800 mt-8 pt-8 text-center text-amber-300">
+          <div className="border-t border-red-800 mt-8 pt-8 text-center text-amber-300">
             <p>&copy; {new Date().getFullYear()} AfroVending. All rights reserved.</p>
           </div>
         </div>

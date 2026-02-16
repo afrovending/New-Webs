@@ -106,14 +106,14 @@ const ProductsPage = () => {
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">Category</label>
                 <Select
-                  value={filters.category}
-                  onValueChange={(value) => setFilters({ ...filters, category: value })}
+                  value={filters.category || "all"}
+                  onValueChange={(value) => setFilters({ ...filters, category: value === "all" ? "" : value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
+                    <SelectItem value="all">All Categories</SelectItem>
                     {categories.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                     ))}

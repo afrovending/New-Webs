@@ -72,6 +72,17 @@ Created `/app/app.yaml` for DigitalOcean App Platform:
 - STRIPE_API_KEY: Stripe API key (SECRET)
 - CORS_ORIGINS: Allowed origins (default: *)
 
+## Vendor Spotlight Section (Feb 16, 2025)
+Added cultural storytelling section on homepage featuring:
+- "Vendor Spotlight" badge header
+- "Meet the Artisans Behind the Products" title
+- Vendor story image with floating stats card (Products, Artisans, Founded Year)
+- Vendor cultural story in italicized quote format
+- Store name with location and verification badge
+- Stats badges (Artisans Employed, Founded Year, Rating)
+- "Visit Store" CTA button
+- Dark gradient background for visual impact
+
 ## Trust Bar & Shop-by-Country Feature (Feb 16, 2025)
 
 **Trust Bar** - Red bar below header with trust signals:

@@ -72,6 +72,13 @@ Created `/app/app.yaml` for DigitalOcean App Platform:
 - STRIPE_API_KEY: Stripe API key (SECRET)
 - CORS_ORIGINS: Allowed origins (default: *)
 
+## Navigation Menu (Feb 16, 2025)
+Updated header navigation with dropdown menus:
+- **Products** dropdown: All Products + 6 product categories with icons
+- **Services** dropdown: All Services + 7 service categories with icons
+- **Vendors** link
+- Mobile menu also updated with categorized sections
+
 ## Categories Structure (Feb 16, 2025)
 Categories are now separated by type (product vs service):
 

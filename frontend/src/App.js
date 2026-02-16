@@ -20,6 +20,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
+import PricingPage from './pages/PricingPage';
 
 // Protected Pages
 import DashboardPage from './pages/DashboardPage';

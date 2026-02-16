@@ -276,7 +276,7 @@ const MainLayout = () => {
                         {productCategories.map((cat) => (
                           <Link 
                             key={cat.id}
-                            to={`/products?category=${cat.id}`} 
+                            to={`/category/${cat.name.toLowerCase().replace(/\s+&\s+/g, '-').replace(/\s+/g, '-')}`} 
                             onClick={() => setMobileMenuOpen(false)}
                             className="text-sm text-gray-600 hover:text-red-600 flex items-center gap-1"
                           >

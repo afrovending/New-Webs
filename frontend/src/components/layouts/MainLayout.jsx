@@ -93,13 +93,13 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-amber-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Top Bar */}
-      <div className="bg-amber-900 text-amber-100 text-sm py-2">
+      <div className="bg-black text-gray-300 text-sm py-2">
         <div className="container mx-auto px-4 flex justify-between items-center">
           <span>Authentic African Products & Services</span>
           <div className="hidden md:flex items-center gap-4">
-            <Link to="/vendors" className="hover:text-white transition">Become a Vendor</Link>
+            <Link to="/pricing" className="hover:text-white transition">Become a Vendor</Link>
             <span>|</span>
             <span>Free shipping on orders over $100</span>
           </div>
@@ -112,10 +112,8 @@ const MainLayout = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-amber-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-xl">A</span>
-              </div>
-              <span className="text-xl font-bold text-amber-900 hidden sm:block">AfroVending</span>
+              <img src="/logo.png" alt="AfroVending" className="h-12 w-auto" />
+              <span className="text-xl font-bold text-red-600 hidden sm:block">AfroVending</span>
             </Link>
 
             {/* Search Bar */}

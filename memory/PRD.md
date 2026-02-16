@@ -72,6 +72,25 @@ Created `/app/app.yaml` for DigitalOcean App Platform:
 - STRIPE_API_KEY: Stripe API key (SECRET)
 - CORS_ORIGINS: Allowed origins (default: *)
 
+## Service Categories Added (Feb 16, 2025)
+- Event and Decor
+- Fashion Designing
+- Catering Services
+- Barbing Services
+- Beauty and Facials
+- Braiding Services
+- Professional Services
+
+## Sample Services Added (Feb 16, 2025)
+7 African services with AI-generated images:
+1. Traditional African Wedding Decoration - From $1500 (Event and Decor)
+2. Custom African Fashion Design - From $250 (Fashion Designing)
+3. African Cuisine Catering Package - $35/person (Catering Services)
+4. Premium Barbing & Grooming Session - $45 (Barbing Services)
+5. Luxury Facial & Skincare Treatment - $85 (Beauty and Facials)
+6. Professional Hair Braiding Service - From $120 (Braiding Services)
+7. Business Consulting & Advisory - $150/hr (Professional Services)
+
 ## Sample Products Added (Feb 16, 2025)
 8 African products with AI-generated images:
 1. Ankara Print Maxi Dress - $89.99 (Fashion)

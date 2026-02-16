@@ -1146,7 +1146,7 @@ async def get_checkout_status(session_id: str):
 
 @api_router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
-    """Handle Stripe webhooks"""
+    """Handle Stripe webhooks for orders, bookings, and subscriptions"""
     stripe.api_key = STRIPE_API_KEY
     
     body = await request.body()
@@ -1179,6 +1179,54 @@ async def stripe_webhook(request: Request):
                         {"id": transaction["booking_id"]},
                         {"$set": {"payment_status": "paid", "status": "confirmed"}}
                     )
+                elif transaction.get("type") == "subscription":
+                    # Handle subscription activation
+                    plan_id = transaction.get("plan_id", "starter")
+                    plan = SUBSCRIPTION_PLANS.get(plan_id, SUBSCRIPTION_PLANS["starter"])
+                    
+                    await db.subscriptions.update_one(
+                        {"vendor_id": transaction["vendor_id"]},
+                        {"$set": {
+                            "plan_id": plan_id,
+                            "status": "active",
+                            "price": plan["price"],
+                            "stripe_subscription_id": session.subscription,
+                            "stripe_customer_id": session.customer,
+                            "updated_at": datetime.now(timezone.utc).isoformat()
+                        }},
+                        upsert=True
+                    )
+                    
+                    await db.vendors.update_one(
+                        {"id": transaction["vendor_id"]},
+                        {"$set": {
+                            "subscription_plan": plan_id,
+                            "commission_rate": plan["commission_rate"],
+                            "max_products": plan["max_products"],
+                            "is_verified": plan_id in ["growth", "pro"]
+                        }}
+                    )
+        
+        elif event.type == "customer.subscription.deleted":
+            # Handle subscription cancellation from Stripe
+            subscription = event.data.object
+            await db.subscriptions.update_one(
+                {"stripe_subscription_id": subscription.id},
+                {"$set": {"status": "cancelled", "cancelled_at": datetime.now(timezone.utc).isoformat()}}
+            )
+            
+            # Find vendor and downgrade
+            sub_record = await db.subscriptions.find_one({"stripe_subscription_id": subscription.id})
+            if sub_record:
+                await db.vendors.update_one(
+                    {"id": sub_record["vendor_id"]},
+                    {"$set": {"subscription_plan": "starter", "commission_rate": 20, "max_products": 5}}
+                )
+        
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        return {"status": "error"}
         
         return {"status": "success"}
     except Exception as e:

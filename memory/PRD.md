@@ -44,8 +44,15 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - ✅ Python version 3.9 specified in `.python-version`
 - ✅ Duplicate `/app/afrovending_repo` folder removed
 - ✅ 5 N+1 database query issues fixed for production performance
-- ✅ All lint checks passed
+- ✅ All E2E tests passed (29/29 backend, all frontend)
+- ✅ Stripe subscription integration complete (TEST MODE)
 - ⏳ Ready for DigitalOcean deployment - user needs to Save to GitHub and trigger deploy
+
+## Stripe Subscription System
+- **TEST MODE**: Subscriptions activate without real payment
+- For production payments: Add valid `STRIPE_API_KEY` in backend/.env
+- Plans: Starter (Free), Growth ($25/mo), Pro ($50/mo), Enterprise (Custom)
+- Vendor Subscription page: `/vendor/subscription`
 
 ## Prioritized Backlog
 

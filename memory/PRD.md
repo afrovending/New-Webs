@@ -72,6 +72,28 @@ Created `/app/app.yaml` for DigitalOcean App Platform:
 - STRIPE_API_KEY: Stripe API key (SECRET)
 - CORS_ORIGINS: Allowed origins (default: *)
 
+## Category Landing Pages (Feb 16, 2025)
+Created SEO-optimized landing pages for each product category:
+
+**Routes:** `/category/{slug}`
+- `/category/fashion` - Orange/red gradient, Ankara/Kente focus
+- `/category/art-crafts` - Amber/brown gradient, sculptures/masks
+- `/category/food-groceries` - Green gradient, spices/ingredients
+- `/category/jewelry` - Purple gradient, beads/brass
+- `/category/home-decor` - Teal gradient, baskets/textiles
+- `/category/beauty` - Pink/rose gradient, shea butter/black soap
+
+**Features per page:**
+- Custom hero section with gradient colors
+- SEO meta title/description/keywords
+- Category-specific trust badges
+- Popular search tags (Ankara, Kente, Dashiki, etc.)
+- Featured products from that category
+- SEO content section with buyer benefits
+- "Start Your Journey" CTA section
+
+**Navigation updated:** Products dropdown now links to category landing pages
+
 ## Vendor Spotlight Section (Feb 16, 2025)
 Added cultural storytelling section on homepage featuring:
 - "Vendor Spotlight" badge header

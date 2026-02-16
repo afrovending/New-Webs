@@ -347,7 +347,7 @@ const MainLayout = () => {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {productCategories.map((cat) => (
-                    <DropdownMenuItem key={cat.id} onClick={() => navigate(`/products?category=${cat.id}`)}>
+                    <DropdownMenuItem key={cat.id} onClick={() => navigate(`/category/${cat.name.toLowerCase().replace(/\s+&\s+/g, '-').replace(/\s+/g, '-')}`)}>
                       <span className="mr-2">{categoryIcons[cat.name] || '📦'}</span>
                       {cat.name}
                     </DropdownMenuItem>

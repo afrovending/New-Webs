@@ -113,6 +113,30 @@ const MainLayout = () => {
         </div>
       </div>
 
+      {/* Trust Bar */}
+      <div className="bg-red-600 text-white py-2">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-center items-center gap-8 text-sm">
+            <div className="flex items-center gap-2">
+              <BadgeCheck className="h-4 w-4" />
+              <span>Verified Vendors</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Truck className="h-4 w-4" />
+              <span>US & Global Shipping</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Lock className="h-4 w-4" />
+              <span>Secure Checkout</span>
+            </div>
+            <div className="hidden lg:flex items-center gap-2">
+              <Globe className="h-4 w-4" />
+              <span>12+ African Countries</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Main Header */}
       <header className="bg-white shadow-sm sticky top-0 z-50">
         <div className="container mx-auto px-4">

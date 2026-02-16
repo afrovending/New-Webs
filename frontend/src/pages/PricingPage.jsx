@@ -200,9 +200,18 @@ const PricingPage = () => {
         // Redirect to Stripe Checkout
         window.location.href = response.data.checkout_url;
       } else if (response.data.status === 'activated') {
-        // Free plan activated directly
-        setMessage({ type: 'success', text: response.data.message });
+        // Plan activated directly (free plan or test mode)
+        setMessage({ 
+          type: 'success', 
+          text: response.data.message || `${planId} plan activated successfully!`
+        });
         setCurrentPlan(planId);
+        if (response.data.test_mode) {
+          setMessage({ 
+            type: 'success', 
+            text: `${response.data.message} (Demo mode - no payment required)`
+          });
+        }
       }
     } catch (err) {
       setMessage({ 

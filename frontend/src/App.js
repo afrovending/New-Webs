@@ -21,6 +21,7 @@ import RegisterPage from './pages/RegisterPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import PricingPage from './pages/PricingPage';
+import CategoryLandingPage from './pages/CategoryLandingPage';
 
 // Protected Pages
 import DashboardPage from './pages/DashboardPage';

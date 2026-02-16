@@ -72,6 +72,28 @@ Created `/app/app.yaml` for DigitalOcean App Platform:
 - STRIPE_API_KEY: Stripe API key (SECRET)
 - CORS_ORIGINS: Allowed origins (default: *)
 
+## Related Products & Cross-sell (Feb 16, 2025)
+Enhanced product detail pages with:
+
+**More African Treasures Like This (Related Products)**
+- Products from the same category
+- Hover effect with "Add to Cart" button
+- Discount badges showing percentage off
+- Star ratings and AfroVending Official branding
+
+**Complete Your Collection (Cross-sell)**
+- Products from different categories for variety
+- Amber/orange gradient background
+- "Save $X" badges showing dollar savings
+- Verified Vendor badges with star ratings
+- Quick "Add" buttons
+- Heart/wishlist buttons on hover
+
+**African Heritage Banner**
+- "Every Purchase Supports African Artisans" messaging
+- Dark gradient background
+- "Meet Our Artisans" and "Continue Shopping" CTAs
+
 ## Category Landing Pages (Feb 16, 2025)
 Created SEO-optimized landing pages for each product category:
 

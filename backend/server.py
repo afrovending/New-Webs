@@ -1185,6 +1185,259 @@ async def stripe_webhook(request: Request):
         logger.error(f"Webhook error: {e}")
         return {"status": "error"}
 
+# ==================== VENDOR SUBSCRIPTIONS ====================
+
+# Subscription Plans - Server-side definition (security: never accept prices from frontend)
+SUBSCRIPTION_PLANS = {
+    "starter": {
+        "name": "Starter",
+        "price": 0.00,
+        "commission_rate": 20,
+        "max_products": 5,
+        "features": ["Vendor profile", "Up to 5 products", "Standard placement", "Email support"]
+    },
+    "growth": {
+        "name": "Growth",
+        "price": 25.00,
+        "commission_rate": 15,
+        "max_products": 50,
+        "features": ["Up to 50 products", "15% commission", "Boosted visibility", "Analytics", "Verified badge"]
+    },
+    "pro": {
+        "name": "Pro Vendor",
+        "price": 50.00,
+        "commission_rate": 10,
+        "max_products": -1,  # unlimited
+        "features": ["Unlimited products", "10% commission", "Featured placement", "Homepage promotion", "Advanced analytics", "Priority support"]
+    }
+}
+
+class SubscriptionRequest(BaseModel):
+    plan_id: str
+    origin_url: str
+
+@api_router.get("/subscription/plans")
+async def get_subscription_plans():
+    """Get all available subscription plans"""
+    return SUBSCRIPTION_PLANS
+
+@api_router.get("/subscription/current")
+async def get_current_subscription(user: dict = Depends(get_current_user)):
+    """Get current user's subscription"""
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    subscription = await db.subscriptions.find_one(
+        {"vendor_id": vendor["id"], "status": "active"},
+        {"_id": 0}
+    )
+    
+    if not subscription:
+        # Default to starter plan
+        return {
+            "plan_id": "starter",
+            "plan": SUBSCRIPTION_PLANS["starter"],
+            "status": "active",
+            "is_free": True
+        }
+    
+    return {
+        **subscription,
+        "plan": SUBSCRIPTION_PLANS.get(subscription["plan_id"], SUBSCRIPTION_PLANS["starter"])
+    }
+
+@api_router.post("/subscription/checkout")
+async def create_subscription_checkout(sub_request: SubscriptionRequest, request: Request, user: dict = Depends(get_current_user)):
+    """Create checkout session for subscription"""
+    stripe.api_key = STRIPE_API_KEY
+    
+    plan_id = sub_request.plan_id.lower()
+    if plan_id not in SUBSCRIPTION_PLANS:
+        raise HTTPException(status_code=400, detail="Invalid subscription plan")
+    
+    plan = SUBSCRIPTION_PLANS[plan_id]
+    
+    # Check if vendor exists
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=400, detail="You must have a vendor profile to subscribe")
+    
+    # Starter is free - just update the subscription
+    if plan["price"] == 0:
+        await db.subscriptions.update_one(
+            {"vendor_id": vendor["id"]},
+            {"$set": {
+                "plan_id": plan_id,
+                "status": "active",
+                "price": 0,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }},
+            upsert=True
+        )
+        await db.vendors.update_one(
+            {"id": vendor["id"]},
+            {"$set": {
+                "subscription_plan": plan_id,
+                "commission_rate": plan["commission_rate"],
+                "max_products": plan["max_products"]
+            }}
+        )
+        return {"status": "activated", "plan": plan_id, "message": "Free plan activated"}
+    
+    origin_url = sub_request.origin_url.rstrip("/")
+    
+    # Create Stripe Checkout Session for subscription
+    session = stripe.checkout.Session.create(
+        payment_method_types=["card"],
+        line_items=[{
+            "price_data": {
+                "currency": "usd",
+                "product_data": {
+                    "name": f"AfroVending {plan['name']} Plan",
+                    "description": f"Monthly subscription - {plan['commission_rate']}% commission rate"
+                },
+                "unit_amount": int(plan["price"] * 100),
+                "recurring": {"interval": "month"}
+            },
+            "quantity": 1,
+        }],
+        mode="subscription",
+        success_url=f"{origin_url}/vendor/subscription?session_id={{CHECKOUT_SESSION_ID}}&success=true",
+        cancel_url=f"{origin_url}/pricing?cancelled=true",
+        metadata={
+            "vendor_id": vendor["id"],
+            "user_id": user["id"],
+            "plan_id": plan_id,
+            "type": "subscription"
+        },
+        customer_email=user["email"]
+    )
+    
+    # Create pending subscription transaction
+    await db.payment_transactions.insert_one({
+        "id": str(uuid.uuid4()),
+        "session_id": session.id,
+        "vendor_id": vendor["id"],
+        "user_id": user["id"],
+        "plan_id": plan_id,
+        "amount": plan["price"],
+        "currency": "usd",
+        "type": "subscription",
+        "payment_status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"checkout_url": session.url, "session_id": session.id}
+
+@api_router.get("/subscription/status/{session_id}")
+async def get_subscription_status(session_id: str, user: dict = Depends(get_current_user)):
+    """Get subscription checkout status and activate if paid"""
+    stripe.api_key = STRIPE_API_KEY
+    
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid session: {str(e)}")
+    
+    transaction = await db.payment_transactions.find_one(
+        {"session_id": session_id, "type": "subscription"},
+        {"_id": 0}
+    )
+    
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    
+    payment_status = "paid" if session.payment_status == "paid" else "pending"
+    
+    # Update transaction and activate subscription if paid
+    if transaction["payment_status"] != payment_status:
+        await db.payment_transactions.update_one(
+            {"session_id": session_id},
+            {"$set": {"payment_status": payment_status, "stripe_subscription_id": session.subscription}}
+        )
+        
+        if payment_status == "paid":
+            plan_id = transaction["plan_id"]
+            plan = SUBSCRIPTION_PLANS.get(plan_id, SUBSCRIPTION_PLANS["starter"])
+            
+            # Create/update subscription record
+            await db.subscriptions.update_one(
+                {"vendor_id": transaction["vendor_id"]},
+                {"$set": {
+                    "plan_id": plan_id,
+                    "status": "active",
+                    "price": plan["price"],
+                    "stripe_subscription_id": session.subscription,
+                    "stripe_customer_id": session.customer,
+                    "current_period_start": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }},
+                upsert=True
+            )
+            
+            # Update vendor with subscription benefits
+            await db.vendors.update_one(
+                {"id": transaction["vendor_id"]},
+                {"$set": {
+                    "subscription_plan": plan_id,
+                    "commission_rate": plan["commission_rate"],
+                    "max_products": plan["max_products"],
+                    "is_verified": plan_id in ["growth", "pro"]  # Verified badge for paid plans
+                }}
+            )
+    
+    return {
+        "status": session.status,
+        "payment_status": payment_status,
+        "plan_id": transaction["plan_id"],
+        "amount": transaction["amount"],
+        "subscription_active": payment_status == "paid"
+    }
+
+@api_router.post("/subscription/cancel")
+async def cancel_subscription(user: dict = Depends(get_current_user)):
+    """Cancel current subscription"""
+    stripe.api_key = STRIPE_API_KEY
+    
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    subscription = await db.subscriptions.find_one(
+        {"vendor_id": vendor["id"], "status": "active"},
+        {"_id": 0}
+    )
+    
+    if not subscription:
+        raise HTTPException(status_code=400, detail="No active subscription found")
+    
+    if subscription.get("stripe_subscription_id"):
+        try:
+            stripe.Subscription.cancel(subscription["stripe_subscription_id"])
+        except Exception as e:
+            logger.error(f"Failed to cancel Stripe subscription: {e}")
+    
+    # Downgrade to starter
+    await db.subscriptions.update_one(
+        {"vendor_id": vendor["id"]},
+        {"$set": {
+            "status": "cancelled",
+            "cancelled_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    await db.vendors.update_one(
+        {"id": vendor["id"]},
+        {"$set": {
+            "subscription_plan": "starter",
+            "commission_rate": 20,
+            "max_products": 5
+        }}
+    )
+    
+    return {"status": "cancelled", "message": "Subscription cancelled. Downgraded to Starter plan."}
+
 # ==================== REVIEWS ====================
 
 @api_router.get("/reviews")

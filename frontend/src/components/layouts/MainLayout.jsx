@@ -304,7 +304,7 @@ const MainLayout = () => {
               {/* Products Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1 text-gray-700 hover:text-amber-600 font-medium transition">
+                  <button className="flex items-center gap-1 text-gray-700 hover:text-red-600 font-medium transition">
                     Products
                     <ChevronDown className="h-4 w-4" />
                   </button>

@@ -128,6 +128,27 @@ const ProductsPage = () => {
                 </Select>
               </div>
 
+              {/* Country Filter */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Country</label>
+                <Select
+                  value={filters.country || "all"}
+                  onValueChange={(value) => setFilters({ ...filters, country: value === "all" ? "" : value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Countries" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">🌍 All Countries</SelectItem>
+                    {countries.map((country) => (
+                      <SelectItem key={country.code} value={country.code}>
+                        {country.flag} {country.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Price Range */}
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">
@@ -167,6 +188,7 @@ const ProductsPage = () => {
                 onClick={() => setFilters({
                   search: '',
                   category: '',
+                  country: '',
                   minPrice: 0,
                   maxPrice: 1000,
                   sortBy: 'created_at',

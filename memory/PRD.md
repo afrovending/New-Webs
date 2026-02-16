@@ -72,6 +72,20 @@ Created `/app/app.yaml` for DigitalOcean App Platform:
 - STRIPE_API_KEY: Stripe API key (SECRET)
 - CORS_ORIGINS: Allowed origins (default: *)
 
+## Trust Bar & Shop-by-Country Feature (Feb 16, 2025)
+
+**Trust Bar** - Red bar below header with trust signals:
+- Verified Vendors badge
+- US & Global Shipping badge
+- Secure Checkout badge
+- 12+ African Countries badge
+
+**Shop-by-Country** - Country-based filtering:
+- Countries dropdown in navigation (12 African countries)
+- Country filter on Products page
+- Backend API supports country filtering
+- Countries: Nigeria, Ghana, Kenya, South Africa, Ethiopia, Tanzania, Senegal, Cameroon, Morocco, Egypt, Uganda, Ivory Coast
+
 ## Branding & Design Update (Feb 16, 2025)
 - Added new AfroVending logo (red shopping cart with Africa map)
 - Updated color scheme from amber/orange to red throughout the app

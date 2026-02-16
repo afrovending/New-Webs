@@ -530,6 +530,7 @@ async def update_vendor(vendor_id: str, vendor_data: VendorCreate, user: dict = 
 async def get_products(
     category_id: str = None,
     vendor_id: str = None,
+    country: str = None,
     search: str = None,
     min_price: float = None,
     max_price: float = None,
@@ -544,6 +545,8 @@ async def get_products(
         query["category_id"] = category_id
     if vendor_id:
         query["vendor_id"] = vendor_id
+    if country:
+        query["country_code"] = country.upper()
     if search:
         query["$or"] = [
             {"name": {"$regex": search, "$options": "i"}},

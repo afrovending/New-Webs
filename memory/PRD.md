@@ -72,6 +72,19 @@ Created `/app/app.yaml` for DigitalOcean App Platform:
 - STRIPE_API_KEY: Stripe API key (SECRET)
 - CORS_ORIGINS: Allowed origins (default: *)
 
+## Branding & Design Update (Feb 16, 2025)
+- Added new AfroVending logo (red shopping cart with Africa map)
+- Updated color scheme from amber/orange to red throughout the app
+- Updated header, login, register pages with new logo
+- New black top bar with "Authentic African Products & Services"
+
+## Pricing Page Added (Feb 16, 2025)
+Based on Afrovending_Pricing_Page_Copy.pdf:
+- **Starter Plan** - $0/month (5 products, 20% commission)
+- **Growth Plan** - $25/month (50 products, 15% commission, Verified badge)
+- **Pro Vendor** - $50/month (Unlimited products, 10% commission, Featured placement)
+- **Enterprise** - Custom pricing (Dedicated manager, B2B visibility)
+
 ## Navigation Menu (Feb 16, 2025)
 Updated header navigation with dropdown menus:
 - **Products** dropdown: All Products + 6 product categories with icons

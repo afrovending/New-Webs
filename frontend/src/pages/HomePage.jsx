@@ -124,7 +124,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Categories Section */}
+      {/* Product Categories Section */}
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
@@ -133,17 +133,47 @@ const HomePage = () => {
               View All <ChevronRight className="h-4 w-4 ml-1" />
             </Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-            {categories.map((category) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {productCategories.map((category) => (
               <Link
                 key={category.id}
-                to={`/products?category=${encodeURIComponent(category.name)}`}
+                to={`/products?category=${category.id}`}
                 className="group"
               >
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                   <CardContent className="p-6 text-center">
                     <span className="text-4xl mb-3 block">{categoryIcons[category.name] || '📦'}</span>
                     <p className="font-medium text-gray-900 group-hover:text-amber-600 transition-colors">
+                      {category.name}
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Service Categories Section */}
+      <section className="py-16 bg-amber-50">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Browse Services</h2>
+            <Link to="/services" className="text-amber-600 hover:text-amber-700 font-medium flex items-center">
+              View All <ChevronRight className="h-4 w-4 ml-1" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            {serviceCategories.map((category) => (
+              <Link
+                key={category.id}
+                to={`/services?category=${category.id}`}
+                className="group"
+              >
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-white">
+                  <CardContent className="p-6 text-center">
+                    <span className="text-4xl mb-3 block">{categoryIcons[category.name] || '🛠️'}</span>
+                    <p className="font-medium text-gray-900 group-hover:text-amber-600 transition-colors text-sm">
                       {category.name}
                     </p>
                   </CardContent>

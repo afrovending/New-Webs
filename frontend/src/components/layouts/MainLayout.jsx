@@ -227,7 +227,7 @@ const MainLayout = () => {
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-80">
+                <SheetContent side="right" className="w-80 overflow-y-auto">
                   <nav className="flex flex-col gap-4 mt-8">
                     <form onSubmit={handleSearch} className="mb-4">
                       <Input
@@ -237,18 +237,60 @@ const MainLayout = () => {
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
                     </form>
-                    <Link to="/products" onClick={() => setMobileMenuOpen(false)} className="text-lg font-medium">Products</Link>
-                    <Link to="/services" onClick={() => setMobileMenuOpen(false)} className="text-lg font-medium">Services</Link>
-                    <Link to="/vendors" onClick={() => setMobileMenuOpen(false)} className="text-lg font-medium">Vendors</Link>
+                    
+                    {/* Products Section */}
+                    <div className="border-b pb-4">
+                      <Link to="/products" onClick={() => setMobileMenuOpen(false)} className="text-lg font-semibold text-amber-800 mb-2 block">
+                        🛍️ Products
+                      </Link>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {productCategories.map((cat) => (
+                          <Link 
+                            key={cat.id}
+                            to={`/products?category=${cat.id}`} 
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="text-sm text-gray-600 hover:text-amber-600 flex items-center gap-1"
+                          >
+                            <span>{categoryIcons[cat.name] || '📦'}</span>
+                            {cat.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Services Section */}
+                    <div className="border-b pb-4">
+                      <Link to="/services" onClick={() => setMobileMenuOpen(false)} className="text-lg font-semibold text-amber-800 mb-2 block">
+                        🛠️ Services
+                      </Link>
+                      <div className="grid grid-cols-1 gap-2 mt-2">
+                        {serviceCategories.map((cat) => (
+                          <Link 
+                            key={cat.id}
+                            to={`/services?category=${cat.id}`} 
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="text-sm text-gray-600 hover:text-amber-600 flex items-center gap-1"
+                          >
+                            <span>{categoryIcons[cat.name] || '🔧'}</span>
+                            {cat.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Link to="/vendors" onClick={() => setMobileMenuOpen(false)} className="text-lg font-medium">
+                      🏪 Vendors
+                    </Link>
+                    
                     {!isAuthenticated && (
-                      <>
+                      <div className="pt-4 space-y-2">
                         <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
                           <Button variant="outline" className="w-full">Login</Button>
                         </Link>
                         <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
                           <Button className="w-full bg-amber-600 hover:bg-amber-700">Sign Up</Button>
                         </Link>
-                      </>
+                      </div>
                     )}
                   </nav>
                 </SheetContent>

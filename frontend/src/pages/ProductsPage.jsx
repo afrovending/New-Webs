@@ -17,27 +17,33 @@ const ProductsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [countries, setCountries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('grid');
   
   const [filters, setFilters] = useState({
     search: searchParams.get('search') || '',
     category: searchParams.get('category') || '',
+    country: searchParams.get('country') || '',
     minPrice: 0,
     maxPrice: 1000,
     sortBy: 'created_at',
   });
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchInitialData = async () => {
       try {
-        const response = await api.get('/categories?type=product');
-        setCategories(response.data);
+        const [catResponse, countryResponse] = await Promise.all([
+          api.get('/categories?type=product'),
+          api.get('/countries'),
+        ]);
+        setCategories(catResponse.data);
+        setCountries(countryResponse.data);
       } catch (error) {
-        console.error('Error fetching categories:', error);
+        console.error('Error fetching data:', error);
       }
     };
-    fetchCategories();
+    fetchInitialData();
   }, []);
 
   useEffect(() => {
@@ -47,6 +53,7 @@ const ProductsPage = () => {
         const params = new URLSearchParams();
         if (filters.search) params.append('search', filters.search);
         if (filters.category) params.append('category_id', filters.category);
+        if (filters.country) params.append('country', filters.country);
         if (filters.minPrice > 0) params.append('min_price', filters.minPrice);
         if (filters.maxPrice < 1000) params.append('max_price', filters.maxPrice);
         params.append('sort_by', filters.sortBy);

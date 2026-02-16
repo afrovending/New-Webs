@@ -347,8 +347,11 @@ const MainLayout = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Link to="/vendors" className="text-gray-700 hover:text-amber-600 font-medium transition">
+              <Link to="/vendors" className="text-gray-700 hover:text-red-600 font-medium transition">
                 Vendors
+              </Link>
+              <Link to="/pricing" className="text-gray-700 hover:text-red-600 font-medium transition">
+                Pricing
               </Link>
             </div>
           </div>

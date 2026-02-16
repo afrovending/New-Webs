@@ -378,6 +378,29 @@ const MainLayout = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {/* Countries Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-1 text-gray-700 hover:text-red-600 font-medium transition">
+                    Countries
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56 max-h-80 overflow-y-auto">
+                  <DropdownMenuItem onClick={() => navigate('/products')}>
+                    <span className="mr-2">🌍</span>
+                    All Countries
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {countries.map((country) => (
+                    <DropdownMenuItem key={country.code} onClick={() => navigate(`/products?country=${country.code}`)}>
+                      <span className="mr-2">{country.flag}</span>
+                      {country.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Link to="/vendors" className="text-gray-700 hover:text-red-600 font-medium transition">
                 Vendors
               </Link>

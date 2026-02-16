@@ -124,7 +124,7 @@ const MainLayout = () => {
                   placeholder="Search products, services, vendors..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border-amber-200 focus:border-amber-500"
+                  className="w-full pl-10 pr-4 py-2 border-gray-200 focus:border-red-500"
                 />
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               </div>

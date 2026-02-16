@@ -438,10 +438,27 @@ async def create_category(name: str, icon: str = None, parent_id: str = None, ty
         "name": name,
         "icon": icon,
         "parent_id": parent_id,
+        "type": type,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.categories.insert_one(category)
     return category
+
+# ==================== COUNTRIES ====================
+
+@api_router.get("/countries")
+async def get_countries():
+    """Get all African countries"""
+    countries = await db.countries.find({}, {"_id": 0}).to_list(100)
+    return countries
+
+@api_router.get("/countries/{country_code}")
+async def get_country(country_code: str):
+    """Get country by code"""
+    country = await db.countries.find_one({"code": country_code.upper()}, {"_id": 0})
+    if not country:
+        raise HTTPException(status_code=404, detail="Country not found")
+    return country
 
 # ==================== VENDORS ====================
 
@@ -455,9 +472,10 @@ async def get_vendors(
     """Get vendors list"""
     query = {"is_approved": is_approved}
     if country:
-        query["country"] = country
+        query["country_code"] = country.upper()
     
     vendors = await db.vendors.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+    return vendors
     return vendors
 
 @api_router.get("/vendors/{vendor_id}")

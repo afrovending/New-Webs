@@ -260,27 +260,55 @@ const MainLayout = () => {
         {/* Navigation */}
         <nav className="border-t border-gray-100 hidden md:block">
           <div className="container mx-auto px-4">
-            <div className="flex items-center gap-8 h-12">
-              <Link to="/products" className="text-gray-700 hover:text-amber-600 font-medium transition">
-                Products
-              </Link>
-              <Link to="/services" className="text-gray-700 hover:text-amber-600 font-medium transition">
-                Services
-              </Link>
+            <div className="flex items-center gap-6 h-12">
+              {/* Products Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-1 text-gray-700 hover:text-amber-600 font-medium transition">
+                    Products
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuItem onClick={() => navigate('/products')}>
+                    <span className="mr-2">🛍️</span>
+                    All Products
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {productCategories.map((cat) => (
+                    <DropdownMenuItem key={cat.id} onClick={() => navigate(`/products?category=${cat.id}`)}>
+                      <span className="mr-2">{categoryIcons[cat.name] || '📦'}</span>
+                      {cat.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Services Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-1 text-gray-700 hover:text-amber-600 font-medium transition">
+                    Services
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuItem onClick={() => navigate('/services')}>
+                    <span className="mr-2">🛠️</span>
+                    All Services
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {serviceCategories.map((cat) => (
+                    <DropdownMenuItem key={cat.id} onClick={() => navigate(`/services?category=${cat.id}`)}>
+                      <span className="mr-2">{categoryIcons[cat.name] || '🔧'}</span>
+                      {cat.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Link to="/vendors" className="text-gray-700 hover:text-amber-600 font-medium transition">
                 Vendors
-              </Link>
-              <Link to="/products?category=Fashion" className="text-gray-600 hover:text-amber-600 transition">
-                Fashion
-              </Link>
-              <Link to="/products?category=Art+%26+Crafts" className="text-gray-600 hover:text-amber-600 transition">
-                Art & Crafts
-              </Link>
-              <Link to="/products?category=Jewelry" className="text-gray-600 hover:text-amber-600 transition">
-                Jewelry
-              </Link>
-              <Link to="/products?category=Beauty" className="text-gray-600 hover:text-amber-600 transition">
-                Beauty
               </Link>
             </div>
           </div>

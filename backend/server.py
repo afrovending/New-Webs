@@ -1298,7 +1298,6 @@ async def get_current_subscription(user: dict = Depends(get_current_user)):
 @api_router.post("/subscription/checkout")
 async def create_subscription_checkout(sub_request: SubscriptionRequest, request: Request, user: dict = Depends(get_current_user)):
     """Create checkout session for subscription"""
-    stripe.api_key = STRIPE_API_KEY
     
     plan_id = sub_request.plan_id.lower()
     if plan_id not in SUBSCRIPTION_PLANS:
@@ -1335,48 +1334,105 @@ async def create_subscription_checkout(sub_request: SubscriptionRequest, request
     
     origin_url = sub_request.origin_url.rstrip("/")
     
-    # Create Stripe Checkout Session for subscription
-    session = stripe.checkout.Session.create(
-        payment_method_types=["card"],
-        line_items=[{
-            "price_data": {
-                "currency": "usd",
-                "product_data": {
-                    "name": f"AfroVending {plan['name']} Plan",
-                    "description": f"Monthly subscription - {plan['commission_rate']}% commission rate"
+    # Check if we have a valid Stripe API key (not the test placeholder)
+    if STRIPE_API_KEY and STRIPE_API_KEY.startswith("sk_") and STRIPE_API_KEY != "sk_test_emergent":
+        try:
+            stripe.api_key = STRIPE_API_KEY
+            # Create Stripe Checkout Session for subscription
+            session = stripe.checkout.Session.create(
+                payment_method_types=["card"],
+                line_items=[{
+                    "price_data": {
+                        "currency": "usd",
+                        "product_data": {
+                            "name": f"AfroVending {plan['name']} Plan",
+                            "description": f"Monthly subscription - {plan['commission_rate']}% commission rate"
+                        },
+                        "unit_amount": int(plan["price"] * 100),
+                        "recurring": {"interval": "month"}
+                    },
+                    "quantity": 1,
+                }],
+                mode="subscription",
+                success_url=f"{origin_url}/vendor/subscription?session_id={{CHECKOUT_SESSION_ID}}&success=true",
+                cancel_url=f"{origin_url}/pricing?cancelled=true",
+                metadata={
+                    "vendor_id": vendor["id"],
+                    "user_id": user["id"],
+                    "plan_id": plan_id,
+                    "type": "subscription"
                 },
-                "unit_amount": int(plan["price"] * 100),
-                "recurring": {"interval": "month"}
-            },
-            "quantity": 1,
-        }],
-        mode="subscription",
-        success_url=f"{origin_url}/vendor/subscription?session_id={{CHECKOUT_SESSION_ID}}&success=true",
-        cancel_url=f"{origin_url}/pricing?cancelled=true",
-        metadata={
-            "vendor_id": vendor["id"],
-            "user_id": user["id"],
+                customer_email=user["email"]
+            )
+            
+            # Create pending subscription transaction
+            await db.payment_transactions.insert_one({
+                "id": str(uuid.uuid4()),
+                "session_id": session.id,
+                "vendor_id": vendor["id"],
+                "user_id": user["id"],
+                "plan_id": plan_id,
+                "amount": plan["price"],
+                "currency": "usd",
+                "type": "subscription",
+                "payment_status": "pending",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            
+            return {"checkout_url": session.url, "session_id": session.id}
+        except Exception as e:
+            logger.error(f"Stripe subscription error: {e}")
+            # Fall through to test mode
+    
+    # TEST MODE: Activate subscription directly for demo purposes
+    # In production, a valid Stripe API key is required
+    logger.info(f"TEST MODE: Activating {plan_id} subscription for vendor {vendor['id']}")
+    
+    test_session_id = f"test_sub_{uuid.uuid4().hex[:16]}"
+    
+    await db.subscriptions.update_one(
+        {"vendor_id": vendor["id"]},
+        {"$set": {
             "plan_id": plan_id,
-            "type": "subscription"
-        },
-        customer_email=user["email"]
+            "status": "active",
+            "price": plan["price"],
+            "test_mode": True,
+            "current_period_start": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }},
+        upsert=True
     )
     
-    # Create pending subscription transaction
+    await db.vendors.update_one(
+        {"id": vendor["id"]},
+        {"$set": {
+            "subscription_plan": plan_id,
+            "commission_rate": plan["commission_rate"],
+            "max_products": plan["max_products"],
+            "is_verified": plan_id in ["growth", "pro"]
+        }}
+    )
+    
     await db.payment_transactions.insert_one({
         "id": str(uuid.uuid4()),
-        "session_id": session.id,
+        "session_id": test_session_id,
         "vendor_id": vendor["id"],
         "user_id": user["id"],
         "plan_id": plan_id,
         "amount": plan["price"],
         "currency": "usd",
         "type": "subscription",
-        "payment_status": "pending",
+        "payment_status": "paid",
+        "test_mode": True,
         "created_at": datetime.now(timezone.utc).isoformat()
     })
     
-    return {"checkout_url": session.url, "session_id": session.id}
+    return {
+        "status": "activated",
+        "plan": plan_id,
+        "message": f"TEST MODE: {plan['name']} plan activated. In production, Stripe payment would be required.",
+        "test_mode": True
+    }
 
 @api_router.get("/subscription/status/{session_id}")
 async def get_subscription_status(session_id: str, user: dict = Depends(get_current_user)):

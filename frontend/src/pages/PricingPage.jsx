@@ -1,14 +1,27 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
-import { Check, Star, Zap, Crown, Building2 } from 'lucide-react';
+import { Check, Star, Zap, Crown, Building2, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 const PricingPage = () => {
+  const { user, token } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [loading, setLoading] = useState(null);
+  const [currentPlan, setCurrentPlan] = useState(null);
+  const [message, setMessage] = useState(null);
+
   const plans = [
     {
+      id: 'starter',
       name: 'Starter',
       price: '$0',
+      priceValue: 0,
       period: 'month',
       description: 'Perfect for new vendors getting started',
       icon: Star,
@@ -25,8 +38,10 @@ const PricingPage = () => {
       color: 'gray'
     },
     {
+      id: 'growth',
       name: 'Growth',
       price: '$25',
+      priceValue: 25,
       period: 'month',
       description: 'Built for growing African brands',
       icon: Zap,
@@ -43,8 +58,10 @@ const PricingPage = () => {
       color: 'red'
     },
     {
+      id: 'pro',
       name: 'Pro Vendor',
       price: '$50',
+      priceValue: 50,
       period: 'month',
       description: 'For serious sellers & top-performing brands',
       icon: Crown,
@@ -62,8 +79,10 @@ const PricingPage = () => {
       color: 'gray'
     },
     {
+      id: 'enterprise',
       name: 'Enterprise',
       price: 'Custom',
+      priceValue: null,
       period: 'pricing',
       description: 'For distributors, collectives & exporters',
       icon: Building2,
@@ -80,6 +99,120 @@ const PricingPage = () => {
       color: 'gray'
     }
   ];
+
+  // Check for success/cancelled from URL params
+  useEffect(() => {
+    const sessionId = searchParams.get('session_id');
+    const success = searchParams.get('success');
+    const cancelled = searchParams.get('cancelled');
+
+    if (cancelled) {
+      setMessage({ type: 'error', text: 'Subscription cancelled. You can try again anytime.' });
+    }
+
+    if (sessionId && success) {
+      // Poll for subscription status
+      pollSubscriptionStatus(sessionId);
+    }
+  }, [searchParams]);
+
+  // Fetch current subscription if logged in as vendor
+  useEffect(() => {
+    if (user && user.role === 'vendor' && token) {
+      fetchCurrentPlan();
+    }
+  }, [user, token]);
+
+  const fetchCurrentPlan = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/subscription/current`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCurrentPlan(response.data.plan_id);
+    } catch (err) {
+      console.log('No current subscription');
+    }
+  };
+
+  const pollSubscriptionStatus = async (sessionId, attempts = 0) => {
+    if (attempts >= 5) {
+      setMessage({ type: 'error', text: 'Could not verify payment. Please check your email for confirmation.' });
+      return;
+    }
+
+    try {
+      const response = await axios.get(`${API_URL}/api/subscription/status/${sessionId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data.payment_status === 'paid') {
+        setMessage({ type: 'success', text: `Success! Your ${response.data.plan_id} plan is now active.` });
+        setCurrentPlan(response.data.plan_id);
+        // Clear URL params
+        window.history.replaceState({}, '', '/pricing');
+      } else {
+        // Continue polling
+        setTimeout(() => pollSubscriptionStatus(sessionId, attempts + 1), 2000);
+      }
+    } catch (err) {
+      setTimeout(() => pollSubscriptionStatus(sessionId, attempts + 1), 2000);
+    }
+  };
+
+  const handleSubscribe = async (planId) => {
+    // Enterprise plan - redirect to contact
+    if (planId === 'enterprise') {
+      window.location.href = 'mailto:enterprise@afrovending.com?subject=Enterprise Plan Inquiry';
+      return;
+    }
+
+    // Must be logged in as vendor
+    if (!user) {
+      navigate(`/register?role=vendor&plan=${planId}`);
+      return;
+    }
+
+    if (user.role !== 'vendor') {
+      setMessage({ type: 'error', text: 'You need a vendor account to subscribe. Please register as a vendor.' });
+      return;
+    }
+
+    // Already on this plan
+    if (currentPlan === planId) {
+      setMessage({ type: 'info', text: 'You are already on this plan.' });
+      return;
+    }
+
+    setLoading(planId);
+    setMessage(null);
+
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/subscription/checkout`,
+        {
+          plan_id: planId,
+          origin_url: window.location.origin
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.checkout_url) {
+        // Redirect to Stripe Checkout
+        window.location.href = response.data.checkout_url;
+      } else if (response.data.status === 'activated') {
+        // Free plan activated directly
+        setMessage({ type: 'success', text: response.data.message });
+        setCurrentPlan(planId);
+      }
+    } catch (err) {
+      setMessage({ 
+        type: 'error', 
+        text: err.response?.data?.detail || 'Failed to start subscription. Please try again.' 
+      });
+    } finally {
+      setLoading(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -111,6 +244,31 @@ const PricingPage = () => {
         </div>
       </section>
 
+      {/* Message Banner */}
+      {message && (
+        <div className={`max-w-4xl mx-auto px-4 mb-8`}>
+          <div className={`p-4 rounded-lg flex items-center gap-3 ${
+            message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' :
+            message.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
+            'bg-blue-50 text-blue-800 border border-blue-200'
+          }`}>
+            {message.type === 'success' ? <CheckCircle className="h-5 w-5" /> : 
+             message.type === 'error' ? <XCircle className="h-5 w-5" /> : null}
+            {message.text}
+          </div>
+        </div>
+      )}
+
+      {/* Current Plan Banner */}
+      {currentPlan && (
+        <div className="max-w-4xl mx-auto px-4 mb-8">
+          <div className="bg-gray-100 p-4 rounded-lg text-center">
+            <span className="text-gray-600">Your current plan: </span>
+            <span className="font-semibold text-gray-900 capitalize">{currentPlan}</span>
+          </div>
+        </div>
+      )}
+
       {/* Pricing Section */}
       <section className="py-12 px-4">
         <div className="container mx-auto">
@@ -124,19 +282,29 @@ const PricingPage = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
             {plans.map((plan) => {
               const IconComponent = plan.icon;
+              const isCurrentPlan = currentPlan === plan.id;
+              const isLoading = loading === plan.id;
+              
               return (
                 <Card 
                   key={plan.name} 
                   className={`relative overflow-hidden ${
                     plan.popular 
                       ? 'border-2 border-red-500 shadow-xl scale-105' 
+                      : isCurrentPlan
+                      ? 'border-2 border-green-500'
                       : 'border border-gray-200 hover:border-gray-300'
                   } transition-all`}
-                  data-testid={`pricing-card-${plan.name.toLowerCase()}`}
+                  data-testid={`pricing-card-${plan.id}`}
                 >
                   {plan.popular && (
                     <div className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
                       Most Popular
+                    </div>
+                  )}
+                  {isCurrentPlan && (
+                    <div className="absolute top-0 left-0 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-br-lg">
+                      Current Plan
                     </div>
                   )}
                   <CardHeader className="text-center pb-2">
@@ -165,18 +333,26 @@ const PricingPage = () => {
                         </li>
                       ))}
                     </ul>
-                    <Link to="/register?role=vendor">
-                      <Button 
-                        className={`w-full ${
-                          plan.popular 
-                            ? 'bg-red-600 hover:bg-red-700' 
-                            : 'bg-gray-900 hover:bg-gray-800'
-                        }`}
-                        data-testid={`pricing-cta-${plan.name.toLowerCase()}`}
-                      >
-                        {plan.buttonText}
-                      </Button>
-                    </Link>
+                    <Button 
+                      className={`w-full ${
+                        isCurrentPlan
+                          ? 'bg-green-600 hover:bg-green-700'
+                          : plan.popular 
+                          ? 'bg-red-600 hover:bg-red-700' 
+                          : 'bg-gray-900 hover:bg-gray-800'
+                      }`}
+                      onClick={() => handleSubscribe(plan.id)}
+                      disabled={isLoading || isCurrentPlan}
+                      data-testid={`pricing-cta-${plan.id}`}
+                    >
+                      {isLoading ? (
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...</>
+                      ) : isCurrentPlan ? (
+                        'Current Plan'
+                      ) : (
+                        plan.buttonText
+                      )}
+                    </Button>
                   </CardContent>
                 </Card>
               );
@@ -209,11 +385,13 @@ const PricingPage = () => {
               <div className="text-gray-400 text-sm">Pro Vendor</div>
             </div>
           </div>
-          <Link to="/register?role=vendor">
-            <Button size="lg" className="bg-red-600 hover:bg-red-700">
-              Start Selling Today
-            </Button>
-          </Link>
+          {!user && (
+            <Link to="/register?role=vendor">
+              <Button size="lg" className="bg-red-600 hover:bg-red-700">
+                Start Selling Today
+              </Button>
+            </Link>
+          )}
         </div>
       </section>
 
@@ -225,11 +403,21 @@ const PricingPage = () => {
             Join hundreds of African vendors already selling on AfroVending. 
             Start free today and upgrade when you're ready.
           </p>
-          <Link to="/register?role=vendor">
-            <Button size="lg" className="bg-red-600 hover:bg-red-700">
-              Create Your Vendor Account
+          {!user ? (
+            <Link to="/register?role=vendor">
+              <Button size="lg" className="bg-red-600 hover:bg-red-700">
+                Create Your Vendor Account
+              </Button>
+            </Link>
+          ) : user.role === 'vendor' && currentPlan !== 'pro' ? (
+            <Button 
+              size="lg" 
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => handleSubscribe('pro')}
+            >
+              Upgrade to Pro
             </Button>
-          </Link>
+          ) : null}
         </div>
       </section>
     </div>

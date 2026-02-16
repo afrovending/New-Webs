@@ -131,6 +131,7 @@ const AppRouter = () => {
         <Route path="vendors" element={<VendorsPage />} />
         <Route path="vendors/:id" element={<VendorStorePage />} />
         <Route path="cart" element={<CartPage />} />
+        <Route path="pricing" element={<PricingPage />} />
         <Route path="checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
       </Route>
 

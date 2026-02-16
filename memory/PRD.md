@@ -72,7 +72,18 @@ Created `/app/app.yaml` for DigitalOcean App Platform:
 - STRIPE_API_KEY: Stripe API key (SECRET)
 - CORS_ORIGINS: Allowed origins (default: *)
 
-## Service Categories Added (Feb 16, 2025)
+## Categories Structure (Feb 16, 2025)
+Categories are now separated by type (product vs service):
+
+**Product Categories (6):**
+- Fashion
+- Art & Crafts
+- Food & Groceries
+- Jewelry
+- Home Decor
+- Beauty
+
+**Service Categories (7):**
 - Event and Decor
 - Fashion Designing
 - Catering Services

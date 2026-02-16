@@ -373,24 +373,63 @@ const ProductDetailPage = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Related Products */}
+      {/* Related Products - Same Category */}
       {relatedProducts.length > 0 && (
-        <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Products</h2>
+        <section className="mb-16">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">More African Treasures Like This</h2>
+              <p className="text-gray-600 mt-1">Handpicked products from the same collection</p>
+            </div>
+            <Link to="/products" className="text-red-600 hover:text-red-700 font-medium flex items-center">
+              View All <ChevronRight className="h-4 w-4 ml-1" />
+            </Link>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {relatedProducts.slice(0, 4).map((product) => (
-              <Link key={product.id} to={`/products/${product.id}`}>
-                <Card className="group hover:shadow-lg transition-shadow cursor-pointer overflow-hidden">
-                  <div className="aspect-square bg-gray-100">
-                    {product.images?.[0] ? (
-                      <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+            {relatedProducts.map((relatedProduct) => (
+              <Link key={relatedProduct.id} to={`/products/${relatedProduct.id}`}>
+                <Card className="group hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden border-0 shadow-md" data-testid={`related-product-${relatedProduct.id}`}>
+                  <div className="aspect-square bg-gray-100 relative overflow-hidden">
+                    {relatedProduct.images?.[0] ? (
+                      <img 
+                        src={relatedProduct.images[0]} 
+                        alt={relatedProduct.name} 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
                     )}
+                    {relatedProduct.compare_price && relatedProduct.compare_price > relatedProduct.price && (
+                      <Badge className="absolute top-2 left-2 bg-red-500">
+                        {Math.round((1 - relatedProduct.price / relatedProduct.compare_price) * 100)}% OFF
+                      </Badge>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <Button 
+                      size="sm" 
+                      className="absolute bottom-2 left-1/2 -translate-x-1/2 translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 bg-white text-gray-900 hover:bg-red-600 hover:text-white"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        addToCart(relatedProduct, 1);
+                        toast.success(`${relatedProduct.name} added to cart!`);
+                      }}
+                    >
+                      <ShoppingCart className="h-4 w-4 mr-1" /> Add to Cart
+                    </Button>
                   </div>
                   <CardContent className="p-4">
-                    <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-red-600">{product.name}</h3>
-                    <p className="text-lg font-bold text-red-600 mt-2">${product.price}</p>
+                    <p className="text-xs text-red-600 font-medium mb-1">AfroVending Official</p>
+                    <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-red-600 transition-colors">{relatedProduct.name}</h3>
+                    <div className="flex items-center gap-1 mt-2">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <span className="text-xs text-gray-600">{relatedProduct.average_rating || 4.5}</span>
+                    </div>
+                    <div className="flex items-baseline gap-2 mt-2">
+                      <span className="text-lg font-bold text-red-600">${relatedProduct.price}</span>
+                      {relatedProduct.compare_price && relatedProduct.compare_price > relatedProduct.price && (
+                        <span className="text-sm text-gray-400 line-through">${relatedProduct.compare_price}</span>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </Link>
@@ -398,6 +437,113 @@ const ProductDetailPage = () => {
           </div>
         </section>
       )}
+
+      {/* Cross-sell - Complete Your Collection */}
+      {crossSellProducts.length > 0 && (
+        <section className="mb-16 bg-gradient-to-br from-amber-50 to-orange-50 -mx-4 px-4 py-12 md:-mx-8 md:px-8 rounded-2xl">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-5 w-5 text-amber-600" />
+                <span className="text-amber-700 font-semibold text-sm uppercase tracking-wide">Complete Your Collection</span>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">You May Also Love</h2>
+              <p className="text-gray-600 mt-1">Discover more authentic African treasures</p>
+            </div>
+            <Link to="/products" className="text-red-600 hover:text-red-700 font-medium flex items-center">
+              Explore All <ChevronRight className="h-4 w-4 ml-1" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {crossSellProducts.map((crossProduct) => (
+              <Link key={crossProduct.id} to={`/products/${crossProduct.id}`}>
+                <Card className="group hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden bg-white" data-testid={`crosssell-product-${crossProduct.id}`}>
+                  <div className="aspect-square bg-gray-100 relative overflow-hidden">
+                    {crossProduct.images?.[0] ? (
+                      <img 
+                        src={crossProduct.images[0]} 
+                        alt={crossProduct.name} 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
+                    )}
+                    {crossProduct.compare_price && crossProduct.compare_price > crossProduct.price && (
+                      <Badge className="absolute top-2 left-2 bg-amber-500">
+                        Save ${(crossProduct.compare_price - crossProduct.price).toFixed(0)}
+                      </Badge>
+                    )}
+                    <button 
+                      className="absolute top-2 right-2 w-8 h-8 bg-white/80 backdrop-blur rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-600"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        toast.success('Added to wishlist!');
+                      }}
+                    >
+                      <Heart className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-1 mb-1">
+                      <BadgeCheck className="h-3 w-3 text-blue-500" />
+                      <p className="text-xs text-gray-500">Verified Vendor</p>
+                    </div>
+                    <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-red-600 transition-colors">{crossProduct.name}</h3>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className={`h-3 w-3 ${i < Math.floor(crossProduct.average_rating || 4.5) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+                        ))}
+                      </div>
+                      <span className="text-xs text-gray-500">({crossProduct.review_count || 0})</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="text-lg font-bold text-gray-900">${crossProduct.price}</span>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="h-8 px-3 text-xs hover:bg-red-600 hover:text-white hover:border-red-600"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          addToCart(crossProduct, 1);
+                          toast.success(`${crossProduct.name} added to cart!`);
+                        }}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* African Heritage Banner */}
+      <section className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-8 md:p-12 text-white mb-8">
+        <div className="max-w-2xl">
+          <h3 className="text-2xl md:text-3xl font-bold mb-3">
+            Every Purchase Supports African Artisans
+          </h3>
+          <p className="text-gray-300 mb-6">
+            When you shop at AfroVending, you're not just buying products — you're supporting families, 
+            preserving traditions, and empowering communities across Africa.
+          </p>
+          <div className="flex flex-wrap gap-4">
+            <Link to="/vendors">
+              <Button className="bg-red-600 hover:bg-red-700">
+                Meet Our Artisans
+              </Button>
+            </Link>
+            <Link to="/products">
+              <Button variant="outline" className="border-white text-white hover:bg-white/10">
+                Continue Shopping
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

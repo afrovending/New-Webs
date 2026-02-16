@@ -72,6 +72,17 @@ Created `/app/app.yaml` for DigitalOcean App Platform:
 - STRIPE_API_KEY: Stripe API key (SECRET)
 - CORS_ORIGINS: Allowed origins (default: *)
 
+## Sample Products Added (Feb 16, 2025)
+8 African products with AI-generated images:
+1. Ankara Print Maxi Dress - $89.99 (Fashion)
+2. Maasai Beaded Collar Necklace - $45.00 (Jewelry)
+3. Traditional Carved Wooden Mask - $125.00 (Art & Crafts)
+4. Organic Shea Butter Skincare Set - $38.50 (Beauty)
+5. Kente Pattern Storage Basket - $55.00 (Home Decor)
+6. African Print Headwrap Gele - $28.00 (Fashion)
+7. Hand-Carved Djembe Drum - $195.00 (Art & Crafts)
+8. Traditional African Black Soap - $12.99 (Beauty)
+
 ## What's Remaining (P0)
 - [ ] Deploy to DigitalOcean (ready - save to GitHub first)
 - [ ] Configure production environment variables

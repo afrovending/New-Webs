@@ -23,7 +23,7 @@ const ServicesPage = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await api.get('/categories');
+        const response = await api.get('/categories?type=service');
         setCategories(response.data);
       } catch (error) {
         console.error('Error fetching categories:', error);

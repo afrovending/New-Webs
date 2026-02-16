@@ -147,7 +147,7 @@ const HomePage = () => {
             {productCategories.map((category) => (
               <Link
                 key={category.id}
-                to={`/products?category=${category.id}`}
+                to={`/category/${category.name.toLowerCase().replace(/\s+&\s+/g, '-').replace(/\s+/g, '-')}`}
                 className="group"
               >
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer">

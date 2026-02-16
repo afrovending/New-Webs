@@ -561,13 +561,21 @@ async def get_products(
     sort_field = sort_by if sort_by in ["price", "created_at", "average_rating"] else "created_at"
     products = await db.products.find(query, {"_id": 0}).sort(sort_field, -1).skip(skip).limit(limit).to_list(limit)
     
-    # Add vendor info
-    for product in products:
-        vendor = await db.vendors.find_one({"id": product["vendor_id"]}, {"_id": 0, "store_name": 1, "country": 1, "is_verified": 1})
-        if vendor:
-            product["vendor_name"] = vendor.get("store_name")
-            product["vendor_country"] = vendor.get("country")
-            product["vendor_verified"] = vendor.get("is_verified", False)
+    # Batch fetch vendor info to avoid N+1 queries
+    if products:
+        vendor_ids = list(set(p["vendor_id"] for p in products if p.get("vendor_id")))
+        vendors = await db.vendors.find(
+            {"id": {"$in": vendor_ids}}, 
+            {"_id": 0, "id": 1, "store_name": 1, "country": 1, "is_verified": 1}
+        ).to_list(len(vendor_ids))
+        vendor_map = {v["id"]: v for v in vendors}
+        
+        for product in products:
+            vendor = vendor_map.get(product.get("vendor_id"))
+            if vendor:
+                product["vendor_name"] = vendor.get("store_name")
+                product["vendor_country"] = vendor.get("country")
+                product["vendor_verified"] = vendor.get("is_verified", False)
     
     return products
 
@@ -667,10 +675,19 @@ async def get_services(
     
     services = await db.services.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
     
-    for service in services:
-        vendor = await db.vendors.find_one({"id": service["vendor_id"]}, {"_id": 0, "store_name": 1})
-        if vendor:
-            service["vendor_name"] = vendor.get("store_name")
+    # Batch fetch vendor info to avoid N+1 queries
+    if services:
+        vendor_ids = list(set(s["vendor_id"] for s in services if s.get("vendor_id")))
+        vendors = await db.vendors.find(
+            {"id": {"$in": vendor_ids}}, 
+            {"_id": 0, "id": 1, "store_name": 1}
+        ).to_list(len(vendor_ids))
+        vendor_map = {v["id"]: v for v in vendors}
+        
+        for service in services:
+            vendor = vendor_map.get(service.get("vendor_id"))
+            if vendor:
+                service["vendor_name"] = vendor.get("store_name")
     
     return services
 
@@ -1202,21 +1219,29 @@ async def create_review(review_data: ReviewCreate, user: dict = Depends(get_curr
     
     await db.reviews.insert_one(review)
     
-    # Update average rating
+    # Update average rating using MongoDB aggregation (efficient for any number of reviews)
     if review_data.product_id:
-        reviews = await db.reviews.find({"product_id": review_data.product_id}, {"rating": 1}).to_list(1000)
-        avg_rating = sum(r["rating"] for r in reviews) / len(reviews)
-        await db.products.update_one(
-            {"id": review_data.product_id},
-            {"$set": {"average_rating": round(avg_rating, 1), "review_count": len(reviews)}}
-        )
+        pipeline = [
+            {"$match": {"product_id": review_data.product_id}},
+            {"$group": {"_id": None, "avg_rating": {"$avg": "$rating"}, "count": {"$sum": 1}}}
+        ]
+        result = await db.reviews.aggregate(pipeline).to_list(1)
+        if result:
+            await db.products.update_one(
+                {"id": review_data.product_id},
+                {"$set": {"average_rating": round(result[0]["avg_rating"], 1), "review_count": result[0]["count"]}}
+            )
     elif review_data.service_id:
-        reviews = await db.reviews.find({"service_id": review_data.service_id}, {"rating": 1}).to_list(1000)
-        avg_rating = sum(r["rating"] for r in reviews) / len(reviews)
-        await db.services.update_one(
-            {"id": review_data.service_id},
-            {"$set": {"average_rating": round(avg_rating, 1), "review_count": len(reviews)}}
-        )
+        pipeline = [
+            {"$match": {"service_id": review_data.service_id}},
+            {"$group": {"_id": None, "avg_rating": {"$avg": "$rating"}, "count": {"$sum": 1}}}
+        ]
+        result = await db.reviews.aggregate(pipeline).to_list(1)
+        if result:
+            await db.services.update_one(
+                {"id": review_data.service_id},
+                {"$set": {"average_rating": round(result[0]["avg_rating"], 1), "review_count": result[0]["count"]}}
+            )
     
     return review
 

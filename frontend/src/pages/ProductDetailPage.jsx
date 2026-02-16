@@ -7,7 +7,20 @@ import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from 'sonner';
-import { Star, ShoppingCart, Minus, Plus, MapPin, Truck, Shield, MessageSquare } from 'lucide-react';
+import { 
+  Star, 
+  ShoppingCart, 
+  Minus, 
+  Plus, 
+  MapPin, 
+  Truck, 
+  Shield, 
+  MessageSquare,
+  Heart,
+  ChevronRight,
+  BadgeCheck,
+  Sparkles
+} from 'lucide-react';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -20,6 +33,7 @@ const ProductDetailPage = () => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const [crossSellProducts, setCrossSellProducts] = useState([]);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -31,11 +45,18 @@ const ProductDetailPage = () => {
         setProduct(productRes.data);
         setReviews(reviewsRes.data);
 
-        // Fetch related products
+        // Fetch related products from same category
         if (productRes.data.category_id) {
-          const relatedRes = await api.get(`/products?category_id=${productRes.data.category_id}&limit=4`);
-          setRelatedProducts(relatedRes.data.filter(p => p.id !== id));
+          const relatedRes = await api.get(`/products?category_id=${productRes.data.category_id}&limit=8`);
+          setRelatedProducts(relatedRes.data.filter(p => p.id !== id).slice(0, 4));
         }
+
+        // Fetch cross-sell products from other categories (for variety)
+        const allProductsRes = await api.get('/products?limit=12');
+        const otherCategoryProducts = allProductsRes.data.filter(
+          p => p.id !== id && p.category_id !== productRes.data.category_id
+        );
+        setCrossSellProducts(otherCategoryProducts.slice(0, 4));
       } catch (error) {
         console.error('Error fetching product:', error);
         toast.error('Product not found');

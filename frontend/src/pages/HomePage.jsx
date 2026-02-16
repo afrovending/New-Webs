@@ -20,22 +20,25 @@ const HomePage = () => {
   const [stats, setStats] = useState({ total_vendors: 0, total_products: 0, countries_served: 0 });
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [featuredVendors, setFeaturedVendors] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [productCategories, setProductCategories] = useState([]);
+  const [serviceCategories, setServiceCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statsRes, productsRes, vendorsRes, categoriesRes] = await Promise.all([
+        const [statsRes, productsRes, vendorsRes, productCatsRes, serviceCatsRes] = await Promise.all([
           api.get('/stats/platform'),
           api.get('/products?limit=8'),
           api.get('/vendors?limit=6'),
-          api.get('/categories'),
+          api.get('/categories?type=product'),
+          api.get('/categories?type=service'),
         ]);
         setStats(statsRes.data);
         setFeaturedProducts(productsRes.data);
         setFeaturedVendors(vendorsRes.data);
-        setCategories(categoriesRes.data);
+        setProductCategories(productCatsRes.data);
+        setServiceCategories(serviceCatsRes.data.filter(c => c.name !== 'Services'));
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -46,13 +49,21 @@ const HomePage = () => {
   }, []);
 
   const categoryIcons = {
+    // Product categories
     Fashion: '👗',
     'Art & Crafts': '🎨',
     'Food & Groceries': '🍲',
     Jewelry: '💎',
     'Home Decor': '🏠',
     Beauty: '✨',
-    Services: '💼',
+    // Service categories
+    'Event and Decor': '🎉',
+    'Fashion Designing': '✂️',
+    'Catering Services': '🍽️',
+    'Barbing Services': '💈',
+    'Beauty and Facials': '💆',
+    'Braiding Services': '💇',
+    'Professional Services': '💼',
   };
 
   return (

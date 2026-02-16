@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
@@ -11,6 +11,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from '../ui/navigation-menu';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import {
   Search,
@@ -26,14 +34,51 @@ import {
   LayoutDashboard,
   Store,
   Shield,
+  ChevronDown,
 } from 'lucide-react';
 
 const MainLayout = () => {
-  const { user, isAuthenticated, logout, isVendor, isAdmin } = useAuth();
+  const { user, isAuthenticated, logout, isVendor, isAdmin, api } = useAuth();
   const { cartCount } = useCart();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [productCategories, setProductCategories] = useState([]);
+  const [serviceCategories, setServiceCategories] = useState([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const [productRes, serviceRes] = await Promise.all([
+          api.get('/categories?type=product'),
+          api.get('/categories?type=service'),
+        ]);
+        setProductCategories(productRes.data);
+        setServiceCategories(serviceRes.data.filter(c => c.name !== 'Services'));
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const categoryIcons = {
+    // Product categories
+    Fashion: '👗',
+    'Art & Crafts': '🎨',
+    'Food & Groceries': '🍲',
+    Jewelry: '💎',
+    'Home Decor': '🏠',
+    Beauty: '✨',
+    // Service categories
+    'Event and Decor': '🎉',
+    'Fashion Designing': '✂️',
+    'Catering Services': '🍽️',
+    'Barbing Services': '💈',
+    'Beauty and Facials': '💆',
+    'Braiding Services': '💇',
+    'Professional Services': '💼',
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();

@@ -213,7 +213,7 @@ const MainLayout = () => {
                     <Button variant="ghost" data-testid="login-button">Login</Button>
                   </Link>
                   <Link to="/register">
-                    <Button className="bg-amber-600 hover:bg-amber-700" data-testid="register-button">Sign Up</Button>
+                    <Button className="bg-red-600 hover:bg-red-700" data-testid="register-button">Sign Up</Button>
                   </Link>
                 </div>
               )}

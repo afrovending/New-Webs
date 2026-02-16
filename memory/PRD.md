@@ -13,28 +13,29 @@ Rebuild AfroVending marketplace with:
 - Multi-country vendor support
 
 ## Architecture
-- **Backend**: Python FastAPI, MongoDB, emergentintegrations for Stripe
+- **Backend**: Python FastAPI, MongoDB (Motor async driver), official Stripe SDK
 - **Frontend**: React with Tailwind CSS, shadcn/ui components
 - **Auth**: JWT + Google OAuth via Emergent Auth
 - **Payments**: Stripe Checkout with escrow for services
 
 ## What's Been Implemented (Feb 16, 2025)
 
-### Backend (1,451 lines)
+### Backend (1,473 lines - `/app/backend/server.py`)
 - [x] Authentication (JWT + Google OAuth)
 - [x] User management (customer, vendor, admin roles)
-- [x] Categories CRUD
+- [x] Categories CRUD with seeding
 - [x] Vendors CRUD with approval workflow
 - [x] Products CRUD with search, filters
 - [x] Services with time slots
 - [x] Bookings with escrow payment
 - [x] Shopping cart & Orders
-- [x] Stripe checkout integration
+- [x] Stripe checkout integration (using official `stripe` SDK)
 - [x] Reviews & Ratings
 - [x] Admin dashboard & stats
+- [x] Vendor verification badge feature
 - [x] Seed data endpoint
 
-### Frontend (79 files)
+### Frontend (Complete React App)
 - [x] Main layout with navigation
 - [x] Dashboard layout (customer/vendor/admin)
 - [x] Home page with stats, featured products/vendors
@@ -50,20 +51,36 @@ Rebuild AfroVending marketplace with:
 - [x] Vendor dashboard (products, services, orders, bookings)
 - [x] Admin dashboard (stats, users, vendors, orders)
 
-## Credentials
+## Test Credentials
 - Admin: admin@afrovending.com / AfroAdmin2024!
 - Vendor: vendor@afrovending.com / AfroVendor2024!
 
-## Deployment (DigitalOcean App Platform)
-- Backend: /backend/Dockerfile, port 8080
-- Frontend: Static site, yarn build
+## Deployment Configuration
+Created `/app/app.yaml` for DigitalOcean App Platform:
+- Backend: Buildpack deployment (no Dockerfile required)
+- Frontend: Static site with yarn build
+
+## Key Technical Decisions
+1. **Removed `emergentintegrations` dependency** - Replaced with official `stripe` SDK to fix deployment build failures
+2. **Buildpack approach** - Using DigitalOcean buildpacks instead of Dockerfile due to platform issues
+3. **Motor async driver** - For MongoDB async operations with FastAPI
+
+## Environment Variables Required for Deployment
+- MONGO_URL: MongoDB connection string (SECRET)
+- DB_NAME: Database name (default: afrovending_db)
+- JWT_SECRET: Secret for JWT tokens (SECRET)
+- STRIPE_API_KEY: Stripe API key (SECRET)
+- CORS_ORIGINS: Allowed origins (default: *)
 
 ## What's Remaining (P0)
-- [ ] SendGrid email integration
-- [ ] PayPal payments
-- [ ] Vendor stripe connect onboarding
+- [ ] Deploy to DigitalOcean (ready - save to GitHub first)
+- [ ] Configure production environment variables
+- [ ] End-to-end testing in production
 
 ## Backlog (P1/P2)
+- SendGrid email integration
+- PayPal payments
+- Vendor Stripe Connect onboarding
 - Multi-currency support
 - Detailed analytics
 - Advanced messaging with notifications

@@ -419,13 +419,16 @@ async def logout(request: Request, response: Response):
 # ==================== CATEGORIES ====================
 
 @api_router.get("/categories")
-async def get_categories():
-    """Get all categories"""
-    categories = await db.categories.find({}, {"_id": 0}).to_list(100)
+async def get_categories(type: str = None):
+    """Get categories, optionally filtered by type (product/service)"""
+    query = {}
+    if type:
+        query["type"] = type
+    categories = await db.categories.find(query, {"_id": 0}).to_list(100)
     return categories
 
 @api_router.post("/categories")
-async def create_category(name: str, icon: str = None, parent_id: str = None, user: dict = Depends(get_current_user)):
+async def create_category(name: str, icon: str = None, parent_id: str = None, type: str = "product", user: dict = Depends(get_current_user)):
     """Create a category (admin only)"""
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")

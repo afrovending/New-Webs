@@ -1,0 +1,34 @@
+name: afrovending
+
+services:
+  - name: backend
+    source_dir: /backend
+    build_command: pip install -r requirements.txt
+    run_command: uvicorn server:app --host 0.0.0.0 --port 8080
+    http_port: 8080
+    envs:
+      - key: MONGO_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: DB_NAME
+        scope: RUN_TIME
+        value: afrovending_db
+      - key: JWT_SECRET
+        scope: RUN_TIME
+        type: SECRET
+      - key: STRIPE_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: CORS_ORIGINS
+        scope: RUN_TIME
+        value: "*"
+
+static_sites:
+  - name: frontend
+    source_dir: /frontend
+    build_command: yarn install && yarn build
+    output_dir: /build
+    envs:
+      - key: REACT_APP_BACKEND_URL
+        scope: BUILD_TIME
+        value: ${backend.PUBLIC_URL}

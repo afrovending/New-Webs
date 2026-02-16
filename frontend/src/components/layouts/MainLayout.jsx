@@ -35,6 +35,10 @@ import {
   Store,
   Shield,
   ChevronDown,
+  BadgeCheck,
+  Truck,
+  Lock,
+  Globe,
 } from 'lucide-react';
 
 const MainLayout = () => {
@@ -45,21 +49,24 @@ const MainLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [productCategories, setProductCategories] = useState([]);
   const [serviceCategories, setServiceCategories] = useState([]);
+  const [countries, setCountries] = useState([]);
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchData = async () => {
       try {
-        const [productRes, serviceRes] = await Promise.all([
+        const [productRes, serviceRes, countriesRes] = await Promise.all([
           api.get('/categories?type=product'),
           api.get('/categories?type=service'),
+          api.get('/countries'),
         ]);
         setProductCategories(productRes.data);
         setServiceCategories(serviceRes.data.filter(c => c.name !== 'Services'));
+        setCountries(countriesRes.data);
       } catch (error) {
-        console.error('Error fetching categories:', error);
+        console.error('Error fetching data:', error);
       }
     };
-    fetchCategories();
+    fetchData();
   }, []);
 
   const categoryIcons = {

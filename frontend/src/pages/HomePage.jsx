@@ -13,6 +13,9 @@ import {
   MapPin,
   ChevronRight,
   BadgeCheck,
+  Users,
+  Calendar,
+  Quote,
 } from 'lucide-react';
 
 const HomePage = () => {
@@ -20,6 +23,7 @@ const HomePage = () => {
   const [stats, setStats] = useState({ total_vendors: 0, total_products: 0, countries_served: 0 });
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [featuredVendors, setFeaturedVendors] = useState([]);
+  const [spotlightVendor, setSpotlightVendor] = useState(null);
   const [productCategories, setProductCategories] = useState([]);
   const [serviceCategories, setServiceCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +43,12 @@ const HomePage = () => {
         setFeaturedVendors(vendorsRes.data);
         setProductCategories(productCatsRes.data);
         setServiceCategories(serviceCatsRes.data.filter(c => c.name !== 'Services'));
+        
+        // Find vendor with story for spotlight
+        const vendorWithStory = vendorsRes.data.find(v => v.story);
+        if (vendorWithStory) {
+          setSpotlightVendor(vendorWithStory);
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {

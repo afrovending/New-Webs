@@ -105,14 +105,14 @@ const ServicesPage = () => {
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">Category</label>
                 <Select
-                  value={filters.category}
-                  onValueChange={(value) => setFilters({ ...filters, category: value })}
+                  value={filters.category || "all"}
+                  onValueChange={(value) => setFilters({ ...filters, category: value === "all" ? "" : value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
+                    <SelectItem value="all">All Categories</SelectItem>
                     {categories.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                     ))}
@@ -123,14 +123,14 @@ const ServicesPage = () => {
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">Location Type</label>
                 <Select
-                  value={filters.locationType}
-                  onValueChange={(value) => setFilters({ ...filters, locationType: value })}
+                  value={filters.locationType || "all"}
+                  onValueChange={(value) => setFilters({ ...filters, locationType: value === "all" ? "" : value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All Types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="remote">Remote</SelectItem>
                     <SelectItem value="onsite">On-site</SelectItem>
                   </SelectContent>

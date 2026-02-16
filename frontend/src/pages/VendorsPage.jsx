@@ -110,7 +110,7 @@ const VendorsPage = () => {
                       {vendor.logo_url ? (
                         <img src={vendor.logo_url} alt={vendor.store_name} className="w-full h-full rounded-full object-cover" />
                       ) : (
-                        <span className="text-2xl font-bold text-amber-600">{vendor.store_name?.[0]}</span>
+                        <span className="text-2xl font-bold text-red-600">{vendor.store_name?.[0]}</span>
                       )}
                     </div>
                     <div className="flex-1 min-w-0 pt-2">

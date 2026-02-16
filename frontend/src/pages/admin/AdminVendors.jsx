@@ -77,7 +77,7 @@ const AdminVendors = () => {
                       {vendor.logo_url ? (
                         <img src={vendor.logo_url} alt="" className="w-full h-full rounded-full object-cover" />
                       ) : (
-                        <span className="text-2xl font-bold text-amber-600">{vendor.store_name?.[0]}</span>
+                        <span className="text-2xl font-bold text-red-600">{vendor.store_name?.[0]}</span>
                       )}
                     </div>
                     <div>
@@ -119,7 +119,7 @@ const AdminVendors = () => {
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <Badge className="bg-amber-100 text-amber-800">Pending</Badge>
+                        <Badge className="bg-amber-100 text-red-800">Pending</Badge>
                         <Button size="sm" onClick={() => approveVendor(vendor.id)} className="bg-green-600 hover:bg-green-700 block w-full">
                           Approve
                         </Button>

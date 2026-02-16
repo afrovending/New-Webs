@@ -56,7 +56,7 @@ const CartPage = () => {
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h1>
         <p className="text-gray-500 mb-8">Looks like you haven't added any products yet</p>
         <Link to="/products">
-          <Button className="bg-amber-600 hover:bg-amber-700">
+          <Button className="bg-red-600 hover:bg-red-700">
             Start Shopping
           </Button>
         </Link>
@@ -82,11 +82,11 @@ const CartPage = () => {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <Link to={`/products/${item.product_id}`} className="font-medium text-gray-900 hover:text-amber-600 line-clamp-1">
+                  <Link to={`/products/${item.product_id}`} className="font-medium text-gray-900 hover:text-red-600 line-clamp-1">
                     {item.product?.name || 'Product'}
                   </Link>
                   <p className="text-sm text-gray-500">{item.product?.vendor_name}</p>
-                  <p className="text-lg font-bold text-amber-600 mt-1">${item.product?.price || 0}</p>
+                  <p className="text-lg font-bold text-red-600 mt-1">${item.product?.price || 0}</p>
                 </div>
                 <div className="flex flex-col items-end justify-between">
                   <Button variant="ghost" size="icon" onClick={() => handleRemove(item.product_id)} className="text-gray-400 hover:text-red-500">
@@ -125,14 +125,14 @@ const CartPage = () => {
               <div className="border-t pt-4">
                 <div className="flex justify-between text-lg font-semibold">
                   <span>Total</span>
-                  <span className="text-amber-600" data-testid="cart-total">${cart.total?.toFixed(2)}</span>
+                  <span className="text-red-600" data-testid="cart-total">${cart.total?.toFixed(2)}</span>
                 </div>
               </div>
-              <Button className="w-full bg-amber-600 hover:bg-amber-700" onClick={handleCheckout} data-testid="checkout-btn">
+              <Button className="w-full bg-red-600 hover:bg-red-700" onClick={handleCheckout} data-testid="checkout-btn">
                 Proceed to Checkout
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
-              <Link to="/products" className="block text-center text-sm text-amber-600 hover:underline">
+              <Link to="/products" className="block text-center text-sm text-red-600 hover:underline">
                 Continue Shopping
               </Link>
             </CardContent>

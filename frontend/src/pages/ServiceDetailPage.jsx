@@ -129,9 +129,9 @@ const ServiceDetailPage = () => {
     <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <nav className="text-sm text-gray-500 mb-6">
-        <Link to="/" className="hover:text-amber-600">Home</Link>
+        <Link to="/" className="hover:text-red-600">Home</Link>
         <span className="mx-2">/</span>
-        <Link to="/services" className="hover:text-amber-600">Services</Link>
+        <Link to="/services" className="hover:text-red-600">Services</Link>
         <span className="mx-2">/</span>
         <span className="text-gray-900">{service.name}</span>
       </nav>
@@ -142,7 +142,7 @@ const ServiceDetailPage = () => {
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="service-name">{service.name}</h1>
             {service.vendor && (
-              <Link to={`/vendors/${service.vendor.id}`} className="text-amber-600 hover:underline">
+              <Link to={`/vendors/${service.vendor.id}`} className="text-red-600 hover:underline">
                 by {service.vendor.store_name}
               </Link>
             )}
@@ -222,7 +222,7 @@ const ServiceDetailPage = () => {
                     {service.vendor.logo_url ? (
                       <img src={service.vendor.logo_url} alt="" className="w-full h-full rounded-full object-cover" />
                     ) : (
-                      <span className="text-2xl font-bold text-amber-600">{service.vendor.store_name?.[0]}</span>
+                      <span className="text-2xl font-bold text-red-600">{service.vendor.store_name?.[0]}</span>
                     )}
                   </div>
                   <div>
@@ -307,7 +307,7 @@ const ServiceDetailPage = () => {
                         <Button
                           key={slot}
                           variant={selectedSlot === slot ? 'default' : 'outline'}
-                          className={selectedSlot === slot ? 'bg-amber-600 hover:bg-amber-700' : ''}
+                          className={selectedSlot === slot ? 'bg-red-600 hover:bg-red-700' : ''}
                           size="sm"
                           onClick={() => setSelectedSlot(slot)}
                         >
@@ -355,7 +355,7 @@ const ServiceDetailPage = () => {
               </div>
 
               <Button
-                className="w-full bg-amber-600 hover:bg-amber-700"
+                className="w-full bg-red-600 hover:bg-red-700"
                 onClick={handleBooking}
                 disabled={booking || !selectedDate || !selectedSlot}
                 data-testid="book-service-btn"

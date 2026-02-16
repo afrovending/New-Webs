@@ -88,9 +88,9 @@ const ProductDetailPage = () => {
     <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <nav className="text-sm text-gray-500 mb-6">
-        <Link to="/" className="hover:text-amber-600">Home</Link>
+        <Link to="/" className="hover:text-red-600">Home</Link>
         <span className="mx-2">/</span>
-        <Link to="/products" className="hover:text-amber-600">Products</Link>
+        <Link to="/products" className="hover:text-red-600">Products</Link>
         <span className="mx-2">/</span>
         <span className="text-gray-900">{product.name}</span>
       </nav>
@@ -118,7 +118,7 @@ const ProductDetailPage = () => {
                   key={index}
                   onClick={() => setSelectedImage(index)}
                   className={`w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 border-2 ${
-                    selectedImage === index ? 'border-amber-600' : 'border-transparent'
+                    selectedImage === index ? 'border-red-600' : 'border-transparent'
                   }`}
                 >
                   <img src={img} alt="" className="w-full h-full object-cover" />
@@ -132,7 +132,7 @@ const ProductDetailPage = () => {
         <div>
           <div className="mb-4">
             {product.vendor && (
-              <Link to={`/vendors/${product.vendor.id}`} className="text-amber-600 hover:underline text-sm font-medium">
+              <Link to={`/vendors/${product.vendor.id}`} className="text-red-600 hover:underline text-sm font-medium">
                 {product.vendor.store_name}
               </Link>
             )}
@@ -160,7 +160,7 @@ const ProductDetailPage = () => {
 
           {/* Price */}
           <div className="flex items-baseline gap-3 mb-6">
-            <span className="text-3xl font-bold text-amber-600" data-testid="product-price">${product.price}</span>
+            <span className="text-3xl font-bold text-red-600" data-testid="product-price">${product.price}</span>
             {product.compare_price && product.compare_price > product.price && (
               <>
                 <span className="text-xl text-gray-400 line-through">${product.compare_price}</span>
@@ -214,7 +214,7 @@ const ProductDetailPage = () => {
           {/* Actions */}
           <div className="flex gap-4 mb-8">
             <Button
-              className="flex-1 bg-amber-600 hover:bg-amber-700 h-12"
+              className="flex-1 bg-red-600 hover:bg-red-700 h-12"
               onClick={handleAddToCart}
               disabled={product.stock === 0}
               data-testid="add-to-cart-btn"
@@ -224,7 +224,7 @@ const ProductDetailPage = () => {
             </Button>
             <Button
               variant="outline"
-              className="flex-1 h-12 border-amber-600 text-amber-600 hover:bg-amber-50"
+              className="flex-1 h-12 border-red-600 text-red-600 hover:bg-amber-50"
               onClick={handleBuyNow}
               disabled={product.stock === 0}
               data-testid="buy-now-btn"
@@ -236,16 +236,16 @@ const ProductDetailPage = () => {
           {/* Features */}
           <div className="border-t pt-6 space-y-4">
             <div className="flex items-center gap-3 text-gray-600">
-              <Truck className="h-5 w-5 text-amber-600" />
+              <Truck className="h-5 w-5 text-red-600" />
               <span>Free shipping on orders over $100</span>
             </div>
             <div className="flex items-center gap-3 text-gray-600">
-              <Shield className="h-5 w-5 text-amber-600" />
+              <Shield className="h-5 w-5 text-red-600" />
               <span>Secure payment with buyer protection</span>
             </div>
             {product.vendor && (
               <div className="flex items-center gap-3 text-gray-600">
-                <MapPin className="h-5 w-5 text-amber-600" />
+                <MapPin className="h-5 w-5 text-red-600" />
                 <span>Ships from {product.vendor.city}, {product.vendor.country}</span>
               </div>
             )}
@@ -256,13 +256,13 @@ const ProductDetailPage = () => {
       {/* Tabs */}
       <Tabs defaultValue="description" className="mb-12">
         <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
-          <TabsTrigger value="description" className="rounded-none border-b-2 border-transparent data-[state=active]:border-amber-600 data-[state=active]:bg-transparent">
+          <TabsTrigger value="description" className="rounded-none border-b-2 border-transparent data-[state=active]:border-red-600 data-[state=active]:bg-transparent">
             Description
           </TabsTrigger>
-          <TabsTrigger value="reviews" className="rounded-none border-b-2 border-transparent data-[state=active]:border-amber-600 data-[state=active]:bg-transparent">
+          <TabsTrigger value="reviews" className="rounded-none border-b-2 border-transparent data-[state=active]:border-red-600 data-[state=active]:bg-transparent">
             Reviews ({reviews.length})
           </TabsTrigger>
-          <TabsTrigger value="vendor" className="rounded-none border-b-2 border-transparent data-[state=active]:border-amber-600 data-[state=active]:bg-transparent">
+          <TabsTrigger value="vendor" className="rounded-none border-b-2 border-transparent data-[state=active]:border-red-600 data-[state=active]:bg-transparent">
             Vendor
           </TabsTrigger>
         </TabsList>
@@ -323,7 +323,7 @@ const ProductDetailPage = () => {
                     {product.vendor.logo_url ? (
                       <img src={product.vendor.logo_url} alt="" className="w-full h-full rounded-full object-cover" />
                     ) : (
-                      <span className="text-2xl font-bold text-amber-600">{product.vendor.store_name?.[0]}</span>
+                      <span className="text-2xl font-bold text-red-600">{product.vendor.store_name?.[0]}</span>
                     )}
                   </div>
                   <div className="flex-1">
@@ -368,8 +368,8 @@ const ProductDetailPage = () => {
                     )}
                   </div>
                   <CardContent className="p-4">
-                    <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-amber-600">{product.name}</h3>
-                    <p className="text-lg font-bold text-amber-600 mt-2">${product.price}</p>
+                    <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-red-600">{product.name}</h3>
+                    <p className="text-lg font-bold text-red-600 mt-2">${product.price}</p>
                   </CardContent>
                 </Card>
               </Link>

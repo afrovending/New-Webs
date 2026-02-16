@@ -92,7 +92,7 @@ const VendorProducts = () => {
         <h1 className="text-2xl font-bold">Products</h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => { setEditingProduct(null); setFormData({ name: '', description: '', price: '', compare_price: '', category_id: '', stock: '', images: '', tags: '' }); }}>
+            <Button className="bg-red-600 hover:bg-red-700" onClick={() => { setEditingProduct(null); setFormData({ name: '', description: '', price: '', compare_price: '', category_id: '', stock: '', images: '', tags: '' }); }}>
               <Plus className="h-4 w-4 mr-2" />Add Product
             </Button>
           </DialogTrigger>
@@ -131,7 +131,7 @@ const VendorProducts = () => {
                 <Label>Tags (comma-separated)</Label>
                 <Input value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} placeholder="fashion, handmade" />
               </div>
-              <Button type="submit" className="w-full bg-amber-600 hover:bg-amber-700">
+              <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">
                 {editingProduct ? 'Update Product' : 'Create Product'}
               </Button>
             </form>
@@ -162,7 +162,7 @@ const VendorProducts = () => {
               <CardContent className="p-4">
                 <h3 className="font-medium line-clamp-1">{product.name}</h3>
                 <div className="flex items-center justify-between mt-2">
-                  <span className="font-bold text-amber-600">${product.price}</span>
+                  <span className="font-bold text-red-600">${product.price}</span>
                   <span className="text-sm text-gray-500">Stock: {product.stock}</span>
                 </div>
                 <div className="flex gap-2 mt-4">

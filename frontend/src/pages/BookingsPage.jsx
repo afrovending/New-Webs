@@ -51,7 +51,7 @@ const BookingsPage = () => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-800';
       case 'confirmed': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-amber-100 text-amber-800';
+      case 'pending': return 'bg-amber-100 text-red-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -82,7 +82,7 @@ const BookingsPage = () => {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-bold text-amber-600">${booking.price}</p>
+                    <p className="text-xl font-bold text-red-600">${booking.price}</p>
                     <Badge className={getStatusColor(booking.status)}>{booking.status}</Badge>
                   </div>
                 </div>
@@ -91,7 +91,7 @@ const BookingsPage = () => {
                 )}
                 <div className="flex gap-2 mt-4">
                   {booking.payment_status === 'pending' && booking.status !== 'cancelled' && (
-                    <Button onClick={() => handlePayment(booking.id)} className="bg-amber-600 hover:bg-amber-700">
+                    <Button onClick={() => handlePayment(booking.id)} className="bg-red-600 hover:bg-red-700">
                       Pay Now
                     </Button>
                   )}

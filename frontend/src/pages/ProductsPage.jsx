@@ -238,7 +238,7 @@ const ProductsPage = () => {
                       )}
                       <Button
                         size="icon"
-                        className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-amber-600 hover:bg-amber-700"
+                        className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-600 hover:bg-red-700"
                         onClick={(e) => handleAddToCart(e, product)}
                         data-testid={`add-to-cart-${product.id}`}
                       >
@@ -252,7 +252,7 @@ const ProductsPage = () => {
                           <BadgeCheck className="h-3.5 w-3.5 text-blue-500" title="Verified Vendor" />
                         )}
                       </div>
-                      <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-amber-600 transition-colors">
+                      <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-red-600 transition-colors">
                         {product.name}
                       </h3>
                       <div className="flex items-center gap-1 mt-2">
@@ -262,7 +262,7 @@ const ProductsPage = () => {
                         </span>
                       </div>
                       <div className="flex items-baseline gap-2 mt-2">
-                        <span className="text-lg font-bold text-amber-600">${product.price}</span>
+                        <span className="text-lg font-bold text-red-600">${product.price}</span>
                         {product.compare_price && product.compare_price > product.price && (
                           <span className="text-sm text-gray-400 line-through">${product.compare_price}</span>
                         )}
@@ -297,14 +297,14 @@ const ProductsPage = () => {
                         <p className="text-gray-600 text-sm line-clamp-2 mt-1">{product.description}</p>
                         <div className="flex items-center justify-between mt-3">
                           <div className="flex items-center gap-2">
-                            <span className="text-xl font-bold text-amber-600">${product.price}</span>
+                            <span className="text-xl font-bold text-red-600">${product.price}</span>
                             <div className="flex items-center gap-1">
                               <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                               <span className="text-sm text-gray-600">{product.average_rating?.toFixed(1) || '0.0'}</span>
                             </div>
                           </div>
                           <Button
-                            className="bg-amber-600 hover:bg-amber-700"
+                            className="bg-red-600 hover:bg-red-700"
                             onClick={(e) => handleAddToCart(e, product)}
                           >
                             <ShoppingCart className="h-4 w-4 mr-2" />

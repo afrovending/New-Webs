@@ -39,7 +39,7 @@ const AdminUsers = () => {
   const getRoleBadge = (role) => {
     switch (role) {
       case 'admin': return <Badge className="bg-purple-100 text-purple-800">Admin</Badge>;
-      case 'vendor': return <Badge className="bg-amber-100 text-amber-800">Vendor</Badge>;
+      case 'vendor': return <Badge className="bg-amber-100 text-red-800">Vendor</Badge>;
       default: return <Badge className="bg-gray-100 text-gray-800">Customer</Badge>;
     }
   };
@@ -73,7 +73,7 @@ const AdminUsers = () => {
                       <img src={user.picture} alt="" className="w-8 h-8 rounded-full" />
                     ) : (
                       <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-amber-600">{user.first_name?.[0]}</span>
+                        <span className="text-sm font-medium text-red-600">{user.first_name?.[0]}</span>
                       </div>
                     )}
                     <span className="font-medium">{user.first_name} {user.last_name}</span>

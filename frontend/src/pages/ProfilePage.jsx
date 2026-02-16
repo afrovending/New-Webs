@@ -26,7 +26,7 @@ const ProfilePage = () => {
               <img src={user.picture} alt="" className="w-20 h-20 rounded-full" />
             ) : (
               <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center">
-                <span className="text-3xl font-bold text-amber-600">{user?.first_name?.[0]}</span>
+                <span className="text-3xl font-bold text-red-600">{user?.first_name?.[0]}</span>
               </div>
             )}
             <div>

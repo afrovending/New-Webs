@@ -40,7 +40,7 @@ const VendorDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg p-6 text-white">
+      <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-lg p-6 text-white">
         <h1 className="text-2xl font-bold" data-testid="vendor-dashboard-title">Vendor Dashboard</h1>
         <p className="text-amber-100 mt-1">Manage your store and track performance</p>
       </div>
@@ -48,14 +48,14 @@ const VendorDashboard = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
-            <Package className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+            <Package className="h-8 w-8 text-red-500 mx-auto mb-2" />
             <p className="text-2xl font-bold">{stats.orders}</p>
             <p className="text-sm text-gray-500">Orders</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <Calendar className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+            <Calendar className="h-8 w-8 text-red-500 mx-auto mb-2" />
             <p className="text-2xl font-bold">{stats.bookings}</p>
             <p className="text-sm text-gray-500">Bookings</p>
           </CardContent>
@@ -92,7 +92,7 @@ const VendorDashboard = () => {
                       <p className="font-medium text-sm">Order #{order.id.slice(0, 8)}</p>
                       <p className="text-xs text-gray-500">{new Date(order.created_at).toLocaleDateString()}</p>
                     </div>
-                    <span className="font-medium text-amber-600">${order.total}</span>
+                    <span className="font-medium text-red-600">${order.total}</span>
                   </div>
                 ))}
               </div>
@@ -115,7 +115,7 @@ const VendorDashboard = () => {
                       <p className="font-medium text-sm">{booking.service_name}</p>
                       <p className="text-xs text-gray-500">{booking.booking_date}</p>
                     </div>
-                    <span className="font-medium text-amber-600">${booking.price}</span>
+                    <span className="font-medium text-red-600">${booking.price}</span>
                   </div>
                 ))}
               </div>

@@ -33,7 +33,7 @@ const DashboardPage = () => {
     switch (status) {
       case 'completed': return 'text-green-600 bg-green-50';
       case 'processing': case 'confirmed': return 'text-blue-600 bg-blue-50';
-      case 'pending': return 'text-amber-600 bg-amber-50';
+      case 'pending': return 'text-red-600 bg-amber-50';
       case 'cancelled': return 'text-red-600 bg-red-50';
       default: return 'text-gray-600 bg-gray-50';
     }
@@ -42,7 +42,7 @@ const DashboardPage = () => {
   return (
     <div className="space-y-6">
       {/* Welcome */}
-      <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg p-6 text-white">
+      <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-lg p-6 text-white">
         <h1 className="text-2xl font-bold" data-testid="dashboard-welcome">Welcome back, {user?.first_name}!</h1>
         <p className="text-amber-100 mt-1">Here's an overview of your recent activity</p>
       </div>
@@ -51,21 +51,21 @@ const DashboardPage = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
-            <Package className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+            <Package className="h-8 w-8 text-red-500 mx-auto mb-2" />
             <p className="text-2xl font-bold">{orders.length}</p>
             <p className="text-sm text-gray-500">Orders</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <Calendar className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+            <Calendar className="h-8 w-8 text-red-500 mx-auto mb-2" />
             <p className="text-2xl font-bold">{bookings.length}</p>
             <p className="text-sm text-gray-500">Bookings</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <MessageSquare className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+            <MessageSquare className="h-8 w-8 text-red-500 mx-auto mb-2" />
             <p className="text-2xl font-bold">0</p>
             <p className="text-sm text-gray-500">Messages</p>
           </CardContent>
@@ -73,7 +73,7 @@ const DashboardPage = () => {
         <Card>
           <CardContent className="p-4 text-center">
             <div className="h-8 w-8 bg-amber-100 rounded-full mx-auto mb-2 flex items-center justify-center">
-              <span className="text-amber-600 font-bold">{user?.first_name?.[0]}</span>
+              <span className="text-red-600 font-bold">{user?.first_name?.[0]}</span>
             </div>
             <p className="text-sm font-medium capitalize">{user?.role}</p>
             <p className="text-xs text-gray-500">Account Type</p>
@@ -108,7 +108,7 @@ const DashboardPage = () => {
                       <p className="text-xs text-gray-500">{new Date(order.created_at).toLocaleDateString()}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium text-amber-600">${order.total}</p>
+                      <p className="font-medium text-red-600">${order.total}</p>
                       <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>
                         {order.status}
                       </span>
@@ -146,7 +146,7 @@ const DashboardPage = () => {
                       <p className="text-xs text-gray-500">{booking.booking_date} at {booking.booking_time}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium text-amber-600">${booking.price}</p>
+                      <p className="font-medium text-red-600">${booking.price}</p>
                       <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(booking.status)}`}>
                         {booking.status}
                       </span>

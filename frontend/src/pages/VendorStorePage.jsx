@@ -66,7 +66,7 @@ const VendorStorePage = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Banner */}
-      <div className="relative h-48 md:h-64 bg-gradient-to-r from-amber-600 to-amber-800 rounded-lg overflow-hidden mb-8">
+      <div className="relative h-48 md:h-64 bg-gradient-to-r from-red-600 to-red-800 rounded-lg overflow-hidden mb-8">
         {vendor.banner_url && (
           <img src={vendor.banner_url} alt="" className="w-full h-full object-cover opacity-50" />
         )}
@@ -76,7 +76,7 @@ const VendorStorePage = () => {
               {vendor.logo_url ? (
                 <img src={vendor.logo_url} alt="" className="w-full h-full rounded-full object-cover" />
               ) : (
-                <span className="text-4xl font-bold text-amber-600">{vendor.store_name?.[0]}</span>
+                <span className="text-4xl font-bold text-red-600">{vendor.store_name?.[0]}</span>
               )}
             </div>
             <div className="text-white mb-2">
@@ -99,7 +99,7 @@ const VendorStorePage = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center gap-1 text-amber-500 mb-1">
+            <div className="flex items-center justify-center gap-1 text-red-500 mb-1">
               <Star className="h-5 w-5 fill-amber-400" />
               <span className="text-2xl font-bold">{vendor.average_rating?.toFixed(1) || '0.0'}</span>
             </div>
@@ -141,13 +141,13 @@ const VendorStorePage = () => {
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4">Contact</h2>
               {isAuthenticated ? (
-                <Button className="w-full bg-amber-600 hover:bg-amber-700">
+                <Button className="w-full bg-red-600 hover:bg-red-700">
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Send Message
                 </Button>
               ) : (
                 <p className="text-gray-500 text-sm">
-                  <Link to="/login" className="text-amber-600 hover:underline">Login</Link> to contact this vendor
+                  <Link to="/login" className="text-red-600 hover:underline">Login</Link> to contact this vendor
                 </p>
               )}
             </CardContent>
@@ -189,19 +189,19 @@ const VendorStorePage = () => {
                       )}
                       <Button
                         size="icon"
-                        className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-amber-600 hover:bg-amber-700"
+                        className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-600 hover:bg-red-700"
                         onClick={(e) => handleAddToCart(e, product)}
                       >
                         <ShoppingCart className="h-4 w-4" />
                       </Button>
                     </div>
                     <CardContent className="p-4">
-                      <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-amber-600">{product.name}</h3>
+                      <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-red-600">{product.name}</h3>
                       <div className="flex items-center gap-1 mt-2">
                         <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                         <span className="text-sm text-gray-600">{product.average_rating?.toFixed(1) || '0.0'}</span>
                       </div>
-                      <p className="text-lg font-bold text-amber-600 mt-2">${product.price}</p>
+                      <p className="text-lg font-bold text-red-600 mt-2">${product.price}</p>
                     </CardContent>
                   </Card>
                 </Link>
@@ -222,8 +222,8 @@ const VendorStorePage = () => {
                   <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between mb-3">
-                        <h3 className="font-semibold text-gray-900 text-lg hover:text-amber-600">{service.name}</h3>
-                        <span className="text-xl font-bold text-amber-600">${service.price}</span>
+                        <h3 className="font-semibold text-gray-900 text-lg hover:text-red-600">{service.name}</h3>
+                        <span className="text-xl font-bold text-red-600">${service.price}</span>
                       </div>
                       <p className="text-gray-600 text-sm line-clamp-2 mb-4">{service.description}</p>
                       <div className="flex items-center gap-1">

@@ -58,7 +58,7 @@ const VendorServices = () => {
         <h1 className="text-2xl font-bold">Services</h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-amber-600 hover:bg-amber-700">
+            <Button className="bg-red-600 hover:bg-red-700">
               <Plus className="h-4 w-4 mr-2" />Add Service
             </Button>
           </DialogTrigger>
@@ -113,7 +113,7 @@ const VendorServices = () => {
                 <Label>Image URLs (comma-separated)</Label>
                 <Input value={formData.images} onChange={(e) => setFormData({ ...formData, images: e.target.value })} />
               </div>
-              <Button type="submit" className="w-full bg-amber-600 hover:bg-amber-700">Create Service</Button>
+              <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">Create Service</Button>
             </form>
           </DialogContent>
         </Dialog>
@@ -136,7 +136,7 @@ const VendorServices = () => {
                 <h3 className="font-medium text-lg">{service.name}</h3>
                 <p className="text-gray-600 text-sm line-clamp-2 mt-1">{service.description}</p>
                 <div className="flex items-center justify-between mt-4">
-                  <span className="font-bold text-amber-600">${service.price}</span>
+                  <span className="font-bold text-red-600">${service.price}</span>
                   <span className="text-sm text-gray-500">{service.duration_minutes} min</span>
                 </div>
               </CardContent>

@@ -48,7 +48,7 @@ const LoginPage = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <Link to="/" className="flex items-center justify-center gap-2 mb-4">
-            <div className="w-10 h-10 bg-amber-600 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-xl">A</span>
             </div>
             <span className="text-xl font-bold text-amber-900">AfroVending</span>
@@ -118,7 +118,7 @@ const LoginPage = () => {
             </div>
             <Button
               type="submit"
-              className="w-full bg-amber-600 hover:bg-amber-700"
+              className="w-full bg-red-600 hover:bg-red-700"
               disabled={loading}
               data-testid="login-submit-btn"
             >
@@ -129,7 +129,7 @@ const LoginPage = () => {
 
           <p className="text-center text-sm text-gray-600">
             Don't have an account?{' '}
-            <Link to="/register" className="text-amber-600 hover:underline font-medium">
+            <Link to="/register" className="text-red-600 hover:underline font-medium">
               Sign up
             </Link>
           </p>

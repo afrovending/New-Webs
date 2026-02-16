@@ -50,7 +50,7 @@ const AdminDashboard = () => {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <Store className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+            <Store className="h-8 w-8 text-red-500 mx-auto mb-2" />
             <p className="text-2xl font-bold">{stats?.total_vendors || 0}</p>
             <p className="text-sm text-gray-500">Vendors</p>
           </CardContent>
@@ -97,7 +97,7 @@ const AdminDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-amber-500" />
+              <TrendingUp className="h-5 w-5 text-red-500" />
               Quick Stats
             </CardTitle>
           </CardHeader>
@@ -105,7 +105,7 @@ const AdminDashboard = () => {
             <div className="space-y-3">
               <div className="flex justify-between items-center p-3 bg-amber-50 rounded-lg">
                 <span className="text-gray-600">Pending Vendors</span>
-                <span className="font-bold text-amber-600">{stats?.pending_vendors || 0}</span>
+                <span className="font-bold text-red-600">{stats?.pending_vendors || 0}</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
                 <span className="text-gray-600">Total Services</span>

@@ -58,7 +58,7 @@ const CheckoutPage = () => {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <p className="text-gray-500 mb-4">Your cart is empty</p>
-        <Button onClick={() => navigate('/products')} className="bg-amber-600 hover:bg-amber-700">
+        <Button onClick={() => navigate('/products')} className="bg-red-600 hover:bg-red-700">
           Continue Shopping
         </Button>
       </div>
@@ -126,7 +126,7 @@ const CheckoutPage = () => {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full bg-amber-600 hover:bg-amber-700 h-12"
+                    className="w-full bg-red-600 hover:bg-red-700 h-12"
                     disabled={loading}
                     data-testid="place-order-btn"
                   >
@@ -162,7 +162,7 @@ const CheckoutPage = () => {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm line-clamp-1">{item.product?.name}</p>
                     <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                    <p className="text-sm font-medium text-amber-600">${item.item_total?.toFixed(2)}</p>
+                    <p className="text-sm font-medium text-red-600">${item.item_total?.toFixed(2)}</p>
                   </div>
                 </div>
               ))}
@@ -178,7 +178,7 @@ const CheckoutPage = () => {
                 </div>
                 <div className="flex justify-between text-lg font-semibold pt-2 border-t">
                   <span>Total</span>
-                  <span className="text-amber-600">${cart.total?.toFixed(2)}</span>
+                  <span className="text-red-600">${cart.total?.toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>

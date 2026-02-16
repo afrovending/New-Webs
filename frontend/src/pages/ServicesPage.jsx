@@ -181,12 +181,12 @@ const ServicesPage = () => {
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <h3 className="font-semibold text-gray-900 text-lg hover:text-amber-600 transition-colors">
+                          <h3 className="font-semibold text-gray-900 text-lg hover:text-red-600 transition-colors">
                             {service.name}
                           </h3>
-                          <p className="text-sm text-amber-600">{service.vendor_name}</p>
+                          <p className="text-sm text-red-600">{service.vendor_name}</p>
                         </div>
-                        <span className="text-xl font-bold text-amber-600">{getPriceLabel(service)}</span>
+                        <span className="text-xl font-bold text-red-600">{getPriceLabel(service)}</span>
                       </div>
                       
                       <p className="text-gray-600 text-sm line-clamp-2 mb-4">{service.description}</p>
@@ -206,7 +206,7 @@ const ServicesPage = () => {
                         </div>
                       </div>
 
-                      <Button className="w-full mt-4 bg-amber-600 hover:bg-amber-700">
+                      <Button className="w-full mt-4 bg-red-600 hover:bg-red-700">
                         <Calendar className="h-4 w-4 mr-2" />
                         Book Now
                       </Button>

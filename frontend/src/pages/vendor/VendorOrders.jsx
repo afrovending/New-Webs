@@ -39,7 +39,7 @@ const VendorOrders = () => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-800';
       case 'processing': case 'shipped': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-amber-100 text-amber-800';
+      case 'pending': return 'bg-amber-100 text-red-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -66,7 +66,7 @@ const VendorOrders = () => {
                     <p className="text-sm text-gray-500">{new Date(order.created_at).toLocaleDateString()}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-bold text-amber-600">${order.total}</p>
+                    <p className="text-xl font-bold text-red-600">${order.total}</p>
                     <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
                   </div>
                 </div>

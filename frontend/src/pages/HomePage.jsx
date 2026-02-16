@@ -264,6 +264,113 @@ const HomePage = () => {
         </div>
       </section>
 
+      {/* Vendor Spotlight Section */}
+      {spotlightVendor && (
+        <section className="py-20 bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <Badge className="bg-red-600 text-white mb-4">Vendor Spotlight</Badge>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Meet the Artisans Behind the Products
+              </h2>
+              <p className="text-gray-400 max-w-2xl mx-auto">
+                Every purchase supports African entrepreneurs and preserves traditional craftsmanship
+              </p>
+            </div>
+            
+            <div className="grid lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+              {/* Vendor Image */}
+              <div className="relative">
+                <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
+                  {spotlightVendor.story_image ? (
+                    <img 
+                      src={spotlightVendor.story_image} 
+                      alt={spotlightVendor.store_name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center">
+                      <span className="text-6xl font-bold text-white/20">
+                        {spotlightVendor.store_name?.charAt(0)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {/* Floating Stats Card */}
+                <div className="absolute -bottom-6 -right-6 bg-white text-gray-900 rounded-xl shadow-xl p-6 hidden md:block">
+                  <div className="flex items-center gap-6">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-red-600">{spotlightVendor.product_count || 8}+</div>
+                      <div className="text-xs text-gray-500">Products</div>
+                    </div>
+                    <div className="w-px h-10 bg-gray-200" />
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-red-600">{spotlightVendor.artisans_employed || 15}</div>
+                      <div className="text-xs text-gray-500">Artisans</div>
+                    </div>
+                    <div className="w-px h-10 bg-gray-200" />
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-red-600">{spotlightVendor.founded_year || 2020}</div>
+                      <div className="text-xs text-gray-500">Founded</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Vendor Story */}
+              <div className="lg:pl-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-14 h-14 rounded-full bg-red-600 flex items-center justify-center text-xl font-bold">
+                    {spotlightVendor.store_name?.charAt(0)}
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold flex items-center gap-2">
+                      {spotlightVendor.store_name}
+                      {spotlightVendor.is_verified && (
+                        <BadgeCheck className="h-6 w-6 text-blue-400" />
+                      )}
+                    </h3>
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <MapPin className="h-4 w-4" />
+                      <span>{spotlightVendor.country_name || 'Nigeria'}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="relative mb-6">
+                  <Quote className="absolute -top-2 -left-2 h-8 w-8 text-red-600/30" />
+                  <p className="text-lg text-gray-300 leading-relaxed pl-6 italic">
+                    {spotlightVendor.story}
+                  </p>
+                </div>
+                
+                <div className="flex flex-wrap gap-3 mb-8">
+                  <div className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 text-sm">
+                    <Users className="h-4 w-4 text-red-400" />
+                    <span>{spotlightVendor.artisans_employed || 15} Artisans Employed</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 text-sm">
+                    <Calendar className="h-4 w-4 text-red-400" />
+                    <span>Since {spotlightVendor.founded_year || 2020}</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 text-sm">
+                    <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                    <span>{spotlightVendor.average_rating || 4.8} Rating</span>
+                  </div>
+                </div>
+                
+                <Link to={`/vendors/${spotlightVendor.id}`}>
+                  <Button size="lg" className="bg-red-600 hover:bg-red-700">
+                    Visit Store
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Features Section */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">

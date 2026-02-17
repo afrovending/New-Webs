@@ -41,6 +41,7 @@ const DashboardLayout = ({ isVendor, isAdmin }) => {
 
   const vendorLinks = [
     { to: '/vendor', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/vendor/analytics', icon: TrendingUp, label: 'Analytics' },
     { to: '/vendor/products', icon: ShoppingBag, label: 'Products' },
     { to: '/vendor/services', icon: Briefcase, label: 'Services' },
     { to: '/vendor/orders', icon: Package, label: 'Orders' },

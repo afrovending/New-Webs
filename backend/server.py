@@ -2141,11 +2141,30 @@ async def detailed_health_check():
 @api_router.get("/health")
 async def health_check():
     """Health check endpoint"""
-    return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
+    health_status = {
+        "status": "healthy",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "database": "disconnected"
+    }
+    
+    if db is not None:
+        try:
+            await client.admin.command('ping')
+            health_status["database"] = "connected"
+        except Exception as e:
+            health_status["status"] = "degraded"
+            health_status["database"] = f"error: {str(e)[:100]}"
+    else:
+        health_status["status"] = "degraded"
+    
+    return health_status
 
 @api_router.get("/stats/platform")
 async def get_platform_stats():
     """Get public platform stats"""
+    if db is None:
+        return {"total_vendors": 0, "total_products": 0, "total_countries": 0}
+    
     total_vendors = await db.vendors.count_documents({"is_approved": True})
     total_products = await db.products.count_documents({"is_active": True})
     total_services = await db.services.count_documents({"is_active": True})

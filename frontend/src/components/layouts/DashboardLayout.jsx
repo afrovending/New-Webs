@@ -17,6 +17,7 @@ import {
   Briefcase,
   CheckCircle,
   CreditCard,
+  TrendingUp,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 

@@ -6,6 +6,8 @@ services:
     build_command: pip install -r requirements.txt
     run_command: uvicorn server:app --host 0.0.0.0 --port 8080
     http_port: 8080
+    routes:
+      - path: /api
     envs:
       - key: MONGO_URL
         scope: RUN_TIME
@@ -28,7 +30,10 @@ static_sites:
     source_dir: /frontend
     build_command: yarn install && yarn build
     output_dir: /build
+    routes:
+      - path: /
+    catchall_document: index.html
     envs:
       - key: REACT_APP_BACKEND_URL
         scope: BUILD_TIME
-        value: ${backend.PUBLIC_URL}
+        value: ""

@@ -49,10 +49,10 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - ⏳ Ready for DigitalOcean deployment - user needs to Save to GitHub and trigger deploy
 
 ## Stripe Subscription System
-- **TEST MODE**: Subscriptions activate without real payment
-- For production payments: Add valid `STRIPE_API_KEY` in backend/.env
+- **LIVE MODE**: Using real Stripe key - payments are real
 - Plans: Starter (Free), Growth ($25/mo), Pro ($50/mo), Enterprise (Custom)
 - Vendor Subscription page: `/vendor/subscription`
+- Stripe Checkout for secure payment processing
 
 ## Prioritized Backlog
 

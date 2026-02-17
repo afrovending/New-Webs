@@ -1790,12 +1790,18 @@ async def get_admin_stats(user: dict = Depends(get_current_user)):
     total_bookings = await db.bookings.count_documents({})
     pending_vendors = await db.vendors.count_documents({"is_approved": False})
     
-    # Calculate revenue
-    paid_orders = await db.orders.find({"payment_status": "paid"}, {"total": 1}).to_list(10000)
-    order_revenue = sum(o.get("total", 0) for o in paid_orders)
+    # Calculate revenue using aggregation (optimized for large datasets)
+    order_revenue_result = await db.orders.aggregate([
+        {"$match": {"payment_status": "paid"}},
+        {"$group": {"_id": None, "total": {"$sum": "$total"}}}
+    ]).to_list(1)
+    order_revenue = order_revenue_result[0]["total"] if order_revenue_result else 0
     
-    paid_bookings = await db.bookings.find({"payment_status": {"$in": ["paid", "released"]}}, {"price": 1}).to_list(10000)
-    booking_revenue = sum(b.get("price", 0) for b in paid_bookings)
+    booking_revenue_result = await db.bookings.aggregate([
+        {"$match": {"payment_status": {"$in": ["paid", "released"]}}},
+        {"$group": {"_id": None, "total": {"$sum": "$price"}}}
+    ]).to_list(1)
+    booking_revenue = booking_revenue_result[0]["total"] if booking_revenue_result else 0
     
     return {
         "total_users": total_users,

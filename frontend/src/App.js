@@ -163,6 +163,7 @@ const AppRouter = () => {
         <Route path="services" element={<VendorServices />} />
         <Route path="orders" element={<VendorOrders />} />
         <Route path="bookings" element={<VendorBookings />} />
+        <Route path="analytics" element={<VendorAnalytics />} />
         <Route path="subscription" element={<VendorSubscription />} />
       </Route>
 

@@ -40,6 +40,97 @@ STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', 'sk_test_emergent')
 app = FastAPI(title="AfroVending API", version="1.0.0")
 api_router = APIRouter(prefix="/api")
 
+# ==================== PERFORMANCE MONITORING ====================
+import time
+from collections import defaultdict
+import statistics
+
+# In-memory metrics storage (use Redis in production for persistence)
+class MetricsCollector:
+    def __init__(self):
+        self.request_times = defaultdict(list)  # endpoint -> [response_times]
+        self.request_counts = defaultdict(int)  # endpoint -> count
+        self.error_counts = defaultdict(int)  # endpoint -> error_count
+        self.db_query_times = []  # list of (query_name, duration)
+        self.errors = []  # list of error records
+        self.start_time = datetime.now(timezone.utc)
+        
+    def record_request(self, endpoint: str, duration: float, status_code: int):
+        self.request_times[endpoint].append(duration)
+        self.request_counts[endpoint] += 1
+        if status_code >= 400:
+            self.error_counts[endpoint] += 1
+        # Keep only last 1000 records per endpoint
+        if len(self.request_times[endpoint]) > 1000:
+            self.request_times[endpoint] = self.request_times[endpoint][-1000:]
+    
+    def record_db_query(self, query_name: str, duration: float):
+        self.db_query_times.append((query_name, duration, datetime.now(timezone.utc).isoformat()))
+        if len(self.db_query_times) > 500:
+            self.db_query_times = self.db_query_times[-500:]
+    
+    def record_error(self, endpoint: str, error: str, status_code: int):
+        self.errors.append({
+            "endpoint": endpoint,
+            "error": error[:500],  # Truncate long errors
+            "status_code": status_code,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        if len(self.errors) > 100:
+            self.errors = self.errors[-100:]
+    
+    def get_metrics(self):
+        metrics = {
+            "uptime_seconds": (datetime.now(timezone.utc) - self.start_time).total_seconds(),
+            "total_requests": sum(self.request_counts.values()),
+            "total_errors": sum(self.error_counts.values()),
+            "endpoints": {}
+        }
+        
+        for endpoint, times in self.request_times.items():
+            if times:
+                metrics["endpoints"][endpoint] = {
+                    "count": self.request_counts[endpoint],
+                    "errors": self.error_counts[endpoint],
+                    "avg_ms": round(statistics.mean(times) * 1000, 2),
+                    "min_ms": round(min(times) * 1000, 2),
+                    "max_ms": round(max(times) * 1000, 2),
+                    "p95_ms": round(sorted(times)[int(len(times) * 0.95)] * 1000, 2) if len(times) > 1 else round(times[0] * 1000, 2)
+                }
+        
+        return metrics
+    
+    def get_slow_queries(self, threshold_ms: float = 100):
+        return [
+            {"query": q[0], "duration_ms": round(q[1] * 1000, 2), "timestamp": q[2]}
+            for q in self.db_query_times if q[1] * 1000 > threshold_ms
+        ]
+
+metrics = MetricsCollector()
+
+# Performance monitoring middleware
+@app.middleware("http")
+async def performance_middleware(request: Request, call_next):
+    start_time = time.time()
+    
+    try:
+        response = await call_next(request)
+        duration = time.time() - start_time
+        
+        # Record metrics
+        endpoint = f"{request.method} {request.url.path}"
+        metrics.record_request(endpoint, duration, response.status_code)
+        
+        # Add timing header
+        response.headers["X-Response-Time"] = f"{duration * 1000:.2f}ms"
+        
+        return response
+    except Exception as e:
+        duration = time.time() - start_time
+        endpoint = f"{request.method} {request.url.path}"
+        metrics.record_error(endpoint, str(e), 500)
+        raise
+
 # CORS
 app.add_middleware(
     CORSMiddleware,

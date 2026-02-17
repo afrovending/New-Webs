@@ -48,7 +48,7 @@ STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', '')
 
 # App Setup
 app = FastAPI(title="AfroVending API", version="1.0.0")
-api_router = APIRouter(prefix="/api")
+api_router = APIRouter()
 
 # ==================== PERFORMANCE MONITORING ====================
 import time

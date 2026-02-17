@@ -23,10 +23,20 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# MongoDB connection
-mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ.get('DB_NAME', 'afrovending_db')]
+# MongoDB connection with error handling
+mongo_url = os.environ.get('MONGO_URL', '')
+if not mongo_url:
+    logger.error("MONGO_URL environment variable is not set!")
+    mongo_url = 'mongodb://localhost:27017'  # Fallback for local dev
+
+try:
+    client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=5000)
+    db = client[os.environ.get('DB_NAME', 'afrovending_db')]
+    logger.info(f"MongoDB client initialized for database: {os.environ.get('DB_NAME', 'afrovending_db')}")
+except Exception as e:
+    logger.error(f"Failed to initialize MongoDB client: {e}")
+    client = None
+    db = None
 
 # JWT Config
 JWT_SECRET = os.environ.get('JWT_SECRET', 'your-secret-key-change-in-production')
@@ -34,7 +44,7 @@ JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_DAYS = 7
 
 # Stripe
-STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', 'sk_test_emergent')
+STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', '')
 
 # App Setup
 app = FastAPI(title="AfroVending API", version="1.0.0")

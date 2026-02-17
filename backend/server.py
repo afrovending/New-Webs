@@ -1867,6 +1867,259 @@ async def get_all_orders(user: dict = Depends(get_current_user), skip: int = 0, 
     orders = await db.orders.find({}, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
     return orders
 
+# ==================== VENDOR ANALYTICS ====================
+
+@api_router.get("/vendor/analytics")
+async def get_vendor_analytics(
+    period: str = Query("30d", description="Time period: 7d, 30d, 90d, 1y"),
+    user: dict = Depends(get_current_user)
+):
+    """Get comprehensive vendor analytics"""
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    vendor_id = vendor["id"]
+    
+    # Calculate date range
+    period_days = {"7d": 7, "30d": 30, "90d": 90, "1y": 365}.get(period, 30)
+    start_date = datetime.now(timezone.utc) - timedelta(days=period_days)
+    prev_start = start_date - timedelta(days=period_days)
+    
+    # Current period orders
+    orders = await db.orders.find({
+        "vendor_id": vendor_id,
+        "created_at": {"$gte": start_date.isoformat()}
+    }, {"_id": 0}).to_list(1000)
+    
+    # Previous period orders (for comparison)
+    prev_orders = await db.orders.find({
+        "vendor_id": vendor_id,
+        "created_at": {"$gte": prev_start.isoformat(), "$lt": start_date.isoformat()}
+    }, {"_id": 0}).to_list(1000)
+    
+    # Current period bookings
+    bookings = await db.bookings.find({
+        "vendor_id": vendor_id,
+        "created_at": {"$gte": start_date.isoformat()}
+    }, {"_id": 0}).to_list(1000)
+    
+    # Previous period bookings
+    prev_bookings = await db.bookings.find({
+        "vendor_id": vendor_id,
+        "created_at": {"$gte": prev_start.isoformat(), "$lt": start_date.isoformat()}
+    }, {"_id": 0}).to_list(1000)
+    
+    # Calculate revenue
+    current_revenue = sum(o.get("total", 0) for o in orders if o.get("payment_status") == "paid")
+    current_revenue += sum(b.get("price", 0) for b in bookings if b.get("payment_status") == "paid")
+    prev_revenue = sum(o.get("total", 0) for o in prev_orders if o.get("payment_status") == "paid")
+    prev_revenue += sum(b.get("price", 0) for b in prev_bookings if b.get("payment_status") == "paid")
+    
+    # Calculate growth
+    def calc_growth(current, previous):
+        if previous == 0:
+            return 100 if current > 0 else 0
+        return round(((current - previous) / previous) * 100, 1)
+    
+    # Product analytics
+    products = await db.products.find({"vendor_id": vendor_id}, {"_id": 0}).to_list(100)
+    total_views = sum(p.get("view_count", 0) for p in products)
+    
+    # Top products by orders
+    product_order_counts = {}
+    for order in orders:
+        for item in order.get("items", []):
+            pid = item.get("product_id")
+            if pid:
+                product_order_counts[pid] = product_order_counts.get(pid, 0) + item.get("quantity", 1)
+    
+    top_products = []
+    for pid, count in sorted(product_order_counts.items(), key=lambda x: -x[1])[:5]:
+        product = next((p for p in products if p["id"] == pid), None)
+        if product:
+            top_products.append({
+                "id": pid,
+                "name": product["name"],
+                "orders": count,
+                "revenue": count * product["price"]
+            })
+    
+    # Geographic breakdown
+    geo_breakdown = {}
+    for order in orders:
+        country = order.get("shipping_address", {}).get("country", "Unknown")
+        geo_breakdown[country] = geo_breakdown.get(country, 0) + 1
+    
+    # Daily revenue for charts (last 30 days regardless of period)
+    daily_revenue = {}
+    for i in range(30):
+        day = (datetime.now(timezone.utc) - timedelta(days=i)).strftime("%Y-%m-%d")
+        daily_revenue[day] = 0
+    
+    for order in orders:
+        if order.get("payment_status") == "paid":
+            day = order.get("created_at", "")[:10]
+            if day in daily_revenue:
+                daily_revenue[day] += order.get("total", 0)
+    
+    for booking in bookings:
+        if booking.get("payment_status") == "paid":
+            day = booking.get("created_at", "")[:10]
+            if day in daily_revenue:
+                daily_revenue[day] += booking.get("price", 0)
+    
+    # Conversion rate (views to orders)
+    conversion_rate = round((len(orders) / total_views * 100), 2) if total_views > 0 else 0
+    
+    # Customer insights
+    unique_customers = set()
+    repeat_customers = set()
+    customer_order_counts = {}
+    
+    for order in orders:
+        cid = order.get("user_id")
+        if cid:
+            if cid in unique_customers:
+                repeat_customers.add(cid)
+            unique_customers.add(cid)
+            customer_order_counts[cid] = customer_order_counts.get(cid, 0) + 1
+    
+    avg_order_value = current_revenue / len(orders) if orders else 0
+    
+    return {
+        "period": period,
+        "summary": {
+            "total_orders": len(orders),
+            "total_bookings": len(bookings),
+            "revenue": round(current_revenue, 2),
+            "total_views": total_views,
+            "conversion_rate": conversion_rate,
+            "avg_order_value": round(avg_order_value, 2)
+        },
+        "growth": {
+            "orders": calc_growth(len(orders), len(prev_orders)),
+            "bookings": calc_growth(len(bookings), len(prev_bookings)),
+            "revenue": calc_growth(current_revenue, prev_revenue)
+        },
+        "top_products": top_products,
+        "geographic_breakdown": geo_breakdown,
+        "daily_revenue": [{"date": k, "revenue": v} for k, v in sorted(daily_revenue.items())],
+        "customer_insights": {
+            "total_customers": len(unique_customers),
+            "repeat_customers": len(repeat_customers),
+            "repeat_rate": round(len(repeat_customers) / len(unique_customers) * 100, 1) if unique_customers else 0,
+            "avg_orders_per_customer": round(sum(customer_order_counts.values()) / len(customer_order_counts), 1) if customer_order_counts else 0
+        }
+    }
+
+@api_router.get("/vendor/analytics/products")
+async def get_product_analytics(user: dict = Depends(get_current_user)):
+    """Get detailed product-level analytics"""
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    products = await db.products.find({"vendor_id": vendor["id"]}, {"_id": 0}).to_list(100)
+    
+    # Get order data for each product
+    orders = await db.orders.find({"vendor_id": vendor["id"]}, {"_id": 0}).to_list(1000)
+    
+    product_stats = {}
+    for product in products:
+        pid = product["id"]
+        product_stats[pid] = {
+            "id": pid,
+            "name": product["name"],
+            "price": product["price"],
+            "stock": product.get("stock", 0),
+            "views": product.get("view_count", 0),
+            "rating": product.get("average_rating", 0),
+            "reviews": product.get("review_count", 0),
+            "orders": 0,
+            "units_sold": 0,
+            "revenue": 0
+        }
+    
+    for order in orders:
+        if order.get("payment_status") == "paid":
+            for item in order.get("items", []):
+                pid = item.get("product_id")
+                if pid in product_stats:
+                    product_stats[pid]["orders"] += 1
+                    product_stats[pid]["units_sold"] += item.get("quantity", 1)
+                    product_stats[pid]["revenue"] += item.get("price", 0) * item.get("quantity", 1)
+    
+    # Sort by revenue
+    sorted_products = sorted(product_stats.values(), key=lambda x: -x["revenue"])
+    
+    return {
+        "products": sorted_products,
+        "summary": {
+            "total_products": len(products),
+            "total_views": sum(p["views"] for p in sorted_products),
+            "total_revenue": sum(p["revenue"] for p in sorted_products),
+            "avg_rating": round(sum(p["rating"] for p in sorted_products) / len(sorted_products), 1) if sorted_products else 0
+        }
+    }
+
+# ==================== MONITORING ENDPOINTS ====================
+
+@api_router.get("/monitoring/metrics")
+async def get_monitoring_metrics(user: dict = Depends(get_current_user)):
+    """Get system performance metrics (admin only)"""
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    return metrics.get_metrics()
+
+@api_router.get("/monitoring/errors")
+async def get_recent_errors(user: dict = Depends(get_current_user)):
+    """Get recent error logs (admin only)"""
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    return {"errors": metrics.errors, "total": len(metrics.errors)}
+
+@api_router.get("/monitoring/slow-queries")
+async def get_slow_queries(
+    threshold_ms: float = Query(100, description="Threshold in milliseconds"),
+    user: dict = Depends(get_current_user)
+):
+    """Get slow database queries (admin only)"""
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    return {"slow_queries": metrics.get_slow_queries(threshold_ms)}
+
+@api_router.get("/monitoring/health-detailed")
+async def detailed_health_check():
+    """Detailed health check with component status"""
+    health = {
+        "status": "healthy",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "components": {}
+    }
+    
+    # Check MongoDB
+    try:
+        await db.command("ping")
+        health["components"]["database"] = {"status": "healthy", "type": "mongodb"}
+    except Exception as e:
+        health["status"] = "degraded"
+        health["components"]["database"] = {"status": "unhealthy", "error": str(e)}
+    
+    # System metrics
+    metrics_data = metrics.get_metrics()
+    health["metrics"] = {
+        "uptime_seconds": metrics_data["uptime_seconds"],
+        "total_requests": metrics_data["total_requests"],
+        "total_errors": metrics_data["total_errors"],
+        "error_rate": round(metrics_data["total_errors"] / max(metrics_data["total_requests"], 1) * 100, 2)
+    }
+    
+    return health
+
 # ==================== MISC ====================
 
 @api_router.get("/health")

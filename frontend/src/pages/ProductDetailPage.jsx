@@ -184,10 +184,10 @@ const ProductDetailPage = () => {
 
           {/* Price */}
           <div className="flex items-baseline gap-3 mb-6">
-            <span className="text-3xl font-bold text-red-600" data-testid="product-price">${product.price}</span>
+            <span className="text-3xl font-bold text-red-600" data-testid="product-price">{formatPrice(product.price)}</span>
             {product.compare_price && product.compare_price > product.price && (
               <>
-                <span className="text-xl text-gray-400 line-through">${product.compare_price}</span>
+                <span className="text-xl text-gray-400 line-through">{formatPrice(product.compare_price)}</span>
                 <Badge className="bg-red-500">
                   Save {Math.round((1 - product.price / product.compare_price) * 100)}%
                 </Badge>

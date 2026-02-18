@@ -12,7 +12,7 @@ from auth import get_current_user
 from models import CartItem, OrderCreate, OrderResponse
 
 router = APIRouter(tags=["Cart & Orders"])
-db = get_db()
+# db initialized per-request
 
 
 # ==================== CART ====================

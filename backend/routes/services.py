@@ -11,7 +11,7 @@ from auth import get_current_user
 from models import ServiceCreate, ServiceResponse
 
 router = APIRouter(prefix="/services", tags=["Services"])
-db = get_db()
+# db initialized per-request
 
 
 @router.get("")

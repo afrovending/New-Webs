@@ -11,7 +11,7 @@ from auth import get_current_user
 from models import ProductCreate, ProductResponse
 
 router = APIRouter(prefix="/products", tags=["Products"])
-db = get_db()
+# db initialized per-request
 
 
 @router.get("")

@@ -11,7 +11,7 @@ from auth import get_current_user
 from models import ReviewCreate
 
 router = APIRouter(prefix="/reviews", tags=["Reviews"])
-db = get_db()
+# db initialized per-request
 
 
 @router.get("/product/{product_id}")

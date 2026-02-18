@@ -11,7 +11,7 @@ from auth import get_current_user
 from models import VendorCreate, VendorResponse
 
 router = APIRouter(prefix="/vendors", tags=["Vendors"])
-db = get_db()
+# db initialized per-request
 
 
 @router.get("")

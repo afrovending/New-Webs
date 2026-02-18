@@ -10,7 +10,7 @@ from database import get_db
 from auth import get_current_user
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
-db = get_db()
+# db initialized per-request
 
 
 async def require_admin(user: dict = Depends(get_current_user)):

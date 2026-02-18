@@ -10,7 +10,7 @@ from auth import get_current_user
 from models import BookingCreate, BookingResponse
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
-db = get_db()
+# db initialized per-request
 
 
 @router.get("")

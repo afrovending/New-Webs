@@ -11,7 +11,7 @@ from auth import get_current_user
 from models import PriceAlertCreate
 
 router = APIRouter(prefix="/price-alerts", tags=["Price Alerts"])
-db = get_db()
+# db initialized per-request
 logger = logging.getLogger(__name__)
 
 

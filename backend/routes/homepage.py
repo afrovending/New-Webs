@@ -9,7 +9,7 @@ import random
 from database import get_db
 
 router = APIRouter(prefix="/homepage", tags=["Homepage"])
-db = get_db()
+# db initialized per-request
 
 
 @router.get("/recently-sold")

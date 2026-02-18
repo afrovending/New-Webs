@@ -27,6 +27,7 @@ async def get_products(
     limit: int = 20
 ):
     """Get products with optional filters"""
+    db = get_db()
     query = {"is_active": True}
     
     if category_id:

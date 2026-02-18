@@ -21,8 +21,10 @@ import {
   Heart,
   ChevronRight,
   BadgeCheck,
-  Sparkles
+  Sparkles,
+  Bell
 } from 'lucide-react';
+import PriceAlertButton from '../components/PriceAlertButton';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -236,7 +238,7 @@ const ProductDetailPage = () => {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-4 mb-8">
+          <div className="flex gap-4 mb-4">
             <Button
               className="flex-1 bg-red-600 hover:bg-red-700 h-12"
               onClick={handleAddToCart}
@@ -256,6 +258,17 @@ const ProductDetailPage = () => {
               Buy Now
             </Button>
           </div>
+
+          {/* Price Alert Button */}
+          {isAuthenticated && (
+            <div className="mb-8">
+              <PriceAlertButton 
+                productId={product.id} 
+                currentPrice={product.price} 
+                productName={product.name}
+              />
+            </div>
+          )}
 
           {/* Features */}
           <div className="border-t pt-6 space-y-4">

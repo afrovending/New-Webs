@@ -6,8 +6,10 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Badge } from '../../components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Package } from 'lucide-react';
+import { Plus, Edit, Trash2, Package, Warehouse, Store } from 'lucide-react';
 
 const VendorProducts = () => {
   const { api } = useAuth();
@@ -16,7 +18,7 @@ const VendorProducts = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [formData, setFormData] = useState({
-    name: '', description: '', price: '', compare_price: '', category_id: '', stock: '', images: '', tags: ''
+    name: '', description: '', price: '', compare_price: '', category_id: '', stock: '', images: '', tags: '', fulfillment_option: 'FBV'
   });
 
   const fetchProducts = async () => {
@@ -42,6 +44,7 @@ const VendorProducts = () => {
         stock: parseInt(formData.stock) || 0,
         images: formData.images ? formData.images.split(',').map(s => s.trim()) : [],
         tags: formData.tags ? formData.tags.split(',').map(s => s.trim()) : [],
+        fulfillment_option: formData.fulfillment_option || 'FBV',
       };
       
       if (editingProduct) {
@@ -53,7 +56,7 @@ const VendorProducts = () => {
       }
       setDialogOpen(false);
       setEditingProduct(null);
-      setFormData({ name: '', description: '', price: '', compare_price: '', category_id: '', stock: '', images: '', tags: '' });
+      setFormData({ name: '', description: '', price: '', compare_price: '', category_id: '', stock: '', images: '', tags: '', fulfillment_option: 'FBV' });
       fetchProducts();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to save product');
@@ -82,6 +85,7 @@ const VendorProducts = () => {
       stock: product.stock.toString(),
       images: product.images?.join(', ') || '',
       tags: product.tags?.join(', ') || '',
+      fulfillment_option: product.fulfillment_option || 'FBV',
     });
     setDialogOpen(true);
   };

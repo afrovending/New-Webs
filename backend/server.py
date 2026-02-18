@@ -798,7 +798,7 @@ async def create_product(product_data: ProductCreate, user: dict = Depends(get_c
     return ProductResponse(**product)
 
 @api_router.put("/products/{product_id}")
-async def update_product(product_id: str, product_data: ProductCreate, user: dict = Depends(get_current_user)):
+async def update_product(product_id: str, product_data: ProductCreate, background_tasks: BackgroundTasks, user: dict = Depends(get_current_user)):
     """Update a product"""
     product = await db.products.find_one({"id": product_id}, {"_id": 0})
     if not product:
@@ -808,7 +808,15 @@ async def update_product(product_id: str, product_data: ProductCreate, user: dic
     if not vendor or (vendor["id"] != product["vendor_id"] and user.get("role") != "admin"):
         raise HTTPException(status_code=403, detail="Not authorized")
     
+    old_price = product.get("price", 0)
+    new_price = product_data.price
+    
     await db.products.update_one({"id": product_id}, {"$set": product_data.model_dump()})
+    
+    # If price dropped, check price alerts in background
+    if new_price < old_price:
+        background_tasks.add_task(check_price_alerts_for_product, product_id, new_price)
+    
     return {"message": "Product updated"}
 
 @api_router.delete("/products/{product_id}")

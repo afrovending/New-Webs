@@ -167,6 +167,13 @@ const MainLayout = () => {
               {/* Currency Selector */}
               <CurrencySelector className="hidden sm:flex" />
               
+              {/* Wishlist */}
+              <Link to="/wishlist">
+                <Button variant="ghost" size="icon" data-testid="wishlist-button">
+                  <Heart className="h-5 w-5" />
+                </Button>
+              </Link>
+              
               {/* Cart */}
               <Link to="/cart">
                 <Button variant="ghost" size="icon" className="relative" data-testid="cart-button">

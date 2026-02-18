@@ -20,7 +20,7 @@ const VendorsPage = () => {
       setLoading(true);
       try {
         const params = new URLSearchParams();
-        if (country) params.append('country', country);
+        if (country && country !== 'all') params.append('country', country);
         const response = await api.get(`/vendors?${params.toString()}`);
         setVendors(response.data);
         

@@ -3,8 +3,8 @@ name: afrovending
 services:
   - name: backend
     source_dir: /backend
-    build_command: pip install -r requirements.txt
-    run_command: uvicorn server:app --host 0.0.0.0 --port 8080
+    build_command: pip install --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/ -r requirements.txt
+    run_command: uvicorn server_modular:app --host 0.0.0.0 --port 8080
     http_port: 8080
     routes:
       - path: /api

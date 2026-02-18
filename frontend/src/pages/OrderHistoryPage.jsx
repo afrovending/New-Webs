@@ -107,6 +107,8 @@ const OrderDetailPage = () => {
   const { formatPrice } = useCurrency();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+  const [reordering, setReordering] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && orderId) {
@@ -122,6 +124,43 @@ const OrderDetailPage = () => {
       console.error('Error fetching order:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadInvoice = async () => {
+    setDownloadingInvoice(true);
+    try {
+      const response = await api.get(`/orders/${orderId}/invoice`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `invoice-${orderId.slice(0, 8)}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Invoice downloaded successfully!');
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      toast.error('Failed to download invoice');
+    } finally {
+      setDownloadingInvoice(false);
+    }
+  };
+
+  const handleReorder = async () => {
+    setReordering(true);
+    try {
+      await api.post(`/orders/${orderId}/reorder`);
+      toast.success('Items added to cart!');
+      navigate('/cart');
+    } catch (error) {
+      console.error('Error reordering:', error);
+      toast.error(error.response?.data?.detail || 'Failed to reorder items');
+    } finally {
+      setReordering(false);
     }
   };
 

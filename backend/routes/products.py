@@ -70,6 +70,7 @@ async def get_products(
 @router.get("/{product_id}")
 async def get_product(product_id: str):
     """Get single product by ID"""
+    db = get_db()
     product = await db.products.find_one({"id": product_id}, {"_id": 0})
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -83,6 +84,7 @@ async def get_product(product_id: str):
 @router.post("", response_model=ProductResponse)
 async def create_product(product_data: ProductCreate, user: dict = Depends(get_current_user)):
     """Create a new product"""
+    db = get_db()
     vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
     if not vendor:
         raise HTTPException(status_code=403, detail="Only vendors can create products")
@@ -112,6 +114,7 @@ async def update_product(
     user: dict = Depends(get_current_user)
 ):
     """Update a product"""
+    db = get_db()
     product = await db.products.find_one({"id": product_id}, {"_id": 0})
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -136,6 +139,7 @@ async def update_product(
 @router.delete("/{product_id}")
 async def delete_product(product_id: str, user: dict = Depends(get_current_user)):
     """Delete a product"""
+    db = get_db()
     product = await db.products.find_one({"id": product_id}, {"_id": 0})
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")

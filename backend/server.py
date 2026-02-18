@@ -2589,8 +2589,8 @@ async def seed_database():
         "vendor": {"email": "vendor@afrovending.com", "password": "AfroVendor2024!"}
     }
 
-# Mount router
-app.include_router(api_router)
+# Mount router with /api prefix for ingress routing
+app.include_router(api_router, prefix="/api")
 
 if __name__ == "__main__":
     import uvicorn

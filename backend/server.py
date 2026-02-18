@@ -3,7 +3,7 @@ AfroVending - African Marketplace Backend
 Complete API with Products, Vendors, Orders, Services, Bookings, Payments
 """
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, Query, BackgroundTasks
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field
@@ -16,11 +16,13 @@ import bcrypt
 import jwt
 import httpx
 import logging
+import base64
 
 load_dotenv()
 
-# Import email service
+# Import services
 from email_service import email_service
+from invoice_service import invoice_generator
 
 # Logging
 logging.basicConfig(level=logging.INFO)

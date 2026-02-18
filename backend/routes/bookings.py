@@ -10,12 +10,12 @@ from auth import get_current_user
 from models import BookingCreate, BookingResponse
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
-# db initialized per-request
 
 
 @router.get("")
 async def get_bookings(user: dict = Depends(get_current_user)):
     """Get current user's bookings"""
+    db = get_db()
     bookings = await db.bookings.find(
         {"customer_id": user["id"]}, 
         {"_id": 0}
@@ -26,6 +26,7 @@ async def get_bookings(user: dict = Depends(get_current_user)):
 @router.get("/vendor")
 async def get_vendor_bookings(user: dict = Depends(get_current_user)):
     """Get bookings for vendor's services"""
+    db = get_db()
     vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
     if not vendor:
         raise HTTPException(status_code=403, detail="Vendor access required")
@@ -44,6 +45,7 @@ async def create_booking(
     user: dict = Depends(get_current_user)
 ):
     """Create a new booking"""
+    db = get_db()
     service = await db.services.find_one({"id": booking_data.service_id}, {"_id": 0})
     if not service:
         raise HTTPException(status_code=404, detail="Service not found")
@@ -86,6 +88,7 @@ async def create_booking(
 @router.put("/{booking_id}/status")
 async def update_booking_status(booking_id: str, status: str, user: dict = Depends(get_current_user)):
     """Update booking status"""
+    db = get_db()
     booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
@@ -109,6 +112,7 @@ async def update_booking_status(booking_id: str, status: str, user: dict = Depen
 @router.put("/{booking_id}/confirm-delivery")
 async def confirm_delivery(booking_id: str, user: dict = Depends(get_current_user)):
     """Customer confirms service delivery"""
+    db = get_db()
     booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")

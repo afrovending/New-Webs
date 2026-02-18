@@ -5,20 +5,19 @@ from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from datetime import datetime, timezone
 from typing import List
 import uuid
-import os
 
 from database import get_db
 from auth import get_current_user
 from models import CartItem, OrderCreate, OrderResponse
 
 router = APIRouter(tags=["Cart & Orders"])
-# db initialized per-request
 
 
 # ==================== CART ====================
 @router.get("/cart")
 async def get_cart(user: dict = Depends(get_current_user)):
     """Get current user's cart"""
+    db = get_db()
     cart = await db.carts.find_one({"user_id": user["id"]}, {"_id": 0})
     if not cart:
         return {"items": [], "total": 0}
@@ -44,6 +43,7 @@ async def get_cart(user: dict = Depends(get_current_user)):
 @router.post("/cart/add")
 async def add_to_cart(item: CartItem, user: dict = Depends(get_current_user)):
     """Add item to cart"""
+    db = get_db()
     product = await db.products.find_one({"id": item.product_id}, {"_id": 0})
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -78,6 +78,7 @@ async def add_to_cart(item: CartItem, user: dict = Depends(get_current_user)):
 @router.put("/cart/{product_id}")
 async def update_cart_item(product_id: str, quantity: int, user: dict = Depends(get_current_user)):
     """Update cart item quantity"""
+    db = get_db()
     if quantity <= 0:
         await db.carts.update_one(
             {"user_id": user["id"]},
@@ -94,6 +95,7 @@ async def update_cart_item(product_id: str, quantity: int, user: dict = Depends(
 @router.delete("/cart/{product_id}")
 async def remove_from_cart(product_id: str, user: dict = Depends(get_current_user)):
     """Remove item from cart"""
+    db = get_db()
     await db.carts.update_one(
         {"user_id": user["id"]},
         {"$pull": {"items": {"product_id": product_id}}}
@@ -104,6 +106,7 @@ async def remove_from_cart(product_id: str, user: dict = Depends(get_current_use
 @router.delete("/cart")
 async def clear_cart(user: dict = Depends(get_current_user)):
     """Clear entire cart"""
+    db = get_db()
     await db.carts.delete_one({"user_id": user["id"]})
     return {"message": "Cart cleared"}
 
@@ -112,6 +115,7 @@ async def clear_cart(user: dict = Depends(get_current_user)):
 @router.get("/orders")
 async def get_orders(user: dict = Depends(get_current_user)):
     """Get current user's orders"""
+    db = get_db()
     orders = await db.orders.find(
         {"user_id": user["id"]}, 
         {"_id": 0}
@@ -119,15 +123,35 @@ async def get_orders(user: dict = Depends(get_current_user)):
     return orders
 
 
+@router.get("/orders/history")
+async def get_order_history(
+    status: str = None,
+    page: int = 1,
+    limit: int = 10,
+    user: dict = Depends(get_current_user)
+):
+    """Get order history with pagination"""
+    db = get_db()
+    query = {"user_id": user["id"]}
+    if status and status != "all":
+        query["status"] = status
+    
+    skip = (page - 1) * limit
+    orders = await db.orders.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    total = await db.orders.count_documents(query)
+    
+    return {"orders": orders, "total": total, "page": page, "limit": limit}
+
+
 @router.get("/orders/{order_id}")
 async def get_order(order_id: str, user: dict = Depends(get_current_user)):
     """Get single order by ID"""
+    db = get_db()
     order = await db.orders.find_one({"id": order_id}, {"_id": 0})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     
     if order["user_id"] != user["id"] and user.get("role") != "admin":
-        # Check if user is vendor of any product in order
         vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
         if not vendor:
             raise HTTPException(status_code=403, detail="Not authorized")
@@ -138,6 +162,7 @@ async def get_order(order_id: str, user: dict = Depends(get_current_user)):
 @router.get("/orders/{order_id}/detail")
 async def get_order_detail(order_id: str, user: dict = Depends(get_current_user)):
     """Get detailed order info"""
+    db = get_db()
     order = await db.orders.find_one({"id": order_id}, {"_id": 0})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -151,11 +176,11 @@ async def get_order_detail(order_id: str, user: dict = Depends(get_current_user)
 @router.get("/vendor/orders")
 async def get_vendor_orders(user: dict = Depends(get_current_user)):
     """Get orders for vendor's products"""
+    db = get_db()
     vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
     if not vendor:
         raise HTTPException(status_code=403, detail="Vendor access required")
     
-    # Get orders containing vendor's products
     orders = await db.orders.find(
         {"items.vendor_id": vendor["id"]}, 
         {"_id": 0}
@@ -172,11 +197,11 @@ async def update_order_status(
     user: dict = Depends(get_current_user)
 ):
     """Update order status (vendor or admin)"""
+    db = get_db()
     order = await db.orders.find_one({"id": order_id}, {"_id": 0})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     
-    # Check authorization
     if user.get("role") != "admin":
         vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
         if not vendor:
@@ -190,7 +215,6 @@ async def update_order_status(
     if tracking_number:
         update_data["tracking_number"] = tracking_number
     
-    # Add to timeline
     timeline_entry = {
         "status": status,
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -206,3 +230,45 @@ async def update_order_status(
     )
     
     return {"message": f"Order status updated to {status}"}
+
+
+@router.post("/orders/{order_id}/reorder")
+async def reorder(order_id: str, user: dict = Depends(get_current_user)):
+    """Reorder items from a previous order"""
+    db = get_db()
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    if order["user_id"] != user["id"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Add items to cart
+    cart = await db.carts.find_one({"user_id": user["id"]})
+    
+    for item in order.get("items", []):
+        product = await db.products.find_one({"id": item["product_id"]}, {"_id": 0})
+        if not product or product["stock"] < item.get("quantity", 1):
+            continue
+        
+        if cart:
+            existing = next((i for i in cart.get("items", []) if i["product_id"] == item["product_id"]), None)
+            if existing:
+                await db.carts.update_one(
+                    {"user_id": user["id"], "items.product_id": item["product_id"]},
+                    {"$inc": {"items.$.quantity": item.get("quantity", 1)}}
+                )
+            else:
+                await db.carts.update_one(
+                    {"user_id": user["id"]},
+                    {"$push": {"items": {"product_id": item["product_id"], "quantity": item.get("quantity", 1)}}}
+                )
+        else:
+            await db.carts.insert_one({
+                "user_id": user["id"],
+                "items": [{"product_id": item["product_id"], "quantity": item.get("quantity", 1)}],
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            cart = {"items": []}
+    
+    return {"message": "Items added to cart"}

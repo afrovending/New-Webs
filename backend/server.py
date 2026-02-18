@@ -946,7 +946,7 @@ async def get_vendor_bookings(user: dict = Depends(get_current_user)):
     return bookings
 
 @api_router.post("/bookings", response_model=BookingResponse)
-async def create_booking(booking_data: BookingCreate, user: dict = Depends(get_current_user)):
+async def create_booking(booking_data: BookingCreate, background_tasks: BackgroundTasks, user: dict = Depends(get_current_user)):
     """Create a booking"""
     service = await db.services.find_one({"id": booking_data.service_id}, {"_id": 0})
     if not service:
@@ -980,6 +980,14 @@ async def create_booking(booking_data: BookingCreate, user: dict = Depends(get_c
     }
     
     await db.bookings.insert_one(booking)
+    
+    # Send booking confirmation email
+    background_tasks.add_task(
+        email_service.send_booking_confirmation,
+        user.get("email"),
+        booking
+    )
+    
     return BookingResponse(**booking)
 
 @api_router.put("/bookings/{booking_id}/status")

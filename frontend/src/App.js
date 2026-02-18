@@ -158,7 +158,8 @@ const AppRouter = () => {
       {/* Customer Dashboard */}
       <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route index element={<DashboardPage />} />
-        <Route path="orders" element={<OrdersPage />} />
+        <Route path="orders" element={<OrderHistoryPage />} />
+        <Route path="orders/:orderId" element={<OrderDetailPage />} />
         <Route path="bookings" element={<BookingsPage />} />
         <Route path="messages" element={<MessagesPage />} />
         <Route path="profile" element={<ProfilePage />} />

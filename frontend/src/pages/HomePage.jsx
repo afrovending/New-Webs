@@ -17,6 +17,8 @@ import {
   Calendar,
   Quote,
 } from 'lucide-react';
+import RecentlySold from '../components/RecentlySold';
+import VendorSuccess from '../components/VendorSuccess';
 
 const HomePage = () => {
   const { api } = useAuth();

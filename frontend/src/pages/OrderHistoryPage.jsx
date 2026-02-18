@@ -300,6 +300,43 @@ const OrderDetailPage = () => {
               </p>
             </CardContent>
           </Card>
+
+          {/* Action Buttons */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={handleDownloadInvoice}
+                disabled={downloadingInvoice}
+                data-testid="download-invoice-btn"
+              >
+                {downloadingInvoice ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <FileDown className="h-4 w-4 mr-2" />
+                )}
+                Download Invoice
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={handleReorder}
+                disabled={reordering}
+                data-testid="reorder-btn"
+              >
+                {reordering ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                )}
+                Reorder Items
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

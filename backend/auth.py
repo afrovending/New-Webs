@@ -8,6 +8,8 @@ import bcrypt
 import jwt
 import os
 
+from database import get_db
+
 # JWT Config
 JWT_SECRET = os.environ.get('JWT_SECRET', 'your-secret-key-change-in-production')
 JWT_ALGORITHM = "HS256"
@@ -32,8 +34,9 @@ def create_access_token(data: dict) -> str:
     return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
-async def get_current_user(request: Request, db) -> dict:
+async def get_current_user(request: Request) -> dict:
     """Extract and validate the current user from JWT token"""
+    db = get_db()
     auth_header = request.headers.get("Authorization")
     token = request.cookies.get("access_token")
     
@@ -60,9 +63,9 @@ async def get_current_user(request: Request, db) -> dict:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
-async def get_optional_user(request: Request, db):
+async def get_optional_user(request: Request):
     """Get user if authenticated, None otherwise"""
     try:
-        return await get_current_user(request, db)
+        return await get_current_user(request)
     except HTTPException:
         return None

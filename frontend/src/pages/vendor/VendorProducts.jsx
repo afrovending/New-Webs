@@ -96,7 +96,7 @@ const VendorProducts = () => {
         <h1 className="text-2xl font-bold">Products</h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-red-600 hover:bg-red-700" onClick={() => { setEditingProduct(null); setFormData({ name: '', description: '', price: '', compare_price: '', category_id: '', stock: '', images: '', tags: '' }); }}>
+            <Button className="bg-red-600 hover:bg-red-700" onClick={() => { setEditingProduct(null); setFormData({ name: '', description: '', price: '', compare_price: '', category_id: '', stock: '', images: '', tags: '', fulfillment_option: 'FBV' }); }}>
               <Plus className="h-4 w-4 mr-2" />Add Product
             </Button>
           </DialogTrigger>
@@ -135,6 +135,33 @@ const VendorProducts = () => {
                 <Label>Tags (comma-separated)</Label>
                 <Input value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} placeholder="fashion, handmade" />
               </div>
+              <div className="space-y-2">
+                <Label>Fulfillment Option</Label>
+                <Select value={formData.fulfillment_option} onValueChange={(v) => setFormData({ ...formData, fulfillment_option: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select fulfillment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FBV">
+                      <div className="flex items-center gap-2">
+                        <Store className="h-4 w-4" />
+                        <span>Fulfilled by Vendor (FBV)</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="FBA">
+                      <div className="flex items-center gap-2">
+                        <Warehouse className="h-4 w-4" />
+                        <span>Fulfilled by AfroVending (FBA)</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500">
+                  {formData.fulfillment_option === 'FBA' 
+                    ? 'Ship to our US warehouse for faster delivery to customers' 
+                    : 'You ship directly to customers from your location'}
+                </p>
+              </div>
               <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">
                 {editingProduct ? 'Update Product' : 'Create Product'}
               </Button>
@@ -155,12 +182,23 @@ const VendorProducts = () => {
       ) : (
         <div className="grid md:grid-cols-3 gap-4">
           {products.map((product) => (
-            <Card key={product.id}>
-              <div className="aspect-video bg-gray-100">
+            <Card key={product.id} className="overflow-hidden">
+              <div className="aspect-video bg-gray-100 relative">
                 {product.images?.[0] ? (
                   <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
+                )}
+                {product.fulfillment_option && (
+                  <Badge 
+                    className={`absolute top-2 right-2 ${product.fulfillment_option === 'FBA' ? 'bg-blue-600' : 'bg-gray-600'}`}
+                  >
+                    {product.fulfillment_option === 'FBA' ? (
+                      <><Warehouse className="h-3 w-3 mr-1" />FBA</>
+                    ) : (
+                      <><Store className="h-3 w-3 mr-1" />FBV</>
+                    )}
+                  </Badge>
                 )}
               </div>
               <CardContent className="p-4">

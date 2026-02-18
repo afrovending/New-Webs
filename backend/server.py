@@ -408,18 +408,90 @@ async def login(credentials: UserLogin):
     if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
-    if not user.get("password_hash"):
+    # Check for password in both possible field names
+    password_hash = user.get("password_hash") or user.get("hashed_password")
+    
+    if not password_hash:
         raise HTTPException(status_code=401, detail="Please use Google login for this account")
     
-    if not verify_password(credentials.password, user["password_hash"]):
+    if not verify_password(credentials.password, password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
     token = create_access_token({"sub": user["id"]})
     
     return TokenResponse(
         access_token=token,
-        user=UserResponse(**{k: v for k, v in user.items() if k != "password_hash"})
+        user=UserResponse(**{k: v for k, v in user.items() if k not in ["password_hash", "hashed_password"]})
     )
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(request: ForgotPasswordRequest):
+    """Request password reset"""
+    user = await db.users.find_one({"email": request.email}, {"_id": 0})
+    
+    if not user:
+        # Don't reveal if email exists
+        return {"message": "If this email exists, a reset link has been sent"}
+    
+    # Generate reset token
+    reset_token = str(uuid.uuid4())
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+    
+    await db.password_resets.insert_one({
+        "user_id": user["id"],
+        "email": request.email,
+        "token": reset_token,
+        "expires_at": expires_at.isoformat(),
+        "used": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # In production, send email here
+    # For now, return token (remove in production)
+    logger.info(f"Password reset token for {request.email}: {reset_token}")
+    
+    return {
+        "message": "If this email exists, a reset link has been sent",
+        "reset_token": reset_token  # Remove this in production when email is set up
+    }
+
+@api_router.post("/auth/reset-password")
+async def reset_password(request: ResetPasswordRequest):
+    """Reset password with token"""
+    reset_record = await db.password_resets.find_one({
+        "token": request.token,
+        "used": False
+    }, {"_id": 0})
+    
+    if not reset_record:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    # Check expiration
+    expires_at = datetime.fromisoformat(reset_record["expires_at"].replace('Z', '+00:00'))
+    if datetime.now(timezone.utc) > expires_at:
+        raise HTTPException(status_code=400, detail="Reset token has expired")
+    
+    # Update password
+    new_hash = hash_password(request.new_password)
+    await db.users.update_one(
+        {"id": reset_record["user_id"]},
+        {"$set": {"password_hash": new_hash, "hashed_password": new_hash}}
+    )
+    
+    # Mark token as used
+    await db.password_resets.update_one(
+        {"token": request.token},
+        {"$set": {"used": True}}
+    )
+    
+    return {"message": "Password reset successfully"}
 
 @api_router.post("/auth/google/session")
 async def process_google_session(request: Request, response: Response):

@@ -215,6 +215,7 @@ async def get_me(user: dict = Depends(get_current_user)):
 @router.post("/logout")
 async def logout(request: Request, response: Response):
     """Logout and clear session"""
+    db = get_db()
     session_token = request.cookies.get("session_token")
     if session_token:
         await db.google_sessions.delete_one({"session_token": session_token})

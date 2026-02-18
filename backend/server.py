@@ -1946,6 +1946,263 @@ async def unverify_vendor(vendor_id: str, user: dict = Depends(get_current_user)
     await db.vendors.update_one({"id": vendor_id}, {"$set": {"is_verified": False}})
     return {"message": "Vendor verification removed"}
 
+@api_router.put("/admin/vendors/{vendor_id}/deactivate")
+async def deactivate_vendor(vendor_id: str, reason: str = "", user: dict = Depends(get_current_user)):
+    """Deactivate a vendor for non-compliance (admin)"""
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    vendor = await db.vendors.find_one({"id": vendor_id})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+    
+    await db.vendors.update_one(
+        {"id": vendor_id}, 
+        {"$set": {
+            "is_active": False,
+            "deactivated_at": datetime.now(timezone.utc).isoformat(),
+            "deactivation_reason": reason,
+            "deactivated_by": user["id"]
+        }}
+    )
+    
+    # Also deactivate all vendor's products and services
+    await db.products.update_many({"vendor_id": vendor_id}, {"$set": {"is_active": False}})
+    await db.services.update_many({"vendor_id": vendor_id}, {"$set": {"is_active": False}})
+    
+    return {"message": "Vendor deactivated successfully", "reason": reason}
+
+@api_router.put("/admin/vendors/{vendor_id}/activate")
+async def activate_vendor(vendor_id: str, user: dict = Depends(get_current_user)):
+    """Reactivate a deactivated vendor (admin)"""
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    await db.vendors.update_one(
+        {"id": vendor_id}, 
+        {"$set": {"is_active": True}, "$unset": {"deactivated_at": "", "deactivation_reason": "", "deactivated_by": ""}}
+    )
+    
+    # Reactivate all vendor's products and services
+    await db.products.update_many({"vendor_id": vendor_id}, {"$set": {"is_active": True}})
+    await db.services.update_many({"vendor_id": vendor_id}, {"$set": {"is_active": True}})
+    
+    return {"message": "Vendor reactivated successfully"}
+
+@api_router.get("/admin/analytics")
+async def get_admin_analytics(
+    period: str = Query("30d", description="Time period: 7d, 30d, 90d, 1y"),
+    user: dict = Depends(get_current_user)
+):
+    """Get comprehensive platform analytics for admin dashboard"""
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    period_days = {"7d": 7, "30d": 30, "90d": 90, "1y": 365}.get(period, 30)
+    start_date = datetime.now(timezone.utc) - timedelta(days=period_days)
+    prev_start = start_date - timedelta(days=period_days)
+    
+    # User Stats
+    total_users = await db.users.count_documents({})
+    new_users = await db.users.count_documents({"created_at": {"$gte": start_date.isoformat()}})
+    prev_new_users = await db.users.count_documents({
+        "created_at": {"$gte": prev_start.isoformat(), "$lt": start_date.isoformat()}
+    })
+    
+    # Vendor Stats
+    total_vendors = await db.vendors.count_documents({})
+    active_vendors = await db.vendors.count_documents({"is_active": {"$ne": False}, "is_approved": True})
+    pending_vendors = await db.vendors.count_documents({"is_approved": False})
+    deactivated_vendors = await db.vendors.count_documents({"is_active": False})
+    verified_vendors = await db.vendors.count_documents({"is_verified": True})
+    
+    # Product Stats
+    total_products = await db.products.count_documents({})
+    active_products = await db.products.count_documents({"is_active": True})
+    
+    # Service Stats
+    total_services = await db.services.count_documents({})
+    active_services = await db.services.count_documents({"is_active": True})
+    
+    # Order Stats
+    total_orders = await db.orders.count_documents({})
+    period_orders = await db.orders.count_documents({"created_at": {"$gte": start_date.isoformat()}})
+    prev_period_orders = await db.orders.count_documents({
+        "created_at": {"$gte": prev_start.isoformat(), "$lt": start_date.isoformat()}
+    })
+    
+    # Revenue calculation using aggregation
+    revenue_pipeline = [
+        {"$match": {"payment_status": "paid", "created_at": {"$gte": start_date.isoformat()}}},
+        {"$group": {"_id": None, "total": {"$sum": "$total"}}}
+    ]
+    revenue_result = await db.orders.aggregate(revenue_pipeline).to_list(1)
+    current_revenue = revenue_result[0]["total"] if revenue_result else 0
+    
+    prev_revenue_pipeline = [
+        {"$match": {"payment_status": "paid", "created_at": {"$gte": prev_start.isoformat(), "$lt": start_date.isoformat()}}},
+        {"$group": {"_id": None, "total": {"$sum": "$total"}}}
+    ]
+    prev_revenue_result = await db.orders.aggregate(prev_revenue_pipeline).to_list(1)
+    prev_revenue = prev_revenue_result[0]["total"] if prev_revenue_result else 0
+    
+    # Booking Stats
+    total_bookings = await db.bookings.count_documents({})
+    period_bookings = await db.bookings.count_documents({"created_at": {"$gte": start_date.isoformat()}})
+    
+    # Daily stats for charts (last 30 days)
+    daily_stats = {}
+    for i in range(30):
+        day = (datetime.now(timezone.utc) - timedelta(days=i)).strftime("%Y-%m-%d")
+        daily_stats[day] = {"orders": 0, "revenue": 0, "users": 0}
+    
+    # Get daily orders
+    orders = await db.orders.find(
+        {"created_at": {"$gte": (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()}},
+        {"_id": 0, "created_at": 1, "total": 1, "payment_status": 1}
+    ).to_list(10000)
+    
+    for order in orders:
+        day = order.get("created_at", "")[:10]
+        if day in daily_stats:
+            daily_stats[day]["orders"] += 1
+            if order.get("payment_status") == "paid":
+                daily_stats[day]["revenue"] += order.get("total", 0)
+    
+    # Get daily new users
+    users = await db.users.find(
+        {"created_at": {"$gte": (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()}},
+        {"_id": 0, "created_at": 1}
+    ).to_list(10000)
+    
+    for u in users:
+        day = u.get("created_at", "")[:10]
+        if day in daily_stats:
+            daily_stats[day]["users"] += 1
+    
+    # Top vendors by revenue
+    top_vendors_pipeline = [
+        {"$match": {"payment_status": "paid"}},
+        {"$group": {"_id": "$vendor_id", "revenue": {"$sum": "$total"}, "orders": {"$sum": 1}}},
+        {"$sort": {"revenue": -1}},
+        {"$limit": 10}
+    ]
+    top_vendors_result = await db.orders.aggregate(top_vendors_pipeline).to_list(10)
+    
+    top_vendors = []
+    for v in top_vendors_result:
+        vendor = await db.vendors.find_one({"id": v["_id"]}, {"_id": 0, "store_name": 1, "is_verified": 1})
+        if vendor:
+            top_vendors.append({
+                "vendor_id": v["_id"],
+                "store_name": vendor.get("store_name", "Unknown"),
+                "is_verified": vendor.get("is_verified", False),
+                "revenue": v["revenue"],
+                "orders": v["orders"]
+            })
+    
+    # Top products by sales
+    top_products_pipeline = [
+        {"$match": {"payment_status": "paid"}},
+        {"$unwind": "$items"},
+        {"$group": {"_id": "$items.product_id", "quantity": {"$sum": "$items.quantity"}, "revenue": {"$sum": {"$multiply": ["$items.price", "$items.quantity"]}}}},
+        {"$sort": {"revenue": -1}},
+        {"$limit": 10}
+    ]
+    top_products_result = await db.orders.aggregate(top_products_pipeline).to_list(10)
+    
+    top_products = []
+    for p in top_products_result:
+        product = await db.products.find_one({"id": p["_id"]}, {"_id": 0, "name": 1})
+        if product:
+            top_products.append({
+                "product_id": p["_id"],
+                "name": product.get("name", "Unknown"),
+                "quantity_sold": p["quantity"],
+                "revenue": p["revenue"]
+            })
+    
+    # Country breakdown
+    country_pipeline = [
+        {"$group": {"_id": "$shipping_address.country", "orders": {"$sum": 1}}},
+        {"$sort": {"orders": -1}},
+        {"$limit": 10}
+    ]
+    country_result = await db.orders.aggregate(country_pipeline).to_list(10)
+    country_breakdown = {c["_id"] or "Unknown": c["orders"] for c in country_result}
+    
+    # Calculate growth percentages
+    def calc_growth(current, previous):
+        if previous == 0:
+            return 100 if current > 0 else 0
+        return round(((current - previous) / previous) * 100, 1)
+    
+    return {
+        "period": period,
+        "summary": {
+            "total_users": total_users,
+            "new_users": new_users,
+            "total_vendors": total_vendors,
+            "active_vendors": active_vendors,
+            "pending_vendors": pending_vendors,
+            "deactivated_vendors": deactivated_vendors,
+            "verified_vendors": verified_vendors,
+            "total_products": total_products,
+            "active_products": active_products,
+            "total_services": total_services,
+            "active_services": active_services,
+            "total_orders": total_orders,
+            "period_orders": period_orders,
+            "total_bookings": total_bookings,
+            "period_bookings": period_bookings,
+            "revenue": round(current_revenue, 2)
+        },
+        "growth": {
+            "users": calc_growth(new_users, prev_new_users),
+            "orders": calc_growth(period_orders, prev_period_orders),
+            "revenue": calc_growth(current_revenue, prev_revenue)
+        },
+        "daily_stats": [{"date": k, **v} for k, v in sorted(daily_stats.items())],
+        "top_vendors": top_vendors,
+        "top_products": top_products,
+        "country_breakdown": country_breakdown
+    }
+
+@api_router.get("/admin/vendors")
+async def get_all_vendors(
+    user: dict = Depends(get_current_user),
+    skip: int = 0,
+    limit: int = 50,
+    status: str = Query(None, description="Filter: all, pending, active, deactivated, verified")
+):
+    """Get all vendors with filters (admin)"""
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    query = {}
+    if status == "pending":
+        query["is_approved"] = False
+    elif status == "active":
+        query["is_approved"] = True
+        query["is_active"] = {"$ne": False}
+    elif status == "deactivated":
+        query["is_active"] = False
+    elif status == "verified":
+        query["is_verified"] = True
+    
+    vendors = await db.vendors.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    total = await db.vendors.count_documents(query)
+    
+    # Add user email and product/order counts
+    for vendor in vendors:
+        user_doc = await db.users.find_one({"id": vendor.get("user_id")}, {"_id": 0, "email": 1})
+        vendor["email"] = user_doc.get("email") if user_doc else None
+        vendor["product_count"] = await db.products.count_documents({"vendor_id": vendor["id"]})
+        vendor["service_count"] = await db.services.count_documents({"vendor_id": vendor["id"]})
+        vendor["order_count"] = await db.orders.count_documents({"vendor_id": vendor["id"]})
+    
+    return {"vendors": vendors, "total": total}
+
 @api_router.get("/admin/orders")
 async def get_all_orders(user: dict = Depends(get_current_user), skip: int = 0, limit: int = 50):
     """Get all orders (admin)"""

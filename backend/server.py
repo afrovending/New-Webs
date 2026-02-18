@@ -3662,6 +3662,586 @@ async def convert_currency_live(
         "last_updated": exchange_rate_cache["last_updated"].isoformat() if exchange_rate_cache["last_updated"] else None
     }
 
+# ==================== PDF INVOICE ====================
+
+@api_router.get("/orders/{order_id}/invoice")
+async def download_order_invoice(order_id: str, user: dict = Depends(get_current_user)):
+    """Download PDF invoice for an order"""
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Check authorization
+    if order["user_id"] != user["id"] and user.get("role") != "admin":
+        vendor = await db.vendors.find_one({"user_id": user["id"]})
+        if not vendor or not any(item.get("vendor_id") == vendor["id"] for item in order.get("items", [])):
+            raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Enrich order with vendor names
+    for item in order.get("items", []):
+        if item.get("vendor_id"):
+            vendor = await db.vendors.find_one({"id": item["vendor_id"]}, {"_id": 0, "store_name": 1})
+            item["vendor_name"] = vendor.get("store_name", "AfroVending Store") if vendor else "AfroVending Store"
+    
+    # Generate PDF
+    pdf_buffer = invoice_generator.generate_invoice(order)
+    
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=AfroVending_Invoice_{order_id[:8].upper()}.pdf"
+        }
+    )
+
+@api_router.get("/orders/{order_id}/receipt")
+async def download_order_receipt(order_id: str, user: dict = Depends(get_current_user)):
+    """Download PDF receipt for an order"""
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Check authorization
+    if order["user_id"] != user["id"] and user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Enrich order with vendor names
+    for item in order.get("items", []):
+        if item.get("vendor_id"):
+            vendor = await db.vendors.find_one({"id": item["vendor_id"]}, {"_id": 0, "store_name": 1})
+            item["vendor_name"] = vendor.get("store_name", "AfroVending Store") if vendor else "AfroVending Store"
+    
+    # Generate PDF
+    pdf_buffer = invoice_generator.generate_receipt(order)
+    
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=AfroVending_Receipt_{order_id[:8].upper()}.pdf"
+        }
+    )
+
+# ==================== REORDER ====================
+
+@api_router.post("/orders/{order_id}/reorder")
+async def reorder_items(order_id: str, user: dict = Depends(get_current_user)):
+    """Add all items from a previous order to cart"""
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    if order["user_id"] != user["id"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Get or create cart
+    cart = await db.carts.find_one({"user_id": user["id"]})
+    cart_items = cart.get("items", []) if cart else []
+    
+    items_added = 0
+    items_unavailable = []
+    
+    for item in order.get("items", []):
+        product_id = item.get("product_id")
+        if not product_id:
+            continue
+            
+        product = await db.products.find_one({"id": product_id}, {"_id": 0})
+        if not product:
+            items_unavailable.append(item.get("product_name", "Unknown"))
+            continue
+        
+        if product.get("stock", 0) < 1:
+            items_unavailable.append(product.get("name", "Unknown"))
+            continue
+        
+        # Check if already in cart
+        existing = next((i for i in cart_items if i["product_id"] == product_id), None)
+        if existing:
+            existing["quantity"] += item.get("quantity", 1)
+        else:
+            cart_items.append({
+                "product_id": product_id,
+                "quantity": min(item.get("quantity", 1), product.get("stock", 1))
+            })
+        items_added += 1
+    
+    # Update cart
+    if cart:
+        await db.carts.update_one({"user_id": user["id"]}, {"$set": {"items": cart_items}})
+    else:
+        await db.carts.insert_one({
+            "user_id": user["id"],
+            "items": cart_items,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+    
+    return {
+        "message": f"Added {items_added} items to cart",
+        "items_added": items_added,
+        "items_unavailable": items_unavailable
+    }
+
+# ==================== PRICE ALERTS ====================
+
+class PriceAlertCreate(BaseModel):
+    product_id: str
+    target_price: float
+    notify_email: bool = True
+    notify_app: bool = True
+
+@api_router.post("/price-alerts/create")
+async def create_price_alert(alert_data: PriceAlertCreate, user: dict = Depends(get_current_user)):
+    """Create a price alert for a product"""
+    product = await db.products.find_one({"id": alert_data.product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Check if alert already exists
+    existing = await db.price_alerts.find_one({
+        "user_id": user["id"],
+        "product_id": alert_data.product_id,
+        "is_active": True
+    })
+    if existing:
+        # Update existing alert
+        await db.price_alerts.update_one(
+            {"id": existing["id"]},
+            {"$set": {
+                "target_price": alert_data.target_price,
+                "notify_email": alert_data.notify_email,
+                "notify_app": alert_data.notify_app,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        return {"message": "Price alert updated", "id": existing["id"]}
+    
+    alert = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "product_id": alert_data.product_id,
+        "product_name": product.get("name"),
+        "current_price": product.get("price"),
+        "target_price": alert_data.target_price,
+        "notify_email": alert_data.notify_email,
+        "notify_app": alert_data.notify_app,
+        "is_active": True,
+        "triggered": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.price_alerts.insert_one(alert)
+    return {"message": "Price alert created", "id": alert["id"]}
+
+@api_router.get("/price-alerts")
+async def get_price_alerts(user: dict = Depends(get_current_user)):
+    """Get user's price alerts"""
+    alerts = await db.price_alerts.find(
+        {"user_id": user["id"], "is_active": True},
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Enrich with current prices
+    for alert in alerts:
+        product = await db.products.find_one({"id": alert["product_id"]}, {"_id": 0, "price": 1, "images": 1})
+        if product:
+            alert["current_price"] = product.get("price")
+            alert["product_image"] = product.get("images", [None])[0]
+            alert["price_dropped"] = product.get("price", 0) <= alert["target_price"]
+    
+    return {"alerts": alerts, "count": len(alerts)}
+
+@api_router.delete("/price-alerts/{alert_id}")
+async def delete_price_alert(alert_id: str, user: dict = Depends(get_current_user)):
+    """Delete a price alert"""
+    result = await db.price_alerts.delete_one({"id": alert_id, "user_id": user["id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Price alert not found")
+    return {"message": "Price alert deleted"}
+
+# Background task to check price alerts (call periodically)
+async def check_price_alerts_and_notify():
+    """Check all price alerts and send notifications"""
+    active_alerts = await db.price_alerts.find({"is_active": True, "triggered": False}, {"_id": 0}).to_list(1000)
+    
+    for alert in active_alerts:
+        product = await db.products.find_one({"id": alert["product_id"]}, {"_id": 0})
+        if not product:
+            continue
+        
+        current_price = product.get("price", 0)
+        if current_price <= alert["target_price"]:
+            # Price dropped! Send notification
+            user = await db.users.find_one({"id": alert["user_id"]}, {"_id": 0, "email": 1})
+            
+            if alert.get("notify_email") and user:
+                await send_price_alert_email(
+                    user["email"],
+                    alert["product_name"],
+                    alert["target_price"],
+                    current_price,
+                    alert["product_id"]
+                )
+            
+            if alert.get("notify_app"):
+                # Create in-app notification
+                await db.notifications.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "user_id": alert["user_id"],
+                    "type": "price_alert",
+                    "title": "Price Drop Alert!",
+                    "message": f"{alert['product_name']} is now ${current_price:.2f} (was ${alert.get('current_price', 0):.2f})",
+                    "product_id": alert["product_id"],
+                    "read": False,
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                })
+            
+            # Mark alert as triggered
+            await db.price_alerts.update_one(
+                {"id": alert["id"]},
+                {"$set": {"triggered": True, "triggered_at": datetime.now(timezone.utc).isoformat()}}
+            )
+
+async def send_price_alert_email(to_email: str, product_name: str, target_price: float, current_price: float, product_id: str):
+    """Send price drop alert email"""
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background: linear-gradient(135deg, #16a34a, #15803d); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+            .content {{ background: #fff; padding: 30px; border: 1px solid #eee; }}
+            .price-box {{ background: #f0fdf4; border: 1px solid #22c55e; padding: 20px; border-radius: 10px; margin: 20px 0; text-align: center; }}
+            .btn {{ display: inline-block; background: #dc2626; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1 style="margin: 0;">Price Drop Alert!</h1>
+            </div>
+            <div class="content">
+                <p>Great news! A product on your wishlist just dropped in price.</p>
+                
+                <h3>{product_name}</h3>
+                
+                <div class="price-box">
+                    <p style="margin: 0; font-size: 14px; color: #666;">Your target price: <s>${target_price:.2f}</s></p>
+                    <p style="margin: 10px 0 0 0; font-size: 28px; font-weight: bold; color: #16a34a;">${current_price:.2f}</p>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="https://afrovending.com/products/{product_id}" class="btn" style="color: white;">Shop Now</a>
+                </div>
+                
+                <p style="color: #666; font-size: 14px;">Hurry! Prices may change at any time.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    email_service._send(to_email, f"Price Drop: {product_name} is now ${current_price:.2f}!", html_content)
+
+# ==================== NOTIFICATIONS ====================
+
+@api_router.get("/notifications")
+async def get_notifications(
+    unread_only: bool = False,
+    limit: int = 20,
+    user: dict = Depends(get_current_user)
+):
+    """Get user's notifications"""
+    query = {"user_id": user["id"]}
+    if unread_only:
+        query["read"] = False
+    
+    notifications = await db.notifications.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    unread_count = await db.notifications.count_documents({"user_id": user["id"], "read": False})
+    
+    return {
+        "notifications": notifications,
+        "unread_count": unread_count
+    }
+
+@api_router.put("/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str, user: dict = Depends(get_current_user)):
+    """Mark a notification as read"""
+    result = await db.notifications.update_one(
+        {"id": notification_id, "user_id": user["id"]},
+        {"$set": {"read": True}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    return {"message": "Notification marked as read"}
+
+@api_router.put("/notifications/read-all")
+async def mark_all_notifications_read(user: dict = Depends(get_current_user)):
+    """Mark all notifications as read"""
+    await db.notifications.update_many(
+        {"user_id": user["id"], "read": False},
+        {"$set": {"read": True}}
+    )
+    return {"message": "All notifications marked as read"}
+
+# ==================== FULFILLMENT OPTIONS ====================
+
+# AfroVending US Warehouse Address
+FBA_WAREHOUSE = {
+    "name": "AfroVending Fulfillment Center",
+    "address": "1234 Commerce Way, Suite 500",
+    "city": "Atlanta",
+    "state": "GA",
+    "zip": "30301",
+    "country": "USA",
+    "phone": "+1 (555) 123-4567"
+}
+
+# FBA Fees (percentage of product price)
+FBA_FEES = {
+    "storage_monthly": 0.75,  # $0.75 per cubic foot per month
+    "fulfillment_base": 3.00,  # Base fee per order
+    "fulfillment_per_item": 1.50,  # Per item fee
+    "commission_rate": 0.05,  # 5% additional commission for FBA
+}
+
+# FBV (standard) fees
+FBV_FEES = {
+    "commission_rate": 0.10,  # 10% commission for FBV
+}
+
+@api_router.get("/fulfillment/warehouse")
+async def get_warehouse_address():
+    """Get AfroVending FBA warehouse address"""
+    return {
+        "warehouse": FBA_WAREHOUSE,
+        "instructions": "Ship your inventory to our warehouse for faster fulfillment. Include your Vendor ID on all packages."
+    }
+
+@api_router.get("/fulfillment/fees")
+async def get_fulfillment_fees():
+    """Get FBA vs FBV fee comparison"""
+    return {
+        "fba": {
+            "name": "Fulfilled by AfroVending (FBA)",
+            "description": "Ship your inventory to our US warehouse. We handle storage, packing, and shipping to customers.",
+            "benefits": [
+                "Faster shipping from US warehouse",
+                "Prime-like delivery experience",
+                "Professional packaging with AfroVending branding",
+                "Customer service handled by us",
+                "Eligibility for Featured Vendor status"
+            ],
+            "fees": FBA_FEES,
+            "example": "For a $50 product: $3.00 base + $1.50 per item + 5% commission = $7.00 total"
+        },
+        "fbv": {
+            "name": "Fulfilled by Vendor (FBV)", 
+            "description": "You handle storage and ship directly to customers when orders come in.",
+            "benefits": [
+                "Full control over inventory",
+                "No need to ship to warehouse",
+                "Lower fees for high-volume sellers",
+                "Flexibility in packaging"
+            ],
+            "fees": FBV_FEES,
+            "example": "For a $50 product: 10% commission = $5.00 total"
+        }
+    }
+
+class FulfillmentUpdate(BaseModel):
+    fulfillment_type: str  # 'FBA' or 'FBV'
+
+@api_router.put("/vendor/fulfillment")
+async def update_vendor_fulfillment(data: FulfillmentUpdate, user: dict = Depends(get_current_user)):
+    """Update vendor's default fulfillment preference"""
+    if data.fulfillment_type not in ['FBA', 'FBV']:
+        raise HTTPException(status_code=400, detail="Fulfillment type must be 'FBA' or 'FBV'")
+    
+    vendor = await db.vendors.find_one({"user_id": user["id"]})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    await db.vendors.update_one(
+        {"user_id": user["id"]},
+        {"$set": {"fulfillment_type": data.fulfillment_type, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"message": f"Fulfillment preference updated to {data.fulfillment_type}"}
+
+@api_router.put("/products/{product_id}/fulfillment")
+async def update_product_fulfillment(product_id: str, data: FulfillmentUpdate, user: dict = Depends(get_current_user)):
+    """Update fulfillment type for a specific product"""
+    if data.fulfillment_type not in ['FBA', 'FBV']:
+        raise HTTPException(status_code=400, detail="Fulfillment type must be 'FBA' or 'FBV'")
+    
+    vendor = await db.vendors.find_one({"user_id": user["id"]})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    product = await db.products.find_one({"id": product_id, "vendor_id": vendor["id"]})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found or not owned by you")
+    
+    await db.products.update_one(
+        {"id": product_id},
+        {"$set": {"fulfillment_type": data.fulfillment_type}}
+    )
+    
+    return {"message": f"Product fulfillment updated to {data.fulfillment_type}"}
+
+# ==================== HOMEPAGE DYNAMIC DATA ====================
+
+@api_router.get("/homepage/stats")
+async def get_homepage_stats():
+    """Get dynamic stats for homepage (perceived scale)"""
+    total_vendors = await db.vendors.count_documents({"is_approved": True})
+    total_products = await db.products.count_documents({"is_active": True})
+    total_services = await db.services.count_documents({"is_active": True})
+    total_orders = await db.orders.count_documents({})
+    
+    # Get unique countries
+    vendor_countries = await db.vendors.distinct("country")
+    
+    return {
+        "vendors": total_vendors,
+        "products": total_products,
+        "services": total_services,
+        "orders": total_orders,
+        "countries": len(vendor_countries),
+        "customers": "50K+",  # Social proof number
+        "display": {
+            "vendors": f"{total_vendors}+" if total_vendors > 0 else "1+",
+            "products": f"{total_products}+" if total_products > 0 else "100+",
+            "countries": f"{len(vendor_countries)}+" if len(vendor_countries) > 0 else "12+",
+            "customers": "50K+"
+        }
+    }
+
+@api_router.get("/homepage/recently-sold")
+async def get_recently_sold(limit: int = 10):
+    """Get recently sold products for social proof"""
+    # Get recent orders with items
+    recent_orders = await db.orders.find(
+        {"status": {"$in": ["delivered", "shipped", "processing"]}},
+        {"_id": 0, "items": 1, "created_at": 1, "shipping_country": 1}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    recently_sold = []
+    for order in recent_orders:
+        for item in order.get("items", [])[:1]:  # Take first item from each order
+            product = await db.products.find_one(
+                {"id": item.get("product_id")},
+                {"_id": 0, "id": 1, "name": 1, "images": 1, "price": 1}
+            )
+            if product:
+                recently_sold.append({
+                    "product_id": product["id"],
+                    "name": product["name"],
+                    "image": product.get("images", [None])[0],
+                    "price": product.get("price", 0),
+                    "sold_to": order.get("shipping_country", "USA"),
+                    "time_ago": _time_ago(order.get("created_at"))
+                })
+    
+    # If no real sales, show sample data
+    if not recently_sold:
+        sample_products = await db.products.find({}, {"_id": 0}).limit(5).to_list(5)
+        countries = ["USA", "UK", "Nigeria", "Ghana", "Canada"]
+        for i, product in enumerate(sample_products):
+            recently_sold.append({
+                "product_id": product["id"],
+                "name": product["name"],
+                "image": product.get("images", [None])[0],
+                "price": product.get("price", 0),
+                "sold_to": countries[i % len(countries)],
+                "time_ago": f"{(i+1)*2} hours ago"
+            })
+    
+    return {"items": recently_sold}
+
+def _time_ago(timestamp_str):
+    """Convert timestamp to human-readable time ago"""
+    if not timestamp_str:
+        return "Recently"
+    try:
+        timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+        now = datetime.now(timezone.utc)
+        diff = now - timestamp
+        
+        if diff.days > 0:
+            return f"{diff.days} day{'s' if diff.days > 1 else ''} ago"
+        elif diff.seconds >= 3600:
+            hours = diff.seconds // 3600
+            return f"{hours} hour{'s' if hours > 1 else ''} ago"
+        elif diff.seconds >= 60:
+            minutes = diff.seconds // 60
+            return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+        else:
+            return "Just now"
+    except:
+        return "Recently"
+
+@api_router.get("/homepage/vendor-success")
+async def get_vendor_success_stories(limit: int = 3):
+    """Get vendor success stories for social proof"""
+    # Get top vendors by sales
+    top_vendors = await db.vendors.find(
+        {"is_approved": True, "is_verified": True},
+        {"_id": 0, "id": 1, "store_name": 1, "logo_url": 1, "country": 1, "description": 1}
+    ).limit(limit).to_list(limit)
+    
+    success_stories = []
+    for vendor in top_vendors:
+        # Get vendor stats
+        product_count = await db.products.count_documents({"vendor_id": vendor["id"]})
+        
+        # Calculate total sales (mock for now if no orders)
+        orders = await db.orders.find(
+            {"items.vendor_id": vendor["id"], "payment_status": "paid"},
+            {"_id": 0, "total": 1}
+        ).to_list(100)
+        total_sales = sum(o.get("total", 0) for o in orders)
+        
+        success_stories.append({
+            "vendor_id": vendor["id"],
+            "store_name": vendor["store_name"],
+            "logo": vendor.get("logo_url"),
+            "country": vendor.get("country", "Nigeria"),
+            "description": vendor.get("description", "")[:100],
+            "products": product_count,
+            "total_sales": total_sales if total_sales > 0 else 5000 + (hash(vendor["id"]) % 15000),  # Mock if no sales
+            "testimonial": f"AfroVending helped me reach customers worldwide!" if not vendor.get("testimonial") else vendor["testimonial"]
+        })
+    
+    return {"vendors": success_stories}
+
+@api_router.get("/homepage/trending")
+async def get_trending_products(limit: int = 8):
+    """Get trending products based on views and sales"""
+    # Get products with highest view count or random selection
+    products = await db.products.find(
+        {"is_active": True},
+        {"_id": 0}
+    ).sort("view_count", -1).limit(limit).to_list(limit)
+    
+    if not products:
+        products = await db.products.find({"is_active": True}, {"_id": 0}).limit(limit).to_list(limit)
+    
+    # Enrich with vendor info
+    for product in products:
+        vendor = await db.vendors.find_one(
+            {"id": product.get("vendor_id")},
+            {"_id": 0, "store_name": 1, "is_verified": 1}
+        )
+        if vendor:
+            product["vendor_name"] = vendor.get("store_name")
+            product["vendor_verified"] = vendor.get("is_verified", False)
+    
+    return {"products": products}
+
 # Mount router with /api prefix for ingress routing
 app.include_router(api_router, prefix="/api")
 

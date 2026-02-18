@@ -164,6 +164,9 @@ const MainLayout = () => {
 
             {/* Right Actions */}
             <div className="flex items-center gap-2">
+              {/* Currency Selector */}
+              <CurrencySelector className="hidden sm:flex" />
+              
               {/* Cart */}
               <Link to="/cart">
                 <Button variant="ghost" size="icon" className="relative" data-testid="cart-button">

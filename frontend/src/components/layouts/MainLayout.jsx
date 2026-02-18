@@ -168,6 +168,9 @@ const MainLayout = () => {
               {/* Currency Selector */}
               <CurrencySelector className="hidden sm:flex" />
               
+              {/* Notifications */}
+              <NotificationBell />
+              
               {/* Wishlist */}
               <Link to="/wishlist">
                 <Button variant="ghost" size="icon" data-testid="wishlist-button">

@@ -39,7 +39,9 @@ const AdminVendors = () => {
         params.append('status', statusFilter);
       }
       const response = await api.get(`/admin/vendors?${params.toString()}`);
-      setVendors(response.data);
+      // Handle both array and object response formats
+      const vendorData = Array.isArray(response.data) ? response.data : response.data.vendors || [];
+      setVendors(vendorData);
     } catch (error) {
       console.error('Error fetching vendors:', error);
       // Fallback to old method if new endpoint doesn't exist

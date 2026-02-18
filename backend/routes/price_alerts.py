@@ -11,19 +11,18 @@ from auth import get_current_user
 from models import PriceAlertCreate
 
 router = APIRouter(prefix="/price-alerts", tags=["Price Alerts"])
-# db initialized per-request
 logger = logging.getLogger(__name__)
 
 
 @router.get("")
 async def get_price_alerts(user: dict = Depends(get_current_user)):
     """Get user's price alerts"""
+    db = get_db()
     alerts = await db.price_alerts.find(
         {"user_id": user["id"], "is_active": True},
         {"_id": 0}
     ).sort("created_at", -1).to_list(100)
     
-    # Enrich with current prices
     for alert in alerts:
         product = await db.products.find_one({"id": alert["product_id"]}, {"_id": 0, "price": 1, "name": 1, "images": 1})
         if product:
@@ -37,18 +36,17 @@ async def get_price_alerts(user: dict = Depends(get_current_user)):
 @router.post("/create")
 async def create_price_alert(alert_data: PriceAlertCreate, user: dict = Depends(get_current_user)):
     """Create a new price alert"""
+    db = get_db()
     product = await db.products.find_one({"id": alert_data.product_id}, {"_id": 0})
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     
-    # Check if alert already exists
     existing = await db.price_alerts.find_one({
         "user_id": user["id"],
         "product_id": alert_data.product_id,
         "is_active": True
     })
     if existing:
-        # Update existing alert
         await db.price_alerts.update_one(
             {"id": existing["id"]},
             {"$set": {
@@ -82,6 +80,7 @@ async def create_price_alert(alert_data: PriceAlertCreate, user: dict = Depends(
 @router.delete("/{alert_id}")
 async def delete_price_alert(alert_id: str, user: dict = Depends(get_current_user)):
     """Delete a price alert"""
+    db = get_db()
     result = await db.price_alerts.delete_one({"id": alert_id, "user_id": user["id"]})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Price alert not found")
@@ -90,6 +89,7 @@ async def delete_price_alert(alert_id: str, user: dict = Depends(get_current_use
 
 async def check_price_alerts_for_product(product_id: str, new_price: float):
     """Check all alerts for a specific product and send notifications if price dropped"""
+    db = get_db()
     active_alerts = await db.price_alerts.find({
         "product_id": product_id,
         "is_active": True,
@@ -102,12 +102,10 @@ async def check_price_alerts_for_product(product_id: str, new_price: float):
     
     for alert in active_alerts:
         if new_price <= alert["target_price"]:
-            # Price dropped! Send notification
             user = await db.users.find_one({"id": alert["user_id"]}, {"_id": 0, "email": 1, "first_name": 1})
             
             if alert.get("notify_email") and user:
                 try:
-                    from email_service import email_service
                     await send_price_alert_email(
                         user["email"],
                         alert["product_name"],
@@ -120,7 +118,6 @@ async def check_price_alerts_for_product(product_id: str, new_price: float):
                     logger.error(f"Failed to send price alert email: {e}")
             
             if alert.get("notify_app"):
-                # Create in-app notification
                 await db.notifications.insert_one({
                     "id": str(uuid.uuid4()),
                     "user_id": alert["user_id"],
@@ -133,7 +130,6 @@ async def check_price_alerts_for_product(product_id: str, new_price: float):
                     "created_at": datetime.now(timezone.utc).isoformat()
                 })
             
-            # Mark alert as triggered
             await db.price_alerts.update_one(
                 {"id": alert["id"]},
                 {"$set": {"triggered": True, "triggered_at": datetime.now(timezone.utc).isoformat()}}
@@ -143,34 +139,33 @@ async def check_price_alerts_for_product(product_id: str, new_price: float):
 
 async def send_price_alert_email(to_email: str, product_name: str, target_price: float, current_price: float, product_id: str):
     """Send price drop email notification"""
-    from email_service import email_service
-    
-    html_content = f"""
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #e63946, #d62828); padding: 20px; text-align: center;">
-            <h1 style="color: white; margin: 0;">Price Drop Alert!</h1>
-        </div>
+    try:
+        from email_service import email_service
         
-        <div style="padding: 30px; background: #f8f9fa;">
-            <p style="font-size: 16px; color: #333;">Great news! A product on your price alert list has dropped in price.</p>
-            
-            <h3>{product_name}</h3>
-            
-            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <p><strong>Your target price:</strong> ${target_price:.2f}</p>
-                <p><strong>Current price:</strong> <span style="color: #28a745; font-size: 24px;">${current_price:.2f}</span></p>
+        html_content = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #e63946, #d62828); padding: 20px; text-align: center;">
+                <h1 style="color: white; margin: 0;">Price Drop Alert!</h1>
             </div>
             
-            <a href="https://afrovending.com/products/{product_id}" 
-               style="display: inline-block; background: #e63946; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                Shop Now
-            </a>
+            <div style="padding: 30px; background: #f8f9fa;">
+                <p style="font-size: 16px; color: #333;">Great news! A product on your price alert list has dropped in price.</p>
+                
+                <h3>{product_name}</h3>
+                
+                <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <p><strong>Your target price:</strong> ${target_price:.2f}</p>
+                    <p><strong>Current price:</strong> <span style="color: #28a745; font-size: 24px;">${current_price:.2f}</span></p>
+                </div>
+                
+                <a href="https://afrovending.com/products/{product_id}" 
+                   style="display: inline-block; background: #e63946; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    Shop Now
+                </a>
+            </div>
         </div>
+        """
         
-        <div style="padding: 20px; text-align: center; color: #666; font-size: 12px;">
-            <p>You received this email because you set a price alert on AfroVending.</p>
-        </div>
-    </div>
-    """
-    
-    email_service._send(to_email, f"Price Drop: {product_name} is now ${current_price:.2f}!", html_content)
+        email_service._send(to_email, f"Price Drop: {product_name} is now ${current_price:.2f}!", html_content)
+    except Exception as e:
+        logger.error(f"Failed to send price alert email: {e}")

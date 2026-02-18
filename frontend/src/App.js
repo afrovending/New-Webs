@@ -140,6 +140,7 @@ const AppRouter = () => {
         <Route path="vendors/:id" element={<VendorStorePage />} />
         <Route path="cart" element={<CartPage />} />
         <Route path="pricing" element={<PricingPage />} />
+        <Route path="wishlist" element={<WishlistPage />} />
         
         {/* Category Landing Pages */}
         <Route path="category/:categorySlug" element={<CategoryLandingPage />} />

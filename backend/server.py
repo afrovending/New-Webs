@@ -1130,7 +1130,7 @@ async def get_vendor_orders(user: dict = Depends(get_current_user)):
     return orders
 
 @api_router.post("/orders", response_model=OrderResponse)
-async def create_order(order_data: OrderCreate, user: dict = Depends(get_current_user)):
+async def create_order(order_data: OrderCreate, background_tasks: BackgroundTasks, user: dict = Depends(get_current_user)):
     """Create an order from cart"""
     items = []
     total = 0
@@ -1179,10 +1179,17 @@ async def create_order(order_data: OrderCreate, user: dict = Depends(get_current
             {"$inc": {"stock": -cart_item.quantity}}
         )
     
+    # Send order confirmation email
+    background_tasks.add_task(
+        email_service.send_order_confirmation,
+        user.get("email"),
+        order
+    )
+    
     return OrderResponse(**order)
 
 @api_router.put("/orders/{order_id}/status")
-async def update_order_status(order_id: str, status: str, user: dict = Depends(get_current_user)):
+async def update_order_status(order_id: str, status: str, tracking_number: str = None, background_tasks: BackgroundTasks = None, user: dict = Depends(get_current_user)):
     """Update order status (vendor/admin)"""
     order = await db.orders.find_one({"id": order_id}, {"_id": 0})
     if not order:
@@ -1194,7 +1201,23 @@ async def update_order_status(order_id: str, status: str, user: dict = Depends(g
         if not vendor or not any(item["vendor_id"] == vendor["id"] for item in order["items"]):
             raise HTTPException(status_code=403, detail="Not authorized")
     
-    await db.orders.update_one({"id": order_id}, {"$set": {"status": status}})
+    update_data = {"status": status}
+    if tracking_number:
+        update_data["tracking_number"] = tracking_number
+    
+    await db.orders.update_one({"id": order_id}, {"$set": update_data})
+    
+    # Send shipping notification email if status is shipped
+    if status == "shipped" and background_tasks:
+        order_user = await db.users.find_one({"id": order["user_id"]}, {"_id": 0, "email": 1})
+        if order_user:
+            background_tasks.add_task(
+                email_service.send_order_shipped,
+                order_user["email"],
+                order,
+                tracking_number
+            )
+    
     return {"message": "Order status updated"}
 
 # ==================== PAYMENTS ====================

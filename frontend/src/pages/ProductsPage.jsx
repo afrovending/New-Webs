@@ -249,8 +249,8 @@ const ProductsPage = () => {
           ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
               {products.map((product) => (
-                <Link key={product.id} to={`/products/${product.id}`}>
-                  <Card className="group hover:shadow-lg transition-shadow cursor-pointer overflow-hidden h-full" data-testid={`product-card-${product.id}`}>
+                <Card key={product.id} className="group hover:shadow-lg transition-shadow overflow-hidden h-full" data-testid={`product-card-${product.id}`}>
+                  <Link to={`/products/${product.id}`}>
                     <div className="aspect-square bg-gray-100 relative overflow-hidden">
                       {product.images?.[0] ? (
                         <img
@@ -268,40 +268,47 @@ const ProductsPage = () => {
                           {Math.round((1 - product.price / product.compare_price) * 100)}% OFF
                         </Badge>
                       )}
+                    </div>
+                  </Link>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <div className="flex items-center gap-1">
+                        <p className="text-sm text-gray-500">{product.vendor_name}</p>
+                        {product.vendor_verified && (
+                          <BadgeCheck className="h-3.5 w-3.5 text-blue-500" title="Verified Vendor" />
+                        )}
+                      </div>
+                      <WishlistButton productId={product.id} size="sm" />
+                    </div>
+                    <Link to={`/products/${product.id}`}>
+                      <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-red-600 transition-colors">
+                        {product.name}
+                      </h3>
+                    </Link>
+                    <div className="flex items-center gap-1 mt-2">
+                      <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                      <span className="text-sm text-gray-600">
+                        {product.average_rating?.toFixed(1) || '0.0'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-lg font-bold text-red-600">{formatPrice(product.price)}</span>
+                        {product.compare_price && product.compare_price > product.price && (
+                          <span className="text-sm text-gray-400 line-through">{formatPrice(product.compare_price)}</span>
+                        )}
+                      </div>
                       <Button
                         size="icon"
-                        className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-600 hover:bg-red-700"
+                        className="h-8 w-8 bg-red-600 hover:bg-red-700"
                         onClick={(e) => handleAddToCart(e, product)}
                         data-testid={`add-to-cart-${product.id}`}
                       >
                         <ShoppingCart className="h-4 w-4" />
                       </Button>
                     </div>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-1 mb-1">
-                        <p className="text-sm text-gray-500">{product.vendor_name}</p>
-                        {product.vendor_verified && (
-                          <BadgeCheck className="h-3.5 w-3.5 text-blue-500" title="Verified Vendor" />
-                        )}
-                      </div>
-                      <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-red-600 transition-colors">
-                        {product.name}
-                      </h3>
-                      <div className="flex items-center gap-1 mt-2">
-                        <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                        <span className="text-sm text-gray-600">
-                          {product.average_rating?.toFixed(1) || '0.0'}
-                        </span>
-                      </div>
-                      <div className="flex items-baseline gap-2 mt-2">
-                        <span className="text-lg font-bold text-red-600">${product.price}</span>
-                        {product.compare_price && product.compare_price > product.price && (
-                          <span className="text-sm text-gray-400 line-through">${product.compare_price}</span>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           ) : (

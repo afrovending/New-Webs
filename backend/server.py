@@ -649,7 +649,6 @@ async def get_vendors(
     
     vendors = await db.vendors.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
     return vendors
-    return vendors
 
 @api_router.get("/vendors/{vendor_id}")
 async def get_vendor(vendor_id: str):

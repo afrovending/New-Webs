@@ -12,7 +12,7 @@ const VendorsPage = () => {
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(searchParams.get('search') || '');
-  const [country, setCountry] = useState('');
+  const [country, setCountry] = useState('all');
   const [countries, setCountries] = useState([]);
 
   useEffect(() => {

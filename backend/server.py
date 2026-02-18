@@ -1949,7 +1949,7 @@ async def unverify_vendor(vendor_id: str, user: dict = Depends(get_current_user)
     return {"message": "Vendor verification removed"}
 
 @api_router.put("/admin/vendors/{vendor_id}/deactivate")
-async def deactivate_vendor(vendor_id: str, reason: str = "", user: dict = Depends(get_current_user)):
+async def deactivate_vendor(vendor_id: str, reason: str = "", background_tasks: BackgroundTasks = None, user: dict = Depends(get_current_user)):
     """Deactivate a vendor for non-compliance (admin)"""
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -1972,13 +1972,25 @@ async def deactivate_vendor(vendor_id: str, reason: str = "", user: dict = Depen
     await db.products.update_many({"vendor_id": vendor_id}, {"$set": {"is_active": False}})
     await db.services.update_many({"vendor_id": vendor_id}, {"$set": {"is_active": False}})
     
+    # Send deactivation email notification
+    vendor_user = await db.users.find_one({"id": vendor.get("user_id")}, {"_id": 0, "email": 1})
+    if vendor_user and background_tasks:
+        background_tasks.add_task(
+            email_service.send_vendor_deactivation,
+            vendor_user["email"],
+            vendor.get("store_name", "Vendor"),
+            reason or "Policy violation"
+        )
+    
     return {"message": "Vendor deactivated successfully", "reason": reason}
 
 @api_router.put("/admin/vendors/{vendor_id}/activate")
-async def activate_vendor(vendor_id: str, user: dict = Depends(get_current_user)):
+async def activate_vendor(vendor_id: str, background_tasks: BackgroundTasks = None, user: dict = Depends(get_current_user)):
     """Reactivate a deactivated vendor (admin)"""
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
+    
+    vendor = await db.vendors.find_one({"id": vendor_id})
     
     await db.vendors.update_one(
         {"id": vendor_id}, 
@@ -1988,6 +2000,16 @@ async def activate_vendor(vendor_id: str, user: dict = Depends(get_current_user)
     # Reactivate all vendor's products and services
     await db.products.update_many({"vendor_id": vendor_id}, {"$set": {"is_active": True}})
     await db.services.update_many({"vendor_id": vendor_id}, {"$set": {"is_active": True}})
+    
+    # Send reactivation email notification
+    if vendor:
+        vendor_user = await db.users.find_one({"id": vendor.get("user_id")}, {"_id": 0, "email": 1})
+        if vendor_user and background_tasks:
+            background_tasks.add_task(
+                email_service.send_vendor_reactivation,
+                vendor_user["email"],
+                vendor.get("store_name", "Vendor")
+            )
     
     return {"message": "Vendor reactivated successfully"}
 

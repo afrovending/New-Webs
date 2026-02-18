@@ -178,6 +178,9 @@ class OrderResponse(BaseModel):
 class ReviewCreate(BaseModel):
     rating: int
     comment: str
+    title: Optional[str] = None
+    images: List[str] = []
+    would_recommend: bool = True
     product_id: Optional[str] = None
     service_id: Optional[str] = None
 
@@ -204,3 +207,19 @@ class PriceAlertCreate(BaseModel):
     target_price: float
     notify_email: bool = True
     notify_app: bool = True
+
+
+# ==================== SEARCH MODELS ====================
+class AdvancedSearchParams(BaseModel):
+    query: Optional[str] = None
+    category_id: Optional[str] = None
+    vendor_id: Optional[str] = None
+    country: Optional[str] = None
+    min_price: Optional[float] = None
+    max_price: Optional[float] = None
+    min_rating: Optional[float] = None
+    verified_only: bool = False
+    sort_by: str = "relevance"
+    page: int = 1
+    limit: int = 20
+

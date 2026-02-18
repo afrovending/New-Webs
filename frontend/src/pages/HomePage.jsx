@@ -266,6 +266,9 @@ const HomePage = () => {
         </div>
       </section>
 
+      {/* Recently Sold - Social Proof */}
+      <RecentlySold />
+
       {/* Vendor Spotlight Section */}
       {spotlightVendor && (
         <section className="py-20 bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">

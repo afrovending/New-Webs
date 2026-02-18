@@ -215,6 +215,7 @@ class ProductCreate(BaseModel):
     images: List[str] = []
     stock: int = 0
     tags: List[str] = []
+    fulfillment_option: str = "FBV"  # FBV (Fulfilled by Vendor) or FBA (Fulfilled by AfroVending)
 
 class ProductResponse(BaseModel):
     id: str
@@ -228,6 +229,7 @@ class ProductResponse(BaseModel):
     stock: int
     is_active: bool
     tags: List[str] = []
+    fulfillment_option: str = "FBV"
     average_rating: float = 0
     review_count: int = 0
     created_at: str

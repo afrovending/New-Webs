@@ -54,6 +54,27 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
   - Visual status timeline (pending → confirmed → processing → shipped → delivered)
   - Order detail page with tracking number
   - Support for cancelled/refunded states
+- **Price Alerts** (NEW):
+  - Set target price alerts on products
+  - Quick discount buttons (-10%, -20%, -30%)
+  - Email and in-app notification preferences
+  - View and manage all price alerts
+- **PDF Invoice Download** (NEW):
+  - Download professional PDF invoices for orders
+  - Branded invoice design with AfroVending branding
+  - Includes order details, items, shipping address
+- **Reorder Items** (NEW):
+  - One-click reorder from order history
+  - Adds all items from previous order to cart
+- **Fulfillment Options** (NEW):
+  - FBV (Fulfilled by Vendor) - vendor ships directly
+  - FBA (Fulfilled by AfroVending) - ship to US warehouse
+  - Fulfillment badges on product cards
+- **Social Proof Components** (NEW):
+  - "Recently Sold" live ticker on homepage
+  - Shows products sold with country and time
+  - Vendor Success Stories section
+  - Displays top vendors with sales stats
 
 ### UI/UX Features
 - Red-themed brand identity with custom logo
@@ -113,6 +134,17 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - `GET /api/orders/{order_id}/timeline` - Get order status timeline
 - `GET /api/orders/{order_id}/detail` - Get detailed order info
 - `PUT /api/orders/{order_id}/update-status` - Update with history tracking
+- `GET /api/orders/{order_id}/invoice` - Download PDF invoice (NEW)
+- `POST /api/orders/{order_id}/reorder` - Reorder all items (NEW)
+
+### Price Alerts (NEW)
+- `POST /api/price-alerts/create` - Create price alert
+- `GET /api/price-alerts` - Get user's price alerts
+- `DELETE /api/price-alerts/{alert_id}` - Delete price alert
+
+### Social Proof (NEW)
+- `GET /api/homepage/recently-sold` - Get recently sold items
+- `GET /api/homepage/vendor-success` - Get vendor success stories
 
 ### Reviews
 - `POST /api/reviews/create` - Create review (requires purchase)
@@ -158,13 +190,16 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - [x] Customer reviews & ratings - DONE
 - [x] Advanced search filters - DONE
 - [x] Email notifications - DONE
+- [x] Price Alerts feature - DONE
+- [x] PDF Invoice download - DONE
+- [x] Reorder items from history - DONE
+- [x] Fulfillment options (FBA/FBV) - DONE
+- [x] Social proof (Recently Sold, Vendor Success) - DONE
 - [ ] **User action**: Save to GitHub and Redeploy on DigitalOcean
 
 ### P1 (High Priority)
 - [ ] Refactor server.py into modular routes (3500+ lines)
 - [ ] Add product images to seeded data
-- [ ] Invoice/receipt download
-- [ ] Reorder previous items
 
 ### P2 (Medium Priority)
 - [ ] Progressive Web App (PWA) support
@@ -174,7 +209,6 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 ### P3 (Nice to Have)
 - [ ] Native mobile app
 - [ ] Chat between buyer and vendor
-- [ ] Price alerts for wishlisted items
 
 ## Test Credentials
 - **Admin**: admin@afrovending.com / AfroAdmin2024!
@@ -183,8 +217,13 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 ## Key Files
 - `/app/backend/server.py` - Main API (3500+ lines)
 - `/app/backend/email_service.py` - SendGrid email templates
+- `/app/backend/invoice_service.py` - PDF invoice generation (NEW)
 - `/app/frontend/src/contexts/CurrencyContext.js` - Live currency provider
 - `/app/frontend/src/pages/WishlistPage.jsx` - Wishlist UI
-- `/app/frontend/src/pages/OrderHistoryPage.jsx` - Order History & Timeline
+- `/app/frontend/src/pages/OrderHistoryPage.jsx` - Order History, Invoice & Reorder
+- `/app/frontend/src/pages/vendor/VendorProducts.jsx` - Product form with fulfillment options
 - `/app/frontend/src/components/Reviews.jsx` - Review components
 - `/app/frontend/src/components/WishlistButton.jsx` - Heart button
+- `/app/frontend/src/components/PriceAlertButton.jsx` - Price alert dialog (NEW)
+- `/app/frontend/src/components/RecentlySold.jsx` - Social proof ticker (NEW)
+- `/app/frontend/src/components/VendorSuccess.jsx` - Vendor success stories (NEW)

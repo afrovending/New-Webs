@@ -466,6 +466,9 @@ const HomePage = () => {
         </div>
       </section>
 
+      {/* Vendor Success Stories - Social Proof */}
+      <VendorSuccess />
+
       {/* CTA Section */}
       <section className="py-16 bg-gradient-to-r from-red-600 to-red-800 text-white">
         <div className="container mx-auto px-4 text-center">

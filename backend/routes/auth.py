@@ -47,6 +47,7 @@ async def register(user_data: UserCreate):
 @router.post("/login", response_model=TokenResponse)
 async def login(credentials: UserLogin):
     """Login with email/password"""
+    db = get_db()
     user = await db.users.find_one({"email": credentials.email}, {"_id": 0})
     
     if not user:

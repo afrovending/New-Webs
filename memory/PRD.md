@@ -43,6 +43,7 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
   - Vendor reactivation notification
   - Password reset emails
   - Vendor approval notification
+  - **Price Drop Alert emails** (NEW - sends when product price drops below target)
 - **Wishlist Functionality**:
   - Add/remove products from wishlist
   - Wishlist page with product cards

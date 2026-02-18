@@ -10,17 +10,17 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - **Product Catalog**: Full CRUD with categories, images, pricing, stock management
 - **Service Catalog**: Separate catalog for services with duration, location type
 - **Vendor System**: Registration, approval workflow, store profiles, verified badges
-- **Shopping Cart & Checkout**: Stripe payment integration
+- **Shopping Cart & Checkout**: Stripe payment integration (LIVE)
 - **Admin Panel**: User management, vendor approvals, content moderation
 - **Admin Analytics Dashboard**: Comprehensive platform stats with growth indicators
 - **Vendor Deactivation**: Admin can deactivate/reactivate vendors for non-compliance
 
 ### NEW Features (Feb 18, 2026)
-- **Multi-Currency Support**: 11 currencies (USD, EUR, GBP, NGN, KES, ZAR, GHS, EGP, MAD, XOF, XAF)
+- **Multi-Currency Support**: 11 currencies with LIVE exchange rates from exchangerate-api.com
   - Auto-detect currency by visitor IP
   - Currency selector in header
   - Prices display in selected currency (vendors set prices in USD)
-  - Conversion rates applied in real-time
+  - Real-time rates cached hourly
 - **Customer Reviews & Ratings**:
   - Star ratings (1-5) with review comments
   - Optional review title and images
@@ -31,7 +31,7 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - **Advanced Search Filters**:
   - Text search across name/description
   - Category and vendor filters
-  - Price range filter
+  - Price range filter (with currency conversion)
   - Minimum rating filter
   - Verified vendor filter
   - Sort by: relevance, price, rating, newest
@@ -43,6 +43,17 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
   - Vendor reactivation notification
   - Password reset emails
   - Vendor approval notification
+- **Wishlist Functionality**:
+  - Add/remove products from wishlist
+  - Wishlist page with product cards
+  - Move to cart functionality
+  - Wishlist button on product cards
+  - Wishlist icon in header
+- **Order History with Timeline**:
+  - Order history page with filtering
+  - Visual status timeline (pending → confirmed → processing → shipped → delivered)
+  - Order detail page with tracking number
+  - Support for cancelled/refunded states
 
 ### UI/UX Features
 - Red-themed brand identity with custom logo
@@ -56,33 +67,22 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - Password visibility toggle on login/register
 - Forgot password flow
 
-### Pages
-- Homepage with featured products, services, vendor spotlight
-- Product listing and detail pages with reviews
-- Service listing and detail pages
-- Category landing pages (Fashion, Home, Food, Beauty, Health)
-- Vendor pricing/subscription page
-- Cart and checkout flow
-- Admin dashboard with analytics
-- Admin vendor management with deactivation
-- Vendor dashboard with analytics
-- Vendor subscription management
-- Forgot password page
-- Reset password page
-
 ## Technical Architecture
 - **Backend**: FastAPI, Python 3.9, MongoDB (Motor async driver)
 - **Frontend**: React.js 18.2.0, Tailwind CSS, shadcn/ui
 - **Payments**: Stripe SDK (live integration)
 - **Email**: SendGrid
+- **Currency**: exchangerate-api.com (live rates)
 - **Deployment**: DigitalOcean App Platform
 - **API Prefix**: All routes under `/api` prefix
 
 ## Current Status (Updated Feb 18, 2026)
 
 ### Completed
-- All E2E tests passed (22/22 backend, 100% frontend)
-- Multi-currency with 11 supported currencies
+- All E2E tests passed (26+ backend, 95%+ frontend)
+- Multi-currency with LIVE exchange rates
+- Wishlist functionality with move-to-cart
+- Order history with visual status timeline
 - Customer reviews & ratings system
 - Advanced search with filters
 - Email notifications via SendGrid
@@ -90,22 +90,29 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - Production database seeding script
 - Full Admin Analytics Dashboard
 - Vendor Management with deactivation controls
-- Login bug fix (password hash field compatibility)
-- Vendors page blank fix
 
 ### Pending Deployment
 - User needs to **Save to GitHub** and **Redeploy on DigitalOcean**
 
 ## API Endpoints
 
-### Currency
-- `GET /api/currency/rates` - Get all supported currencies and rates
-- `GET /api/currency/convert?amount=X&from_currency=USD&to_currency=NGN` - Convert
-- `GET /api/currency/detect` - Auto-detect currency by IP
+### Currency (Live Rates)
+- `GET /api/currency/live-rates` - Get live exchange rates (cached hourly)
+- `GET /api/currency/convert-live?amount=X&from_currency=USD&to_currency=NGN` - Live conversion
 
-### Search
-- `POST /api/search/products` - Advanced product search with filters
-- `POST /api/search/services` - Advanced service search with filters
+### Wishlist
+- `GET /api/wishlist` - Get user's wishlist with product details
+- `POST /api/wishlist/add` - Add product to wishlist
+- `DELETE /api/wishlist/remove/{item_id}` - Remove from wishlist
+- `DELETE /api/wishlist/remove-product/{product_id}` - Remove by product ID
+- `GET /api/wishlist/check/{product_id}` - Check if in wishlist
+- `POST /api/wishlist/move-to-cart/{item_id}` - Move to cart
+
+### Order History
+- `GET /api/orders/history?status=&page=&limit=` - Get order history
+- `GET /api/orders/{order_id}/timeline` - Get order status timeline
+- `GET /api/orders/{order_id}/detail` - Get detailed order info
+- `PUT /api/orders/{order_id}/update-status` - Update with history tracking
 
 ### Reviews
 - `POST /api/reviews/create` - Create review (requires purchase)
@@ -114,20 +121,20 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - `GET /api/reviews/vendor/{vendor_id}` - Get all vendor reviews
 - `POST /api/reviews/{review_id}/helpful` - Mark review helpful
 
-### Admin
-- `GET /api/admin/analytics?period=30d` - Admin analytics
-- `GET /api/admin/vendors?status=all` - Admin vendor list
-- `PUT /api/admin/vendors/{id}/deactivate?reason=text` - Deactivate (sends email)
-- `PUT /api/admin/vendors/{id}/activate` - Reactivate (sends email)
+### Search
+- `POST /api/search/products` - Advanced product search
+- `POST /api/search/services` - Advanced service search
 
-### Existing
-- `POST /api/auth/login` - User login
-- `POST /api/auth/forgot-password` - Password reset request
-- `POST /api/orders` - Create order (sends email)
-- `PUT /api/orders/{id}/status` - Update status (sends email if shipped)
-- `POST /api/bookings` - Create booking (sends email)
+## Order Status Flow
+1. **Pending** - Order received
+2. **Confirmed** - Vendor confirmed
+3. **Processing** - Being prepared
+4. **Shipped** - On the way (with tracking)
+5. **Out for Delivery** - Arriving today
+6. **Delivered** - Complete
+- Also: Cancelled, Refunded
 
-## Supported Currencies
+## Supported Currencies (Live Rates)
 | Code | Symbol | Name |
 |------|--------|------|
 | USD | $ | US Dollar |
@@ -145,35 +152,39 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 ## Prioritized Backlog
 
 ### P0 (Critical)
-- [x] Multi-currency support - DONE
+- [x] Multi-currency with live rates - DONE
+- [x] Wishlist functionality - DONE
+- [x] Order history with timeline - DONE
 - [x] Customer reviews & ratings - DONE
 - [x] Advanced search filters - DONE
 - [x] Email notifications - DONE
 - [ ] **User action**: Save to GitHub and Redeploy on DigitalOcean
 
 ### P1 (High Priority)
-- [ ] Refactor server.py into modular routes (auth.py, products.py, admin.py)
+- [ ] Refactor server.py into modular routes (3500+ lines)
 - [ ] Add product images to seeded data
-- [ ] Integrate real-time exchange rate API
+- [ ] Invoice/receipt download
+- [ ] Reorder previous items
 
 ### P2 (Medium Priority)
-- [ ] Wishlist functionality
-- [ ] Order history page
+- [ ] Progressive Web App (PWA) support
+- [ ] Push notifications
 - [ ] Vendor analytics improvements
 
 ### P3 (Nice to Have)
-- [ ] Mobile app
-- [ ] Push notifications
+- [ ] Native mobile app
 - [ ] Chat between buyer and vendor
+- [ ] Price alerts for wishlisted items
 
 ## Test Credentials
 - **Admin**: admin@afrovending.com / AfroAdmin2024!
 - **Vendor**: vendor@afrovending.com / AfroVendor2024!
 
 ## Key Files
-- `/app/backend/server.py` - Main API (2600+ lines)
+- `/app/backend/server.py` - Main API (3500+ lines)
 - `/app/backend/email_service.py` - SendGrid email templates
-- `/app/frontend/src/contexts/CurrencyContext.js` - Currency state management
+- `/app/frontend/src/contexts/CurrencyContext.js` - Live currency provider
+- `/app/frontend/src/pages/WishlistPage.jsx` - Wishlist UI
+- `/app/frontend/src/pages/OrderHistoryPage.jsx` - Order History & Timeline
 - `/app/frontend/src/components/Reviews.jsx` - Review components
-- `/app/frontend/src/components/AdvancedSearch.jsx` - Search filters
-- `/app/frontend/src/components/CurrencySelector.jsx` - Currency dropdown
+- `/app/frontend/src/components/WishlistButton.jsx` - Heart button

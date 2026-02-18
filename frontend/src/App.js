@@ -18,6 +18,8 @@ import VendorsPage from './pages/VendorsPage';
 import VendorStorePage from './pages/VendorStorePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import PricingPage from './pages/PricingPage';

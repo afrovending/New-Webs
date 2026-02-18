@@ -196,11 +196,13 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - [x] Reorder items from history - DONE
 - [x] Fulfillment options (FBA/FBV) - DONE
 - [x] Social proof (Recently Sold, Vendor Success) - DONE
+- [x] African product images - DONE
+- [x] Price Drop Alert email notification - DONE
 - [ ] **User action**: Save to GitHub and Redeploy on DigitalOcean
 
 ### P1 (High Priority)
-- [ ] Refactor server.py into modular routes (3500+ lines)
-- [ ] Add product images to seeded data
+- [x] Started refactoring: Created /app/backend/models.py, database.py, auth.py, routes/
+- [ ] Complete server.py refactoring into modular routes (4252 lines currently)
 
 ### P2 (Medium Priority)
 - [ ] Progressive Web App (PWA) support

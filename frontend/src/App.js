@@ -25,6 +25,7 @@ import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import PricingPage from './pages/PricingPage';
 import CategoryLandingPage from './pages/CategoryLandingPage';
+import WishlistPage from './pages/WishlistPage';
 
 // Protected Pages
 import DashboardPage from './pages/DashboardPage';
@@ -32,6 +33,7 @@ import OrdersPage from './pages/OrdersPage';
 import BookingsPage from './pages/BookingsPage';
 import MessagesPage from './pages/MessagesPage';
 import ProfilePage from './pages/ProfilePage';
+import { OrderHistoryPage, OrderDetailPage } from './pages/OrderHistoryPage';
 
 // Vendor Pages
 import VendorDashboard from './pages/vendor/VendorDashboard';

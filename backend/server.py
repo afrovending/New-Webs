@@ -3198,6 +3198,468 @@ async def get_vendor_reviews(
         "pages": (total + limit - 1) // limit
     }
 
+# ==================== WISHLIST ====================
+
+class WishlistItem(BaseModel):
+    product_id: Optional[str] = None
+    service_id: Optional[str] = None
+
+@api_router.get("/wishlist")
+async def get_wishlist(user: dict = Depends(get_current_user)):
+    """Get user's wishlist with full product/service details"""
+    wishlist = await db.wishlists.find({"user_id": user["id"]}, {"_id": 0}).to_list(100)
+    
+    # Enrich with product/service details
+    enriched_items = []
+    for item in wishlist:
+        enriched_item = {**item}
+        if item.get("product_id"):
+            product = await db.products.find_one({"id": item["product_id"]}, {"_id": 0})
+            if product:
+                enriched_item["product"] = product
+                # Get vendor info
+                vendor = await db.vendors.find_one({"id": product.get("vendor_id")}, {"_id": 0, "store_name": 1, "is_verified": 1})
+                if vendor:
+                    enriched_item["vendor"] = vendor
+        elif item.get("service_id"):
+            service = await db.services.find_one({"id": item["service_id"]}, {"_id": 0})
+            if service:
+                enriched_item["service"] = service
+                vendor = await db.vendors.find_one({"id": service.get("vendor_id")}, {"_id": 0, "store_name": 1, "is_verified": 1})
+                if vendor:
+                    enriched_item["vendor"] = vendor
+        enriched_items.append(enriched_item)
+    
+    return {"items": enriched_items, "count": len(enriched_items)}
+
+@api_router.post("/wishlist/add")
+async def add_to_wishlist(item: WishlistItem, user: dict = Depends(get_current_user)):
+    """Add a product or service to wishlist"""
+    if not item.product_id and not item.service_id:
+        raise HTTPException(status_code=400, detail="Must specify product_id or service_id")
+    
+    # Check if item exists
+    if item.product_id:
+        product = await db.products.find_one({"id": item.product_id})
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
+        
+        # Check if already in wishlist
+        existing = await db.wishlists.find_one({
+            "user_id": user["id"],
+            "product_id": item.product_id
+        })
+        if existing:
+            raise HTTPException(status_code=400, detail="Product already in wishlist")
+        
+        wishlist_item = {
+            "id": str(uuid.uuid4()),
+            "user_id": user["id"],
+            "product_id": item.product_id,
+            "added_at": datetime.now(timezone.utc).isoformat()
+        }
+    else:
+        service = await db.services.find_one({"id": item.service_id})
+        if not service:
+            raise HTTPException(status_code=404, detail="Service not found")
+        
+        existing = await db.wishlists.find_one({
+            "user_id": user["id"],
+            "service_id": item.service_id
+        })
+        if existing:
+            raise HTTPException(status_code=400, detail="Service already in wishlist")
+        
+        wishlist_item = {
+            "id": str(uuid.uuid4()),
+            "user_id": user["id"],
+            "service_id": item.service_id,
+            "added_at": datetime.now(timezone.utc).isoformat()
+        }
+    
+    await db.wishlists.insert_one(wishlist_item)
+    return {"message": "Added to wishlist", "item": wishlist_item}
+
+@api_router.delete("/wishlist/remove/{item_id}")
+async def remove_from_wishlist(item_id: str, user: dict = Depends(get_current_user)):
+    """Remove an item from wishlist"""
+    result = await db.wishlists.delete_one({"id": item_id, "user_id": user["id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Wishlist item not found")
+    return {"message": "Removed from wishlist"}
+
+@api_router.delete("/wishlist/remove-product/{product_id}")
+async def remove_product_from_wishlist(product_id: str, user: dict = Depends(get_current_user)):
+    """Remove a product from wishlist by product ID"""
+    result = await db.wishlists.delete_one({"product_id": product_id, "user_id": user["id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Product not in wishlist")
+    return {"message": "Removed from wishlist"}
+
+@api_router.get("/wishlist/check/{product_id}")
+async def check_wishlist(product_id: str, user: dict = Depends(get_current_user)):
+    """Check if a product is in user's wishlist"""
+    item = await db.wishlists.find_one({
+        "user_id": user["id"],
+        "product_id": product_id
+    })
+    return {"in_wishlist": item is not None, "item_id": item["id"] if item else None}
+
+@api_router.post("/wishlist/move-to-cart/{item_id}")
+async def move_wishlist_to_cart(item_id: str, user: dict = Depends(get_current_user)):
+    """Move a wishlist item to cart"""
+    wishlist_item = await db.wishlists.find_one({"id": item_id, "user_id": user["id"]})
+    if not wishlist_item:
+        raise HTTPException(status_code=404, detail="Wishlist item not found")
+    
+    if wishlist_item.get("product_id"):
+        product = await db.products.find_one({"id": wishlist_item["product_id"]}, {"_id": 0})
+        if not product:
+            raise HTTPException(status_code=404, detail="Product no longer available")
+        
+        if product.get("stock", 0) < 1:
+            raise HTTPException(status_code=400, detail="Product out of stock")
+        
+        # Add to cart
+        cart = await db.carts.find_one({"user_id": user["id"]})
+        if cart:
+            # Check if product already in cart
+            existing_item = next((i for i in cart.get("items", []) if i["product_id"] == product["id"]), None)
+            if existing_item:
+                await db.carts.update_one(
+                    {"user_id": user["id"], "items.product_id": product["id"]},
+                    {"$inc": {"items.$.quantity": 1}}
+                )
+            else:
+                await db.carts.update_one(
+                    {"user_id": user["id"]},
+                    {"$push": {"items": {"product_id": product["id"], "quantity": 1}}}
+                )
+        else:
+            await db.carts.insert_one({
+                "user_id": user["id"],
+                "items": [{"product_id": product["id"], "quantity": 1}],
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+        
+        # Remove from wishlist
+        await db.wishlists.delete_one({"id": item_id})
+        return {"message": "Moved to cart"}
+    else:
+        raise HTTPException(status_code=400, detail="Services cannot be added to cart")
+
+# ==================== ENHANCED ORDER HISTORY ====================
+
+ORDER_STATUS_FLOW = [
+    {"status": "pending", "label": "Order Placed", "description": "Your order has been received"},
+    {"status": "confirmed", "label": "Confirmed", "description": "Order confirmed by vendor"},
+    {"status": "processing", "label": "Processing", "description": "Your order is being prepared"},
+    {"status": "shipped", "label": "Shipped", "description": "Your order is on its way"},
+    {"status": "out_for_delivery", "label": "Out for Delivery", "description": "Your order will arrive today"},
+    {"status": "delivered", "label": "Delivered", "description": "Order successfully delivered"},
+]
+
+@api_router.get("/orders/history")
+async def get_order_history(
+    status: str = None,
+    page: int = 1,
+    limit: int = 10,
+    user: dict = Depends(get_current_user)
+):
+    """Get user's order history with filtering and pagination"""
+    query = {"user_id": user["id"]}
+    if status:
+        query["status"] = status
+    
+    skip = (page - 1) * limit
+    
+    orders = await db.orders.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    total = await db.orders.count_documents(query)
+    
+    # Enrich with product images and vendor info
+    for order in orders:
+        for item in order.get("items", []):
+            product = await db.products.find_one({"id": item.get("product_id")}, {"_id": 0, "images": 1, "name": 1})
+            if product:
+                item["product_image"] = product.get("images", [None])[0]
+                item["product_name"] = product.get("name", item.get("product_name", "Unknown"))
+    
+    return {
+        "orders": orders,
+        "total": total,
+        "page": page,
+        "pages": (total + limit - 1) // limit
+    }
+
+@api_router.get("/orders/{order_id}/timeline")
+async def get_order_timeline(order_id: str, user: dict = Depends(get_current_user)):
+    """Get order status timeline"""
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Check authorization
+    if order["user_id"] != user["id"] and user.get("role") != "admin":
+        vendor = await db.vendors.find_one({"user_id": user["id"]})
+        if not vendor or not any(item.get("vendor_id") == vendor["id"] for item in order.get("items", [])):
+            raise HTTPException(status_code=403, detail="Not authorized")
+    
+    current_status = order.get("status", "pending")
+    status_history = order.get("status_history", [])
+    
+    # Build timeline
+    timeline = []
+    status_reached = False
+    
+    for stage in ORDER_STATUS_FLOW:
+        stage_data = {
+            "status": stage["status"],
+            "label": stage["label"],
+            "description": stage["description"],
+            "completed": False,
+            "current": False,
+            "timestamp": None
+        }
+        
+        # Check if this status was reached
+        history_entry = next((h for h in status_history if h.get("status") == stage["status"]), None)
+        if history_entry:
+            stage_data["completed"] = True
+            stage_data["timestamp"] = history_entry.get("timestamp")
+        
+        if stage["status"] == current_status:
+            stage_data["current"] = True
+            stage_data["completed"] = True
+            if not stage_data["timestamp"]:
+                stage_data["timestamp"] = order.get("updated_at") or order.get("created_at")
+            status_reached = True
+        elif not status_reached:
+            stage_data["completed"] = True
+            if not stage_data["timestamp"]:
+                stage_data["timestamp"] = order.get("created_at")
+        
+        timeline.append(stage_data)
+    
+    # Handle cancelled/refunded orders
+    if current_status == "cancelled":
+        timeline.append({
+            "status": "cancelled",
+            "label": "Cancelled",
+            "description": order.get("cancellation_reason", "Order was cancelled"),
+            "completed": True,
+            "current": True,
+            "timestamp": order.get("cancelled_at")
+        })
+    elif current_status == "refunded":
+        timeline.append({
+            "status": "refunded",
+            "label": "Refunded",
+            "description": "Refund has been processed",
+            "completed": True,
+            "current": True,
+            "timestamp": order.get("refunded_at")
+        })
+    
+    return {
+        "order_id": order_id,
+        "current_status": current_status,
+        "tracking_number": order.get("tracking_number"),
+        "estimated_delivery": order.get("estimated_delivery"),
+        "timeline": timeline,
+        "order_date": order.get("created_at"),
+        "total": order.get("total")
+    }
+
+@api_router.put("/orders/{order_id}/update-status")
+async def update_order_status_with_history(
+    order_id: str,
+    status: str,
+    tracking_number: str = None,
+    estimated_delivery: str = None,
+    note: str = None,
+    background_tasks: BackgroundTasks = None,
+    user: dict = Depends(get_current_user)
+):
+    """Update order status with history tracking (vendor/admin)"""
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Check authorization
+    if user.get("role") != "admin":
+        vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+        if not vendor or not any(item["vendor_id"] == vendor["id"] for item in order.get("items", [])):
+            raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Build status history entry
+    history_entry = {
+        "status": status,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "updated_by": user["id"],
+        "note": note
+    }
+    
+    update_data = {
+        "status": status,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    if tracking_number:
+        update_data["tracking_number"] = tracking_number
+    if estimated_delivery:
+        update_data["estimated_delivery"] = estimated_delivery
+    
+    await db.orders.update_one(
+        {"id": order_id},
+        {
+            "$set": update_data,
+            "$push": {"status_history": history_entry}
+        }
+    )
+    
+    # Send shipping notification email if status is shipped
+    if status == "shipped" and background_tasks:
+        order_user = await db.users.find_one({"id": order["user_id"]}, {"_id": 0, "email": 1})
+        if order_user:
+            background_tasks.add_task(
+                email_service.send_order_shipped,
+                order_user["email"],
+                order,
+                tracking_number
+            )
+    
+    return {"message": "Order status updated", "status": status, "timeline_entry": history_entry}
+
+@api_router.get("/orders/{order_id}/detail")
+async def get_order_detail(order_id: str, user: dict = Depends(get_current_user)):
+    """Get detailed order information"""
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Check authorization
+    if order["user_id"] != user["id"] and user.get("role") != "admin":
+        vendor = await db.vendors.find_one({"user_id": user["id"]})
+        if not vendor or not any(item.get("vendor_id") == vendor["id"] for item in order.get("items", [])):
+            raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Enrich items with full product details
+    enriched_items = []
+    for item in order.get("items", []):
+        enriched_item = {**item}
+        product = await db.products.find_one({"id": item.get("product_id")}, {"_id": 0})
+        if product:
+            enriched_item["product"] = {
+                "id": product.get("id"),
+                "name": product.get("name"),
+                "images": product.get("images", []),
+                "price": product.get("price")
+            }
+            vendor = await db.vendors.find_one({"id": product.get("vendor_id")}, {"_id": 0, "store_name": 1, "is_verified": 1})
+            if vendor:
+                enriched_item["vendor"] = vendor
+        enriched_items.append(enriched_item)
+    
+    order["items"] = enriched_items
+    
+    # Get timeline
+    timeline_data = await get_order_timeline(order_id, user)
+    order["timeline"] = timeline_data.get("timeline", [])
+    
+    return order
+
+# ==================== REAL-TIME EXCHANGE RATES ====================
+
+# Cache for exchange rates (refresh every hour)
+exchange_rate_cache = {
+    "rates": {},
+    "last_updated": None
+}
+
+async def fetch_live_exchange_rates():
+    """Fetch live exchange rates from free API"""
+    global exchange_rate_cache
+    
+    # Check cache (refresh every hour)
+    if exchange_rate_cache["last_updated"]:
+        cache_age = datetime.now(timezone.utc) - exchange_rate_cache["last_updated"]
+        if cache_age.total_seconds() < 3600:  # 1 hour
+            return exchange_rate_cache["rates"]
+    
+    try:
+        # Using exchangerate-api.com free tier
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://api.exchangerate-api.com/v4/latest/USD",
+                timeout=10.0
+            )
+            if response.status_code == 200:
+                data = response.json()
+                rates = data.get("rates", {})
+                
+                # Filter to our supported currencies
+                filtered_rates = {}
+                for currency in CURRENCY_SYMBOLS.keys():
+                    if currency in rates:
+                        filtered_rates[currency] = rates[currency]
+                    elif currency in EXCHANGE_RATES:
+                        # Fallback to static rate
+                        filtered_rates[currency] = EXCHANGE_RATES[currency]
+                
+                exchange_rate_cache["rates"] = filtered_rates
+                exchange_rate_cache["last_updated"] = datetime.now(timezone.utc)
+                
+                logger.info(f"Updated exchange rates from API: {len(filtered_rates)} currencies")
+                return filtered_rates
+    except Exception as e:
+        logger.warning(f"Failed to fetch live exchange rates: {e}")
+    
+    # Fallback to static rates
+    return EXCHANGE_RATES
+
+@api_router.get("/currency/live-rates")
+async def get_live_exchange_rates():
+    """Get live exchange rates (cached, refreshed hourly)"""
+    rates = await fetch_live_exchange_rates()
+    
+    return {
+        "base": "USD",
+        "rates": rates,
+        "symbols": CURRENCY_SYMBOLS,
+        "supported_currencies": list(CURRENCY_SYMBOLS.keys()),
+        "last_updated": exchange_rate_cache["last_updated"].isoformat() if exchange_rate_cache["last_updated"] else None,
+        "source": "exchangerate-api.com"
+    }
+
+@api_router.get("/currency/convert-live")
+async def convert_currency_live(
+    amount: float,
+    from_currency: str = "USD",
+    to_currency: str = "USD"
+):
+    """Convert amount using live exchange rates"""
+    from_currency = from_currency.upper()
+    to_currency = to_currency.upper()
+    
+    rates = await fetch_live_exchange_rates()
+    
+    if from_currency not in rates:
+        raise HTTPException(status_code=400, detail=f"Unsupported currency: {from_currency}")
+    if to_currency not in rates:
+        raise HTTPException(status_code=400, detail=f"Unsupported currency: {to_currency}")
+    
+    # Convert to USD first, then to target currency
+    usd_amount = amount / rates[from_currency]
+    converted = usd_amount * rates[to_currency]
+    
+    return {
+        "original": {"amount": amount, "currency": from_currency, "symbol": CURRENCY_SYMBOLS.get(from_currency, from_currency)},
+        "converted": {"amount": round(converted, 2), "currency": to_currency, "symbol": CURRENCY_SYMBOLS.get(to_currency, to_currency)},
+        "rate": rates[to_currency] / rates[from_currency],
+        "live": True,
+        "last_updated": exchange_rate_cache["last_updated"].isoformat() if exchange_rate_cache["last_updated"] else None
+    }
+
 # Mount router with /api prefix for ingress routing
 app.include_router(api_router, prefix="/api")
 

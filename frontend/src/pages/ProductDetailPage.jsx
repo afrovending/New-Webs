@@ -306,37 +306,14 @@ const ProductDetailPage = () => {
           </div>
         </TabsContent>
         <TabsContent value="reviews" className="pt-6">
-          {reviews.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No reviews yet. Be the first to review!</p>
-          ) : (
-            <div className="space-y-6">
-              {reviews.map((review) => (
-                <Card key={review.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p className="font-medium text-gray-900">{review.user_name}</p>
-                        <div className="flex items-center gap-1 mt-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-4 w-4 ${
-                                i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <span className="text-sm text-gray-500">
-                        {new Date(review.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <p className="text-gray-600">{review.comment}</p>
-                  </CardContent>
-                </Card>
-              ))}
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="md:col-span-2">
+              <ReviewsList productId={id} />
             </div>
-          )}
+            <div>
+              <ReviewForm productId={id} onSuccess={() => {/* refresh handled by ReviewsList */}} />
+            </div>
+          </div>
         </TabsContent>
         <TabsContent value="vendor" className="pt-6">
           {product.vendor && (

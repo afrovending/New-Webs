@@ -11,7 +11,6 @@ from auth import get_current_user
 from models import ServiceCreate, ServiceResponse
 
 router = APIRouter(prefix="/services", tags=["Services"])
-# db initialized per-request
 
 
 @router.get("")
@@ -27,6 +26,7 @@ async def get_services(
     limit: int = 20
 ):
     """Get services with optional filters"""
+    db = get_db()
     query = {"is_active": True}
     
     if category_id:
@@ -60,6 +60,7 @@ async def get_services(
 @router.get("/{service_id}")
 async def get_service(service_id: str):
     """Get single service by ID"""
+    db = get_db()
     service = await db.services.find_one({"id": service_id}, {"_id": 0})
     if not service:
         raise HTTPException(status_code=404, detail="Service not found")
@@ -73,6 +74,7 @@ async def get_service(service_id: str):
 @router.post("", response_model=ServiceResponse)
 async def create_service(service_data: ServiceCreate, user: dict = Depends(get_current_user)):
     """Create a new service"""
+    db = get_db()
     vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
     if not vendor:
         raise HTTPException(status_code=403, detail="Only vendors can create services")
@@ -96,6 +98,7 @@ async def create_service(service_data: ServiceCreate, user: dict = Depends(get_c
 @router.put("/{service_id}")
 async def update_service(service_id: str, service_data: ServiceCreate, user: dict = Depends(get_current_user)):
     """Update a service"""
+    db = get_db()
     service = await db.services.find_one({"id": service_id}, {"_id": 0})
     if not service:
         raise HTTPException(status_code=404, detail="Service not found")
@@ -111,6 +114,7 @@ async def update_service(service_id: str, service_data: ServiceCreate, user: dic
 @router.delete("/{service_id}")
 async def delete_service(service_id: str, user: dict = Depends(get_current_user)):
     """Delete a service"""
+    db = get_db()
     service = await db.services.find_one({"id": service_id}, {"_id": 0})
     if not service:
         raise HTTPException(status_code=404, detail="Service not found")
@@ -126,6 +130,7 @@ async def delete_service(service_id: str, user: dict = Depends(get_current_user)
 @router.get("/{service_id}/timeslots")
 async def get_service_timeslots(service_id: str, date: str):
     """Get available time slots for a service on a specific date"""
+    db = get_db()
     service = await db.services.find_one({"id": service_id}, {"_id": 0})
     if not service:
         raise HTTPException(status_code=404, detail="Service not found")

@@ -10,13 +10,13 @@ from database import get_db
 from auth import get_current_user
 
 router = APIRouter(tags=["Categories & Countries"])
-# db initialized per-request
 
 
 # ==================== CATEGORIES ====================
 @router.get("/categories")
 async def get_categories(type: Optional[str] = None):
     """Get all categories, optionally filtered by type"""
+    db = get_db()
     query = {} if not type else {"type": type}
     categories = await db.categories.find(query, {"_id": 0}).to_list(100)
     return categories
@@ -31,6 +31,7 @@ async def create_category(
     user: dict = Depends(get_current_user)
 ):
     """Create a new category (admin only)"""
+    db = get_db()
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     

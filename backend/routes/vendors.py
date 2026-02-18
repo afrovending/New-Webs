@@ -11,7 +11,6 @@ from auth import get_current_user
 from models import VendorCreate, VendorResponse
 
 router = APIRouter(prefix="/vendors", tags=["Vendors"])
-# db initialized per-request
 
 
 @router.get("")
@@ -23,6 +22,7 @@ async def get_vendors(
     limit: int = 20
 ):
     """Get vendors with optional filters"""
+    db = get_db()
     query = {"is_approved": True}
     
     if country:
@@ -42,6 +42,7 @@ async def get_vendors(
 @router.get("/{vendor_id}")
 async def get_vendor(vendor_id: str):
     """Get single vendor by ID"""
+    db = get_db()
     vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0})
     if not vendor:
         raise HTTPException(status_code=404, detail="Vendor not found")
@@ -51,6 +52,7 @@ async def get_vendor(vendor_id: str):
 @router.post("", response_model=VendorResponse)
 async def create_vendor(vendor_data: VendorCreate, user: dict = Depends(get_current_user)):
     """Create a new vendor profile"""
+    db = get_db()
     existing = await db.vendors.find_one({"user_id": user["id"]})
     if existing:
         raise HTTPException(status_code=400, detail="Vendor profile already exists")
@@ -77,6 +79,7 @@ async def create_vendor(vendor_data: VendorCreate, user: dict = Depends(get_curr
 @router.put("/{vendor_id}")
 async def update_vendor(vendor_id: str, vendor_data: VendorCreate, user: dict = Depends(get_current_user)):
     """Update vendor profile"""
+    db = get_db()
     vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0})
     if not vendor:
         raise HTTPException(status_code=404, detail="Vendor not found")
@@ -91,6 +94,7 @@ async def update_vendor(vendor_id: str, vendor_data: VendorCreate, user: dict = 
 @router.get("/{vendor_id}/products")
 async def get_vendor_products(vendor_id: str, skip: int = 0, limit: int = 20):
     """Get all products for a vendor"""
+    db = get_db()
     products = await db.products.find(
         {"vendor_id": vendor_id, "is_active": True}, 
         {"_id": 0}
@@ -101,6 +105,7 @@ async def get_vendor_products(vendor_id: str, skip: int = 0, limit: int = 20):
 @router.get("/{vendor_id}/services")
 async def get_vendor_services(vendor_id: str, skip: int = 0, limit: int = 20):
     """Get all services for a vendor"""
+    db = get_db()
     services = await db.services.find(
         {"vendor_id": vendor_id, "is_active": True}, 
         {"_id": 0}

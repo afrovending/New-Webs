@@ -236,15 +236,20 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - **Vendor**: vendor@afrovending.com / AfroVendor2024!
 
 ## Key Files
-- `/app/backend/server.py` - Main API (3500+ lines)
+- `/app/backend/server.py` - Original monolithic API (4252 lines, still active)
+- `/app/backend/server_modular.py` - New modular entry point (ready for migration)
+- `/app/backend/models.py` - All Pydantic models
+- `/app/backend/database.py` - MongoDB connection
+- `/app/backend/auth.py` - JWT authentication utilities
+- `/app/backend/routes/` - 14 modular route files (2363 lines total)
 - `/app/backend/email_service.py` - SendGrid email templates
-- `/app/backend/invoice_service.py` - PDF invoice generation (NEW)
+- `/app/backend/invoice_service.py` - PDF invoice generation
 - `/app/frontend/src/contexts/CurrencyContext.js` - Live currency provider
 - `/app/frontend/src/pages/WishlistPage.jsx` - Wishlist UI
 - `/app/frontend/src/pages/OrderHistoryPage.jsx` - Order History, Invoice & Reorder
 - `/app/frontend/src/pages/vendor/VendorProducts.jsx` - Product form with fulfillment options
 - `/app/frontend/src/components/Reviews.jsx` - Review components
 - `/app/frontend/src/components/WishlistButton.jsx` - Heart button
-- `/app/frontend/src/components/PriceAlertButton.jsx` - Price alert dialog (NEW)
-- `/app/frontend/src/components/RecentlySold.jsx` - Social proof ticker (NEW)
-- `/app/frontend/src/components/VendorSuccess.jsx` - Vendor success stories (NEW)
+- `/app/frontend/src/components/PriceAlertButton.jsx` - Price alert dialog
+- `/app/frontend/src/components/RecentlySold.jsx` - Social proof ticker
+- `/app/frontend/src/components/VendorSuccess.jsx` - Vendor success stories

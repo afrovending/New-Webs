@@ -72,6 +72,7 @@ async def login(credentials: UserLogin):
 @router.post("/forgot-password")
 async def forgot_password(request: ForgotPasswordRequest):
     """Request password reset"""
+    db = get_db()
     user = await db.users.find_one({"email": request.email}, {"_id": 0})
     
     if not user:
@@ -98,6 +99,7 @@ async def forgot_password(request: ForgotPasswordRequest):
 @router.post("/reset-password")
 async def reset_password(request: ResetPasswordRequest):
     """Reset password with token"""
+    db = get_db()
     reset_record = await db.password_resets.find_one({
         "token": request.token,
         "used": False

@@ -2644,6 +2644,560 @@ async def seed_database():
         "vendor": {"email": "vendor@afrovending.com", "password": "AfroVendor2024!"}
     }
 
+# ==================== CURRENCY CONVERSION ====================
+
+# Exchange rates (USD as base) - In production, fetch from API like exchangerate-api.com
+EXCHANGE_RATES = {
+    "USD": 1.0,
+    "EUR": 0.92,
+    "GBP": 0.79,
+    "NGN": 1550.0,
+    "KES": 153.0,
+    "ZAR": 18.5,
+    "GHS": 15.8,
+    "EGP": 30.9,
+    "MAD": 10.0,
+    "XOF": 605.0,  # West African CFA
+    "XAF": 605.0,  # Central African CFA
+}
+
+CURRENCY_SYMBOLS = {
+    "USD": "$",
+    "EUR": "€",
+    "GBP": "£",
+    "NGN": "₦",
+    "KES": "KSh",
+    "ZAR": "R",
+    "GHS": "₵",
+    "EGP": "E£",
+    "MAD": "MAD",
+    "XOF": "CFA",
+    "XAF": "FCFA",
+}
+
+# IP to country mapping for currency detection (simplified - use GeoIP service in production)
+COUNTRY_CURRENCIES = {
+    "US": "USD", "GB": "GBP", "DE": "EUR", "FR": "EUR", "NG": "NGN",
+    "KE": "KES", "ZA": "ZAR", "GH": "GHS", "EG": "EGP", "MA": "MAD",
+    "SN": "XOF", "CI": "XOF", "CM": "XAF", "GA": "XAF"
+}
+
+@api_router.get("/currency/rates")
+async def get_exchange_rates():
+    """Get all supported currencies and exchange rates"""
+    return {
+        "base": "USD",
+        "rates": EXCHANGE_RATES,
+        "symbols": CURRENCY_SYMBOLS,
+        "supported_currencies": list(EXCHANGE_RATES.keys())
+    }
+
+@api_router.get("/currency/convert")
+async def convert_currency(
+    amount: float,
+    from_currency: str = "USD",
+    to_currency: str = "USD"
+):
+    """Convert amount between currencies"""
+    from_currency = from_currency.upper()
+    to_currency = to_currency.upper()
+    
+    if from_currency not in EXCHANGE_RATES:
+        raise HTTPException(status_code=400, detail=f"Unsupported currency: {from_currency}")
+    if to_currency not in EXCHANGE_RATES:
+        raise HTTPException(status_code=400, detail=f"Unsupported currency: {to_currency}")
+    
+    # Convert to USD first, then to target currency
+    usd_amount = amount / EXCHANGE_RATES[from_currency]
+    converted = usd_amount * EXCHANGE_RATES[to_currency]
+    
+    return {
+        "original": {"amount": amount, "currency": from_currency, "symbol": CURRENCY_SYMBOLS[from_currency]},
+        "converted": {"amount": round(converted, 2), "currency": to_currency, "symbol": CURRENCY_SYMBOLS[to_currency]},
+        "rate": EXCHANGE_RATES[to_currency] / EXCHANGE_RATES[from_currency]
+    }
+
+@api_router.get("/currency/detect")
+async def detect_currency(request: Request):
+    """Detect user's currency based on IP (simplified)"""
+    # In production, use a proper GeoIP service
+    client_ip = request.client.host
+    
+    # Get country from header or default
+    country_code = request.headers.get("CF-IPCountry", "US")  # Cloudflare header
+    
+    currency = COUNTRY_CURRENCIES.get(country_code.upper(), "USD")
+    
+    return {
+        "detected_country": country_code,
+        "currency": currency,
+        "symbol": CURRENCY_SYMBOLS.get(currency, "$"),
+        "rate": EXCHANGE_RATES.get(currency, 1.0)
+    }
+
+# ==================== ADVANCED SEARCH ====================
+
+class SearchFilters(BaseModel):
+    query: Optional[str] = None
+    category_id: Optional[str] = None
+    vendor_id: Optional[str] = None
+    country: Optional[str] = None
+    min_price: Optional[float] = None
+    max_price: Optional[float] = None
+    min_rating: Optional[float] = None
+    in_stock: Optional[bool] = None
+    verified_vendor: Optional[bool] = None
+    tags: Optional[List[str]] = None
+    sort_by: str = "relevance"  # relevance, price_low, price_high, rating, newest
+    page: int = 1
+    limit: int = 20
+
+@api_router.post("/search/products")
+async def advanced_product_search(filters: SearchFilters):
+    """Advanced product search with multiple filters"""
+    query = {"is_active": True}
+    
+    # Text search
+    if filters.query:
+        query["$or"] = [
+            {"name": {"$regex": filters.query, "$options": "i"}},
+            {"description": {"$regex": filters.query, "$options": "i"}},
+            {"tags": {"$in": [filters.query.lower()]}}
+        ]
+    
+    # Category filter
+    if filters.category_id:
+        query["category_id"] = filters.category_id
+    
+    # Vendor filter
+    if filters.vendor_id:
+        query["vendor_id"] = filters.vendor_id
+    
+    # Price range
+    if filters.min_price is not None or filters.max_price is not None:
+        query["price"] = {}
+        if filters.min_price is not None:
+            query["price"]["$gte"] = filters.min_price
+        if filters.max_price is not None:
+            query["price"]["$lte"] = filters.max_price
+    
+    # Rating filter
+    if filters.min_rating is not None:
+        query["average_rating"] = {"$gte": filters.min_rating}
+    
+    # Stock filter
+    if filters.in_stock:
+        query["stock"] = {"$gt": 0}
+    
+    # Tags filter
+    if filters.tags:
+        query["tags"] = {"$in": [t.lower() for t in filters.tags]}
+    
+    # Sorting
+    sort_options = {
+        "relevance": [("average_rating", -1), ("review_count", -1)],
+        "price_low": [("price", 1)],
+        "price_high": [("price", -1)],
+        "rating": [("average_rating", -1)],
+        "newest": [("created_at", -1)],
+        "popular": [("view_count", -1)]
+    }
+    sort = sort_options.get(filters.sort_by, [("created_at", -1)])
+    
+    # Pagination
+    skip = (filters.page - 1) * filters.limit
+    
+    # Execute query
+    cursor = db.products.find(query, {"_id": 0})
+    for field, direction in sort:
+        cursor = cursor.sort(field, direction)
+    
+    products = await cursor.skip(skip).limit(filters.limit).to_list(filters.limit)
+    total = await db.products.count_documents(query)
+    
+    # Filter by verified vendor if requested
+    if filters.verified_vendor:
+        verified_vendor_ids = [v["id"] for v in await db.vendors.find({"is_verified": True}, {"_id": 0, "id": 1}).to_list(1000)]
+        products = [p for p in products if p.get("vendor_id") in verified_vendor_ids]
+    
+    # Add vendor info
+    if products:
+        vendor_ids = list(set(p["vendor_id"] for p in products if p.get("vendor_id")))
+        vendors = await db.vendors.find(
+            {"id": {"$in": vendor_ids}}, 
+            {"_id": 0, "id": 1, "store_name": 1, "country": 1, "is_verified": 1}
+        ).to_list(len(vendor_ids))
+        vendor_map = {v["id"]: v for v in vendors}
+        
+        for product in products:
+            vendor = vendor_map.get(product.get("vendor_id"))
+            if vendor:
+                product["vendor_name"] = vendor.get("store_name")
+                product["vendor_country"] = vendor.get("country")
+                product["vendor_verified"] = vendor.get("is_verified", False)
+    
+    return {
+        "products": products,
+        "total": total,
+        "page": filters.page,
+        "pages": (total + filters.limit - 1) // filters.limit,
+        "filters_applied": {k: v for k, v in filters.model_dump().items() if v is not None}
+    }
+
+@api_router.post("/search/services")
+async def advanced_service_search(filters: SearchFilters):
+    """Advanced service search with multiple filters"""
+    query = {"is_active": True}
+    
+    if filters.query:
+        query["$or"] = [
+            {"name": {"$regex": filters.query, "$options": "i"}},
+            {"description": {"$regex": filters.query, "$options": "i"}}
+        ]
+    
+    if filters.category_id:
+        query["category_id"] = filters.category_id
+    
+    if filters.vendor_id:
+        query["vendor_id"] = filters.vendor_id
+    
+    if filters.min_price is not None or filters.max_price is not None:
+        query["price"] = {}
+        if filters.min_price is not None:
+            query["price"]["$gte"] = filters.min_price
+        if filters.max_price is not None:
+            query["price"]["$lte"] = filters.max_price
+    
+    if filters.min_rating is not None:
+        query["average_rating"] = {"$gte": filters.min_rating}
+    
+    sort_options = {
+        "relevance": [("average_rating", -1)],
+        "price_low": [("price", 1)],
+        "price_high": [("price", -1)],
+        "rating": [("average_rating", -1)],
+        "newest": [("created_at", -1)]
+    }
+    sort = sort_options.get(filters.sort_by, [("created_at", -1)])
+    
+    skip = (filters.page - 1) * filters.limit
+    
+    cursor = db.services.find(query, {"_id": 0})
+    for field, direction in sort:
+        cursor = cursor.sort(field, direction)
+    
+    services = await cursor.skip(skip).limit(filters.limit).to_list(filters.limit)
+    total = await db.services.count_documents(query)
+    
+    # Add vendor info
+    if services:
+        vendor_ids = list(set(s["vendor_id"] for s in services if s.get("vendor_id")))
+        vendors = await db.vendors.find(
+            {"id": {"$in": vendor_ids}}, 
+            {"_id": 0, "id": 1, "store_name": 1}
+        ).to_list(len(vendor_ids))
+        vendor_map = {v["id"]: v for v in vendors}
+        
+        for service in services:
+            vendor = vendor_map.get(service.get("vendor_id"))
+            if vendor:
+                service["vendor_name"] = vendor.get("store_name")
+    
+    return {
+        "services": services,
+        "total": total,
+        "page": filters.page,
+        "pages": (total + filters.limit - 1) // filters.limit
+    }
+
+# ==================== ENHANCED REVIEWS ====================
+
+class ReviewCreateEnhanced(BaseModel):
+    rating: int = Field(..., ge=1, le=5)
+    title: Optional[str] = None
+    comment: str
+    product_id: Optional[str] = None
+    service_id: Optional[str] = None
+    images: List[str] = []
+    would_recommend: bool = True
+
+class ReviewResponse(BaseModel):
+    id: str
+    user_id: str
+    user_name: str
+    rating: int
+    title: Optional[str]
+    comment: str
+    product_id: Optional[str]
+    service_id: Optional[str]
+    vendor_id: Optional[str]
+    images: List[str]
+    would_recommend: bool
+    helpful_count: int
+    created_at: str
+
+@api_router.post("/reviews/create", response_model=ReviewResponse)
+async def create_enhanced_review(review_data: ReviewCreateEnhanced, user: dict = Depends(get_current_user)):
+    """Create a detailed review with images"""
+    if review_data.rating < 1 or review_data.rating > 5:
+        raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
+    
+    if not review_data.product_id and not review_data.service_id:
+        raise HTTPException(status_code=400, detail="Must specify either product_id or service_id")
+    
+    vendor_id = None
+    item_name = ""
+    
+    if review_data.product_id:
+        product = await db.products.find_one({"id": review_data.product_id}, {"_id": 0})
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
+        vendor_id = product["vendor_id"]
+        item_name = product["name"]
+        
+        # Check if user has purchased this product
+        has_purchased = await db.orders.find_one({
+            "user_id": user["id"],
+            "items.product_id": review_data.product_id,
+            "payment_status": "paid"
+        })
+        if not has_purchased:
+            raise HTTPException(status_code=403, detail="You can only review products you have purchased")
+    
+    elif review_data.service_id:
+        service = await db.services.find_one({"id": review_data.service_id}, {"_id": 0})
+        if not service:
+            raise HTTPException(status_code=404, detail="Service not found")
+        vendor_id = service["vendor_id"]
+        item_name = service["name"]
+        
+        # Check if user has booked this service
+        has_booked = await db.bookings.find_one({
+            "customer_id": user["id"],
+            "service_id": review_data.service_id,
+            "payment_status": "paid",
+            "status": "completed"
+        })
+        if not has_booked:
+            raise HTTPException(status_code=403, detail="You can only review services you have used")
+    
+    # Check for existing review
+    existing = await db.reviews.find_one({
+        "user_id": user["id"],
+        "$or": [
+            {"product_id": review_data.product_id} if review_data.product_id else {},
+            {"service_id": review_data.service_id} if review_data.service_id else {}
+        ]
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail="You have already reviewed this item")
+    
+    review = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "user_name": f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or "Anonymous",
+        "vendor_id": vendor_id,
+        "rating": review_data.rating,
+        "title": review_data.title,
+        "comment": review_data.comment,
+        "product_id": review_data.product_id,
+        "service_id": review_data.service_id,
+        "images": review_data.images[:5],  # Max 5 images
+        "would_recommend": review_data.would_recommend,
+        "helpful_count": 0,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.reviews.insert_one(review)
+    
+    # Update average rating using aggregation
+    if review_data.product_id:
+        pipeline = [
+            {"$match": {"product_id": review_data.product_id}},
+            {"$group": {"_id": None, "avg_rating": {"$avg": "$rating"}, "count": {"$sum": 1}}}
+        ]
+        result = await db.reviews.aggregate(pipeline).to_list(1)
+        if result:
+            await db.products.update_one(
+                {"id": review_data.product_id},
+                {"$set": {"average_rating": round(result[0]["avg_rating"], 1), "review_count": result[0]["count"]}}
+            )
+    elif review_data.service_id:
+        pipeline = [
+            {"$match": {"service_id": review_data.service_id}},
+            {"$group": {"_id": None, "avg_rating": {"$avg": "$rating"}, "count": {"$sum": 1}}}
+        ]
+        result = await db.reviews.aggregate(pipeline).to_list(1)
+        if result:
+            await db.services.update_one(
+                {"id": review_data.service_id},
+                {"$set": {"average_rating": round(result[0]["avg_rating"], 1), "review_count": result[0]["count"]}}
+            )
+    
+    # Update vendor average rating
+    if vendor_id:
+        pipeline = [
+            {"$match": {"vendor_id": vendor_id}},
+            {"$group": {"_id": None, "avg_rating": {"$avg": "$rating"}, "count": {"$sum": 1}}}
+        ]
+        result = await db.reviews.aggregate(pipeline).to_list(1)
+        if result:
+            await db.vendors.update_one(
+                {"id": vendor_id},
+                {"$set": {"average_rating": round(result[0]["avg_rating"], 1)}}
+            )
+    
+    return ReviewResponse(**review)
+
+@api_router.get("/reviews/product/{product_id}")
+async def get_product_reviews(
+    product_id: str,
+    sort_by: str = "newest",
+    rating_filter: int = None,
+    page: int = 1,
+    limit: int = 10
+):
+    """Get reviews for a product with filtering and sorting"""
+    query = {"product_id": product_id}
+    
+    if rating_filter:
+        query["rating"] = rating_filter
+    
+    sort_options = {
+        "newest": [("created_at", -1)],
+        "oldest": [("created_at", 1)],
+        "highest": [("rating", -1)],
+        "lowest": [("rating", 1)],
+        "helpful": [("helpful_count", -1)]
+    }
+    sort = sort_options.get(sort_by, [("created_at", -1)])
+    
+    skip = (page - 1) * limit
+    
+    cursor = db.reviews.find(query, {"_id": 0})
+    for field, direction in sort:
+        cursor = cursor.sort(field, direction)
+    
+    reviews = await cursor.skip(skip).limit(limit).to_list(limit)
+    total = await db.reviews.count_documents(query)
+    
+    # Get rating distribution
+    distribution = {}
+    for i in range(1, 6):
+        distribution[i] = await db.reviews.count_documents({"product_id": product_id, "rating": i})
+    
+    # Calculate recommendation percentage
+    recommend_count = await db.reviews.count_documents({"product_id": product_id, "would_recommend": True})
+    recommend_percent = (recommend_count / total * 100) if total > 0 else 0
+    
+    return {
+        "reviews": reviews,
+        "total": total,
+        "page": page,
+        "pages": (total + limit - 1) // limit,
+        "rating_distribution": distribution,
+        "recommend_percent": round(recommend_percent, 1)
+    }
+
+@api_router.get("/reviews/service/{service_id}")
+async def get_service_reviews(
+    service_id: str,
+    sort_by: str = "newest",
+    rating_filter: int = None,
+    page: int = 1,
+    limit: int = 10
+):
+    """Get reviews for a service"""
+    query = {"service_id": service_id}
+    
+    if rating_filter:
+        query["rating"] = rating_filter
+    
+    sort_options = {
+        "newest": [("created_at", -1)],
+        "oldest": [("created_at", 1)],
+        "highest": [("rating", -1)],
+        "lowest": [("rating", 1)],
+        "helpful": [("helpful_count", -1)]
+    }
+    sort = sort_options.get(sort_by, [("created_at", -1)])
+    
+    skip = (page - 1) * limit
+    
+    cursor = db.reviews.find(query, {"_id": 0})
+    for field, direction in sort:
+        cursor = cursor.sort(field, direction)
+    
+    reviews = await cursor.skip(skip).limit(limit).to_list(limit)
+    total = await db.reviews.count_documents(query)
+    
+    return {
+        "reviews": reviews,
+        "total": total,
+        "page": page,
+        "pages": (total + limit - 1) // limit
+    }
+
+@api_router.post("/reviews/{review_id}/helpful")
+async def mark_review_helpful(review_id: str, user: dict = Depends(get_current_user)):
+    """Mark a review as helpful"""
+    review = await db.reviews.find_one({"id": review_id})
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    
+    # Check if user already marked this review
+    existing = await db.review_helpful.find_one({
+        "review_id": review_id,
+        "user_id": user["id"]
+    })
+    
+    if existing:
+        # Remove helpful mark
+        await db.review_helpful.delete_one({"review_id": review_id, "user_id": user["id"]})
+        await db.reviews.update_one({"id": review_id}, {"$inc": {"helpful_count": -1}})
+        return {"message": "Helpful mark removed", "action": "removed"}
+    else:
+        # Add helpful mark
+        await db.review_helpful.insert_one({
+            "review_id": review_id,
+            "user_id": user["id"],
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        await db.reviews.update_one({"id": review_id}, {"$inc": {"helpful_count": 1}})
+        return {"message": "Review marked as helpful", "action": "added"}
+
+@api_router.get("/reviews/vendor/{vendor_id}")
+async def get_vendor_reviews(
+    vendor_id: str,
+    page: int = 1,
+    limit: int = 10
+):
+    """Get all reviews for a vendor"""
+    query = {"vendor_id": vendor_id}
+    
+    skip = (page - 1) * limit
+    
+    reviews = await db.reviews.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    total = await db.reviews.count_documents(query)
+    
+    # Add item names to reviews
+    for review in reviews:
+        if review.get("product_id"):
+            product = await db.products.find_one({"id": review["product_id"]}, {"_id": 0, "name": 1})
+            review["item_name"] = product.get("name") if product else "Unknown Product"
+            review["item_type"] = "product"
+        elif review.get("service_id"):
+            service = await db.services.find_one({"id": review["service_id"]}, {"_id": 0, "name": 1})
+            review["item_name"] = service.get("name") if service else "Unknown Service"
+            review["item_type"] = "service"
+    
+    return {
+        "reviews": reviews,
+        "total": total,
+        "page": page,
+        "pages": (total + limit - 1) // limit
+    }
+
 # Mount router with /api prefix for ingress routing
 app.include_router(api_router, prefix="/api")
 

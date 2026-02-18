@@ -9,13 +9,12 @@ import random
 from database import get_db
 
 router = APIRouter(prefix="/homepage", tags=["Homepage"])
-# db initialized per-request
 
 
 @router.get("/recently-sold")
 async def get_recently_sold():
     """Get recently sold items for social proof"""
-    # Get recent orders
+    db = get_db()
     recent_orders = await db.orders.find(
         {"status": {"$in": ["completed", "shipped", "delivered"]}},
         {"_id": 0}
@@ -25,10 +24,9 @@ async def get_recently_sold():
     countries = ["USA", "UK", "Canada", "Ghana", "Nigeria", "Kenya", "Germany", "France", "Netherlands"]
     
     for order in recent_orders[:10]:
-        for item in order.get("items", [])[:1]:  # Take first item from each order
+        for item in order.get("items", [])[:1]:
             product = await db.products.find_one({"id": item.get("product_id")}, {"_id": 0})
             if product:
-                # Calculate time ago
                 created = datetime.fromisoformat(order["created_at"].replace("Z", "+00:00"))
                 now = datetime.now(timezone.utc)
                 diff = now - created
@@ -49,7 +47,6 @@ async def get_recently_sold():
                     "time_ago": time_ago
                 })
     
-    # If not enough real data, add some placeholder items
     if len(items) < 5:
         products = await db.products.find({"is_active": True}, {"_id": 0}).limit(10).to_list(10)
         for product in products:
@@ -70,7 +67,7 @@ async def get_recently_sold():
 @router.get("/vendor-success")
 async def get_vendor_success_stories():
     """Get vendor success stories for social proof"""
-    # Get top vendors by sales
+    db = get_db()
     vendors = await db.vendors.find(
         {"is_approved": True, "is_active": True},
         {"_id": 0}
@@ -79,7 +76,6 @@ async def get_vendor_success_stories():
     stories = []
     
     for vendor in vendors:
-        # Get product count
         product_count = await db.products.count_documents({"vendor_id": vendor["id"], "is_active": True})
         
         stories.append({
@@ -100,11 +96,11 @@ async def get_vendor_success_stories():
 @router.get("/stats")
 async def get_homepage_stats():
     """Get platform statistics for homepage"""
+    db = get_db()
     vendor_count = await db.vendors.count_documents({"is_approved": True, "is_active": True})
     product_count = await db.products.count_documents({"is_active": True})
     service_count = await db.services.count_documents({"is_active": True})
     
-    # Get unique countries from vendors
     countries = await db.vendors.distinct("country", {"is_approved": True})
     
     return {
@@ -112,5 +108,5 @@ async def get_homepage_stats():
         "products": product_count,
         "services": service_count,
         "countries": len(countries),
-        "customers": 50000  # Placeholder
+        "customers": 50000
     }

@@ -10,7 +10,6 @@ from database import get_db
 from auth import get_current_user
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
-# db initialized per-request
 
 
 async def require_admin(user: dict = Depends(get_current_user)):
@@ -23,33 +22,28 @@ async def require_admin(user: dict = Depends(get_current_user)):
 @router.get("/stats")
 async def get_admin_stats(user: dict = Depends(require_admin)):
     """Get admin dashboard statistics"""
+    db = get_db()
     now = datetime.now(timezone.utc)
     thirty_days_ago = (now - timedelta(days=30)).isoformat()
     seven_days_ago = (now - timedelta(days=7)).isoformat()
     
-    # User stats
     total_users = await db.users.count_documents({})
     new_users_30d = await db.users.count_documents({"created_at": {"$gte": thirty_days_ago}})
     new_users_7d = await db.users.count_documents({"created_at": {"$gte": seven_days_ago}})
     
-    # Vendor stats
     total_vendors = await db.vendors.count_documents({})
     approved_vendors = await db.vendors.count_documents({"is_approved": True})
     pending_vendors = await db.vendors.count_documents({"is_approved": False})
     verified_vendors = await db.vendors.count_documents({"is_verified": True})
     
-    # Product stats
     total_products = await db.products.count_documents({})
     active_products = await db.products.count_documents({"is_active": True})
     
-    # Service stats
     total_services = await db.services.count_documents({})
     
-    # Order stats
     total_orders = await db.orders.count_documents({})
     orders_30d = await db.orders.count_documents({"created_at": {"$gte": thirty_days_ago}})
     
-    # Revenue (sum of order totals)
     pipeline = [
         {"$match": {"payment_status": "paid"}},
         {"$group": {"_id": None, "total": {"$sum": "$total"}}}
@@ -57,7 +51,6 @@ async def get_admin_stats(user: dict = Depends(require_admin)):
     revenue_result = await db.orders.aggregate(pipeline).to_list(1)
     total_revenue = revenue_result[0]["total"] if revenue_result else 0
     
-    # Revenue last 30 days
     pipeline_30d = [
         {"$match": {"payment_status": "paid", "created_at": {"$gte": thirty_days_ago}}},
         {"$group": {"_id": None, "total": {"$sum": "$total"}}}
@@ -104,6 +97,7 @@ async def get_all_vendors(
     user: dict = Depends(require_admin)
 ):
     """Get all vendors for admin management"""
+    db = get_db()
     query = {}
     if status == "pending":
         query["is_approved"] = False
@@ -115,7 +109,6 @@ async def get_all_vendors(
     vendors = await db.vendors.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
     total = await db.vendors.count_documents(query)
     
-    # Enrich with user info
     for vendor in vendors:
         vendor_user = await db.users.find_one({"id": vendor["user_id"]}, {"_id": 0, "email": 1, "first_name": 1, "last_name": 1})
         vendor["user"] = vendor_user
@@ -126,6 +119,7 @@ async def get_all_vendors(
 @router.put("/vendors/{vendor_id}/approve")
 async def approve_vendor(vendor_id: str, user: dict = Depends(require_admin)):
     """Approve a vendor"""
+    db = get_db()
     result = await db.vendors.update_one(
         {"id": vendor_id},
         {"$set": {"is_approved": True, "approved_at": datetime.now(timezone.utc).isoformat()}}
@@ -140,6 +134,7 @@ async def approve_vendor(vendor_id: str, user: dict = Depends(require_admin)):
 @router.put("/vendors/{vendor_id}/verify")
 async def verify_vendor(vendor_id: str, user: dict = Depends(require_admin)):
     """Verify a vendor"""
+    db = get_db()
     result = await db.vendors.update_one(
         {"id": vendor_id},
         {"$set": {"is_verified": True, "verified_at": datetime.now(timezone.utc).isoformat()}}
@@ -155,10 +150,10 @@ async def verify_vendor(vendor_id: str, user: dict = Depends(require_admin)):
 async def deactivate_vendor(
     vendor_id: str, 
     reason: str = "Policy violation",
-    background_tasks: BackgroundTasks = None,
     user: dict = Depends(require_admin)
 ):
     """Deactivate a vendor"""
+    db = get_db()
     vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0})
     if not vendor:
         raise HTTPException(status_code=404, detail="Vendor not found")
@@ -172,7 +167,6 @@ async def deactivate_vendor(
         }}
     )
     
-    # Deactivate all products and services
     await db.products.update_many({"vendor_id": vendor_id}, {"$set": {"is_active": False}})
     await db.services.update_many({"vendor_id": vendor_id}, {"$set": {"is_active": False}})
     
@@ -182,6 +176,7 @@ async def deactivate_vendor(
 @router.put("/vendors/{vendor_id}/activate")
 async def activate_vendor(vendor_id: str, user: dict = Depends(require_admin)):
     """Reactivate a vendor"""
+    db = get_db()
     result = await db.vendors.update_one(
         {"id": vendor_id},
         {"$set": {
@@ -193,7 +188,6 @@ async def activate_vendor(vendor_id: str, user: dict = Depends(require_admin)):
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Vendor not found")
     
-    # Reactivate products and services
     await db.products.update_many({"vendor_id": vendor_id}, {"$set": {"is_active": True}})
     await db.services.update_many({"vendor_id": vendor_id}, {"$set": {"is_active": True}})
     
@@ -208,6 +202,7 @@ async def get_all_users(
     user: dict = Depends(require_admin)
 ):
     """Get all users for admin management"""
+    db = get_db()
     query = {}
     if role:
         query["role"] = role
@@ -221,9 +216,9 @@ async def get_all_users(
 @router.post("/check-price-alerts")
 async def trigger_price_alert_check(user: dict = Depends(require_admin)):
     """Manually trigger price alert checks"""
+    db = get_db()
     from routes.price_alerts import check_price_alerts_for_product
     
-    # Get all active alerts
     alerts = await db.price_alerts.find({"is_active": True, "triggered": False}, {"_id": 0}).to_list(1000)
     
     checked = 0

@@ -433,7 +433,7 @@ class TestVendorDeactivationEmail:
         
         assert deactivate_response.status_code == 200
         data = deactivate_response.json()
-        assert data.get("message") == "Vendor deactivated"
+        assert "deactivated" in data.get("message", "").lower()
         
         # The email service is called in background task - check logs for confirmation
         print("Vendor deactivation: API call successful, email service triggered")

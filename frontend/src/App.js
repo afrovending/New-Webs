@@ -190,10 +190,12 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <CartProvider>
-          <AppRouter />
-          <Toaster position="top-right" />
-        </CartProvider>
+        <CurrencyProvider>
+          <CartProvider>
+            <AppRouter />
+            <Toaster position="top-right" />
+          </CartProvider>
+        </CurrencyProvider>
       </AuthProvider>
     </BrowserRouter>
   );

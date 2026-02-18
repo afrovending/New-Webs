@@ -29,6 +29,7 @@ const ProductDetailPage = () => {
   const navigate = useNavigate();
   const { api, isAuthenticated } = useAuth();
   const { addToCart } = useCart();
+  const { formatPrice } = useCurrency();
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [quantity, setQuantity] = useState(1);

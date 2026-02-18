@@ -155,9 +155,17 @@ class TestPriceAlerts:
         
         assert response.status_code == 200
         
-        alerts = response.json()
+        data = response.json()
+        # API returns {alerts: [], count: N} format
+        if isinstance(data, dict):
+            alerts = data.get("alerts", [])
+            count = data.get("count", len(alerts))
+        else:
+            alerts = data
+            count = len(alerts)
+        
         assert isinstance(alerts, list)
-        print(f"User has {len(alerts)} price alerts")
+        print(f"User has {count} price alerts")
     
     def test_price_alerts_require_auth(self):
         """Price alert endpoints require authentication"""
@@ -292,8 +300,14 @@ class TestHomepageData:
         assert response.status_code == 200
         
         data = response.json()
-        assert isinstance(data, list)
-        print(f"Recently sold items: {len(data)}")
+        # API may return {items: []} or just []
+        if isinstance(data, dict):
+            items = data.get("items", [])
+        else:
+            items = data
+        
+        assert isinstance(items, list)
+        print(f"Recently sold items: {len(items)}")
 
 
 class TestDeletePriceAlert:
@@ -321,7 +335,13 @@ class TestDeletePriceAlert:
         if alerts_response.status_code != 200:
             pytest.skip("Could not get alerts")
         
-        alerts = alerts_response.json()
+        data = alerts_response.json()
+        # API returns {alerts: [], count: N} format
+        if isinstance(data, dict):
+            alerts = data.get("alerts", [])
+        else:
+            alerts = data
+        
         if len(alerts) == 0:
             pytest.skip("No alerts to delete")
         

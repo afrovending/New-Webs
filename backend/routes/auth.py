@@ -12,12 +12,12 @@ from auth import hash_password, verify_password, create_access_token, get_curren
 from models import UserCreate, UserLogin, UserResponse, TokenResponse, ForgotPasswordRequest, ResetPasswordRequest
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
-db = get_db()
 
 
 @router.post("/register", response_model=TokenResponse)
 async def register(user_data: UserCreate):
     """Register a new user"""
+    db = get_db()
     existing = await db.users.find_one({"email": user_data.email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")

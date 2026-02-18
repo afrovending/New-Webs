@@ -314,46 +314,49 @@ const ProductsPage = () => {
           ) : (
             <div className="space-y-4">
               {products.map((product) => (
-                <Link key={product.id} to={`/products/${product.id}`}>
-                  <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid={`product-card-${product.id}`}>
-                    <CardContent className="p-4 flex gap-4">
-                      <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                        {product.images?.[0] ? (
-                          <img
-                            src={product.images[0]}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400">
-                            No Image
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-500">{product.vendor_name}</p>
-                        <h3 className="font-medium text-gray-900 text-lg">{product.name}</h3>
-                        <p className="text-gray-600 text-sm line-clamp-2 mt-1">{product.description}</p>
-                        <div className="flex items-center justify-between mt-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl font-bold text-red-600">${product.price}</span>
-                            <div className="flex items-center gap-1">
-                              <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                              <span className="text-sm text-gray-600">{product.average_rating?.toFixed(1) || '0.0'}</span>
-                            </div>
-                          </div>
-                          <Button
-                            className="bg-red-600 hover:bg-red-700"
-                            onClick={(e) => handleAddToCart(e, product)}
-                          >
-                            <ShoppingCart className="h-4 w-4 mr-2" />
-                            Add to Cart
-                          </Button>
+                <Card key={product.id} className="hover:shadow-lg transition-shadow" data-testid={`product-card-${product.id}`}>
+                  <CardContent className="p-4 flex gap-4">
+                    <Link to={`/products/${product.id}`} className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                      {product.images?.[0] ? (
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          No Image
                         </div>
+                      )}
+                    </Link>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-gray-500">{product.vendor_name}</p>
+                        <WishlistButton productId={product.id} />
                       </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                      <Link to={`/products/${product.id}`}>
+                        <h3 className="font-medium text-gray-900 text-lg hover:text-red-600">{product.name}</h3>
+                      </Link>
+                      <p className="text-gray-600 text-sm line-clamp-2 mt-1">{product.description}</p>
+                      <div className="flex items-center justify-between mt-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl font-bold text-red-600">{formatPrice(product.price)}</span>
+                          <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                            <span className="text-sm text-gray-600">{product.average_rating?.toFixed(1) || '0.0'}</span>
+                          </div>
+                        </div>
+                        <Button
+                          className="bg-red-600 hover:bg-red-700"
+                          onClick={(e) => handleAddToCart(e, product)}
+                        >
+                          <ShoppingCart className="h-4 w-4 mr-2" />
+                          Add to Cart
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}

@@ -5,6 +5,7 @@ import { useCart } from '../../contexts/CartContext';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import CurrencySelector from '../CurrencySelector';
+import NotificationBell from '../NotificationBell';
 import {
   DropdownMenu,
   DropdownMenuContent,

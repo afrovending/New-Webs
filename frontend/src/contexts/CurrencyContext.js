@@ -36,15 +36,23 @@ export const CurrencyProvider = ({ children }) => {
   useEffect(() => {
     const fetchRates = async () => {
       try {
-        const response = await axios.get(`${API_URL}/api/currency/rates`);
+        // Try live rates first
+        const response = await axios.get(`${API_URL}/api/currency/live-rates`);
         setRates(response.data.rates);
       } catch (error) {
-        console.error('Failed to fetch currency rates:', error);
-        // Fallback rates
-        setRates({
-          USD: 1, EUR: 0.92, GBP: 0.79, NGN: 1550, KES: 153,
-          ZAR: 18.5, GHS: 15.8, EGP: 30.9, MAD: 10, XOF: 605
-        });
+        console.error('Failed to fetch live currency rates, trying static:', error);
+        try {
+          // Fallback to static rates
+          const response = await axios.get(`${API_URL}/api/currency/rates`);
+          setRates(response.data.rates);
+        } catch (fallbackError) {
+          console.error('Failed to fetch currency rates:', fallbackError);
+          // Fallback rates
+          setRates({
+            USD: 1, EUR: 0.92, GBP: 0.79, NGN: 1550, KES: 153,
+            ZAR: 18.5, GHS: 15.8, EGP: 30.9, MAD: 10, XOF: 605
+          });
+        }
       } finally {
         setLoading(false);
       }

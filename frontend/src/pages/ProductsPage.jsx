@@ -155,7 +155,7 @@ const ProductsPage = () => {
               {/* Price Range */}
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Price Range: ${filters.minPrice} - ${filters.maxPrice}
+                  Price Range: {formatPrice(filters.minPrice)} - {formatPrice(filters.maxPrice)}
                 </label>
                 <Slider
                   value={[filters.minPrice, filters.maxPrice]}

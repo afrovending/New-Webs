@@ -4009,6 +4009,18 @@ async def send_price_alert_email(to_email: str, product_name: str, target_price:
     
     email_service._send(to_email, f"Price Drop: {product_name} is now ${current_price:.2f}!", html_content)
 
+
+# Admin endpoint to trigger price alert checks
+@api_router.post("/admin/check-price-alerts")
+async def trigger_price_alert_check(user: dict = Depends(get_current_user)):
+    """Manually trigger price alert checks (admin only)"""
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    await check_price_alerts_and_notify()
+    return {"message": "Price alert check completed"}
+
+
 # ==================== NOTIFICATIONS ====================
 
 @api_router.get("/notifications")

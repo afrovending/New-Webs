@@ -129,6 +129,7 @@ async def reset_password(request: ResetPasswordRequest):
 @router.post("/google/session")
 async def process_google_session(request: Request, response: Response):
     """Process Google OAuth session"""
+    db = get_db()
     body = await request.json()
     session_id = body.get("session_id")
     

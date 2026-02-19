@@ -53,6 +53,15 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminVendors from './pages/admin/AdminVendors';
 import AdminOrders from './pages/admin/AdminOrders';
 
+// Legal Pages
+import LegalPages from './pages/legal/LegalPages';
+import TermsOfService from './pages/legal/TermsOfService';
+import VendorAgreement from './pages/legal/VendorAgreement';
+import BuyerProtection from './pages/legal/BuyerProtection';
+import PrivacyPolicy from './pages/legal/PrivacyPolicy';
+import LiabilityLimitations from './pages/legal/LiabilityLimitations';
+import MarketplaceEnforcement from './pages/legal/MarketplaceEnforcement';
+
 import './App.css';
 
 // Auth Callback Component

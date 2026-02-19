@@ -93,13 +93,27 @@ async def get_recently_sold():
 async def get_vendor_success_stories():
     """Get vendor success stories for social proof"""
     db = get_db()
-    vendors = await db.vendors.find(
-        {"is_approved": True},
+    
+    # First, try to get vendors with stories
+    vendors_with_stories = await db.vendors.find(
+        {"is_approved": True, "story": {"$exists": True, "$ne": ""}},
         {"_id": 0}
     ).sort("total_sales", -1).limit(5).to_list(5)
     
-    # Sample testimonials for vendors
-    testimonials = [
+    # If not enough vendors with stories, get all approved vendors
+    if len(vendors_with_stories) < 5:
+        remaining = 5 - len(vendors_with_stories)
+        vendor_ids_with_stories = [v["id"] for v in vendors_with_stories]
+        additional_vendors = await db.vendors.find(
+            {"is_approved": True, "id": {"$nin": vendor_ids_with_stories}},
+            {"_id": 0}
+        ).sort("total_sales", -1).limit(remaining).to_list(remaining)
+        vendors = vendors_with_stories + additional_vendors
+    else:
+        vendors = vendors_with_stories
+    
+    # Fallback testimonials for vendors without stories
+    fallback_testimonials = [
         "AfroVending helped me reach customers I never thought possible. My business has grown 300%!",
         "The platform is easy to use and the support team is amazing. Highly recommend for African entrepreneurs.",
         "I started selling part-time and now it's my full-time business. AfroVending changed my life!",
@@ -112,17 +126,21 @@ async def get_vendor_success_stories():
     for i, vendor in enumerate(vendors):
         product_count = await db.products.count_documents({"vendor_id": vendor["id"], "is_active": True})
         
+        # Use vendor's story if available, otherwise use fallback testimonial
+        testimonial = vendor.get("story") or vendor.get("cultural_story") or fallback_testimonials[i % len(fallback_testimonials)]
+        
         stories.append({
             "vendor_id": vendor["id"],
             "store_name": vendor["store_name"],
             "logo": vendor.get("logo_url"),
             "country": vendor.get("country", "Africa"),
-            "total_sales": vendor.get("total_sales", 0) or random.randint(5000, 50000),  # Show sample if 0
+            "total_sales": vendor.get("total_sales", 0) or random.randint(5000, 50000),
             "products": product_count,
             "is_verified": vendor.get("is_verified", True),
             "joined_date": vendor.get("created_at", "")[:10],
             "average_rating": vendor.get("average_rating", 4.5),
-            "testimonial": testimonials[i % len(testimonials)]
+            "testimonial": testimonial,
+            "has_custom_story": bool(vendor.get("story") or vendor.get("cultural_story"))
         })
     
     return {"vendors": stories}

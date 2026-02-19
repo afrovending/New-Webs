@@ -290,20 +290,12 @@ const VendorDashboard = () => {
                     )}
                   </div>
                 </div>
-              ))} 
-                          ? 'bg-orange-100 text-orange-700' 
-                          : 'bg-blue-100 text-blue-700'
-                    }`}>
-                      {product.stock === 0 ? 'Out of Stock' : `${product.stock} left`}
-                    </span>
-                  </div>
-                </div>
               ))}
             </div>
             
-            {lowStockData.products.length > 5 && (
+            {lowStockData.products.length > 6 && (
               <p className="text-center text-sm text-gray-500 mt-3">
-                +{lowStockData.products.length - 5} more products need attention
+                +{lowStockData.products.length - 6} more products need attention
               </p>
             )}
           </CardContent>

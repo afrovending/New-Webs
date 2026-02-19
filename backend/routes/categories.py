@@ -20,15 +20,30 @@ async def get_categories(type: Optional[str] = None):
     
     if type:
         # If type is specified, find categories with that type OR without type field (legacy)
-        # For product type, include categories without type (they are product categories)
         if type == "product":
+            # For product type, include categories without type (they are product categories)
             query = {"$or": [{"type": "product"}, {"type": {"$exists": False}}]}
+        elif type == "service":
+            # For service, return service categories or create default ones
+            query = {"type": "service"}
         else:
             query = {"type": type}
     else:
         query = {}
     
     categories = await db.categories.find(query, {"_id": 0}).to_list(100)
+    
+    # If no service categories found, return default service categories
+    if type == "service" and len(categories) == 0:
+        categories = [
+            {"id": "svc-1", "name": "Hair & Beauty", "slug": "hair-beauty", "icon": "scissors", "type": "service"},
+            {"id": "svc-2", "name": "Catering & Events", "slug": "catering", "icon": "utensils", "type": "service"},
+            {"id": "svc-3", "name": "Fashion Design", "slug": "fashion-design", "icon": "ruler", "type": "service"},
+            {"id": "svc-4", "name": "Cultural Experiences", "slug": "cultural", "icon": "globe", "type": "service"},
+            {"id": "svc-5", "name": "Music & Entertainment", "slug": "entertainment", "icon": "music", "type": "service"},
+            {"id": "svc-6", "name": "Health & Wellness", "slug": "wellness", "icon": "heart", "type": "service"},
+        ]
+    
     return categories
 
 

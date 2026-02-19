@@ -36,12 +36,12 @@ async def get_categories(type: Optional[str] = None):
     # If no service categories found, return default service categories
     if type == "service" and len(categories) == 0:
         categories = [
-            {"id": "svc-1", "name": "Hair & Beauty", "slug": "hair-beauty", "icon": "scissors", "type": "service"},
-            {"id": "svc-2", "name": "Catering & Events", "slug": "catering", "icon": "utensils", "type": "service"},
-            {"id": "svc-3", "name": "Fashion Design", "slug": "fashion-design", "icon": "ruler", "type": "service"},
-            {"id": "svc-4", "name": "Cultural Experiences", "slug": "cultural", "icon": "globe", "type": "service"},
-            {"id": "svc-5", "name": "Music & Entertainment", "slug": "entertainment", "icon": "music", "type": "service"},
-            {"id": "svc-6", "name": "Health & Wellness", "slug": "wellness", "icon": "heart", "type": "service"},
+            {"id": "svc-1", "name": "Hair & Beauty", "slug": "hair-beauty", "icon": "💇‍♀️", "type": "service"},
+            {"id": "svc-2", "name": "Catering & Events", "slug": "catering", "icon": "🍛", "type": "service"},
+            {"id": "svc-3", "name": "Fashion Design", "slug": "fashion-design", "icon": "✂️", "type": "service"},
+            {"id": "svc-4", "name": "Cultural Experiences", "slug": "cultural", "icon": "🌍", "type": "service"},
+            {"id": "svc-5", "name": "Music & Entertainment", "slug": "entertainment", "icon": "🎵", "type": "service"},
+            {"id": "svc-6", "name": "Health & Wellness", "slug": "wellness", "icon": "🧘", "type": "service"},
         ]
     
     return categories

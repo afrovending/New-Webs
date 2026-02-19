@@ -92,6 +92,216 @@ async def get_admin_stats(user: dict = Depends(require_admin)):
     }
 
 
+@router.get("/analytics")
+async def get_analytics(period: str = "30d", user: dict = Depends(require_admin)):
+    """
+    Comprehensive analytics dashboard with traffic, sales, top performers.
+    Period: 7d, 30d, 90d, 1y
+    """
+    db = get_db()
+    now = datetime.now(timezone.utc)
+    
+    # Determine date range
+    period_days = {"7d": 7, "30d": 30, "90d": 90, "1y": 365}.get(period, 30)
+    period_start = (now - timedelta(days=period_days)).isoformat()
+    prev_period_start = (now - timedelta(days=period_days * 2)).isoformat()
+    
+    # Basic counts
+    total_users = await db.users.count_documents({})
+    period_users = await db.users.count_documents({"created_at": {"$gte": period_start}})
+    prev_users = await db.users.count_documents({"created_at": {"$gte": prev_period_start, "$lt": period_start}})
+    
+    total_vendors = await db.vendors.count_documents({})
+    active_vendors = await db.vendors.count_documents({"is_active": {"$ne": False}})
+    pending_vendors = await db.vendors.count_documents({"is_approved": False})
+    deactivated_vendors = await db.vendors.count_documents({"is_active": False})
+    verified_vendors = await db.vendors.count_documents({"is_verified": True})
+    
+    total_products = await db.products.count_documents({})
+    active_products = await db.products.count_documents({"is_active": True})
+    
+    total_services = await db.services.count_documents({})
+    active_services = await db.services.count_documents({"is_active": True})
+    
+    # Orders and revenue
+    total_orders = await db.orders.count_documents({})
+    period_orders = await db.orders.count_documents({"created_at": {"$gte": period_start}})
+    prev_orders = await db.orders.count_documents({"created_at": {"$gte": prev_period_start, "$lt": period_start}})
+    
+    # Revenue calculations
+    revenue_pipeline = [
+        {"$match": {"payment_status": "paid", "created_at": {"$gte": period_start}}},
+        {"$group": {"_id": None, "total": {"$sum": "$total"}}}
+    ]
+    revenue_result = await db.orders.aggregate(revenue_pipeline).to_list(1)
+    period_revenue = revenue_result[0]["total"] if revenue_result else 0
+    
+    prev_revenue_pipeline = [
+        {"$match": {"payment_status": "paid", "created_at": {"$gte": prev_period_start, "$lt": period_start}}},
+        {"$group": {"_id": None, "total": {"$sum": "$total"}}}
+    ]
+    prev_revenue_result = await db.orders.aggregate(prev_revenue_pipeline).to_list(1)
+    prev_revenue = prev_revenue_result[0]["total"] if prev_revenue_result else 0
+    
+    # Bookings
+    total_bookings = await db.bookings.count_documents({})
+    period_bookings = await db.bookings.count_documents({"created_at": {"$gte": period_start}})
+    
+    # Calculate growth rates
+    def calc_growth(current, previous):
+        if previous == 0:
+            return 100 if current > 0 else 0
+        return round(((current - previous) / previous) * 100, 1)
+    
+    # Top vendors by revenue
+    top_vendors_pipeline = [
+        {"$match": {"payment_status": "paid", "created_at": {"$gte": period_start}}},
+        {"$unwind": "$items"},
+        {"$group": {
+            "_id": "$items.vendor_id",
+            "revenue": {"$sum": {"$multiply": ["$items.price", "$items.quantity"]}},
+            "orders": {"$sum": 1}
+        }},
+        {"$sort": {"revenue": -1}},
+        {"$limit": 10}
+    ]
+    top_vendors_data = await db.orders.aggregate(top_vendors_pipeline).to_list(10)
+    
+    top_vendors = []
+    for v in top_vendors_data:
+        vendor = await db.vendors.find_one({"id": v["_id"]}, {"_id": 0, "store_name": 1, "is_verified": 1})
+        if vendor:
+            top_vendors.append({
+                "vendor_id": v["_id"],
+                "store_name": vendor.get("store_name", "Unknown"),
+                "is_verified": vendor.get("is_verified", False),
+                "revenue": v["revenue"],
+                "orders": v["orders"]
+            })
+    
+    # Top products by sales
+    top_products_pipeline = [
+        {"$match": {"payment_status": "paid", "created_at": {"$gte": period_start}}},
+        {"$unwind": "$items"},
+        {"$group": {
+            "_id": "$items.product_id",
+            "quantity_sold": {"$sum": "$items.quantity"},
+            "revenue": {"$sum": {"$multiply": ["$items.price", "$items.quantity"]}}
+        }},
+        {"$sort": {"revenue": -1}},
+        {"$limit": 10}
+    ]
+    top_products_data = await db.orders.aggregate(top_products_pipeline).to_list(10)
+    
+    top_products = []
+    for p in top_products_data:
+        product = await db.products.find_one({"id": p["_id"]}, {"_id": 0, "name": 1, "images": 1})
+        if product:
+            top_products.append({
+                "product_id": p["_id"],
+                "name": product.get("name", "Unknown"),
+                "image": product.get("images", [None])[0] if product.get("images") else None,
+                "quantity_sold": p["quantity_sold"],
+                "revenue": p["revenue"]
+            })
+    
+    # Most viewed products (using view_count if tracked)
+    most_viewed_products = await db.products.find(
+        {"view_count": {"$gt": 0}},
+        {"_id": 0, "id": 1, "name": 1, "view_count": 1, "images": 1}
+    ).sort("view_count", -1).limit(10).to_list(10)
+    
+    # Daily stats for chart
+    daily_stats = []
+    for i in range(min(period_days, 30)):
+        day_start = (now - timedelta(days=i+1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = (now - timedelta(days=i)).replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        day_orders = await db.orders.count_documents({
+            "created_at": {"$gte": day_start.isoformat(), "$lt": day_end.isoformat()}
+        })
+        
+        day_revenue_pipeline = [
+            {"$match": {"payment_status": "paid", "created_at": {"$gte": day_start.isoformat(), "$lt": day_end.isoformat()}}},
+            {"$group": {"_id": None, "total": {"$sum": "$total"}}}
+        ]
+        day_revenue_result = await db.orders.aggregate(day_revenue_pipeline).to_list(1)
+        day_revenue = day_revenue_result[0]["total"] if day_revenue_result else 0
+        
+        daily_stats.append({
+            "date": day_start.strftime("%Y-%m-%d"),
+            "orders": day_orders,
+            "revenue": day_revenue
+        })
+    
+    daily_stats.reverse()
+    
+    # Category performance
+    category_pipeline = [
+        {"$match": {"payment_status": "paid", "created_at": {"$gte": period_start}}},
+        {"$unwind": "$items"},
+        {"$lookup": {
+            "from": "products",
+            "localField": "items.product_id",
+            "foreignField": "id",
+            "as": "product"
+        }},
+        {"$unwind": {"path": "$product", "preserveNullAndEmptyArrays": True}},
+        {"$group": {
+            "_id": "$product.category_id",
+            "revenue": {"$sum": {"$multiply": ["$items.price", "$items.quantity"]}},
+            "orders": {"$sum": 1}
+        }},
+        {"$sort": {"revenue": -1}},
+        {"$limit": 10}
+    ]
+    category_data = await db.orders.aggregate(category_pipeline).to_list(10)
+    
+    category_performance = []
+    for c in category_data:
+        if c["_id"]:
+            category = await db.categories.find_one({"id": c["_id"]}, {"_id": 0, "name": 1})
+            if category:
+                category_performance.append({
+                    "category_id": c["_id"],
+                    "name": category.get("name", "Unknown"),
+                    "revenue": c["revenue"],
+                    "orders": c["orders"]
+                })
+    
+    return {
+        "period": period,
+        "summary": {
+            "total_users": total_users,
+            "new_users": period_users,
+            "total_vendors": total_vendors,
+            "active_vendors": active_vendors,
+            "pending_vendors": pending_vendors,
+            "deactivated_vendors": deactivated_vendors,
+            "verified_vendors": verified_vendors,
+            "total_products": total_products,
+            "active_products": active_products,
+            "total_services": total_services,
+            "active_services": active_services,
+            "total_orders": total_orders,
+            "period_orders": period_orders,
+            "total_bookings": total_bookings,
+            "period_bookings": period_bookings,
+            "revenue": period_revenue
+        },
+        "growth": {
+            "users": calc_growth(period_users, prev_users),
+            "orders": calc_growth(period_orders, prev_orders),
+            "revenue": calc_growth(period_revenue, prev_revenue)
+        },
+        "top_vendors": top_vendors,
+        "top_products": top_products,
+        "most_viewed_products": most_viewed_products,
+        "daily_stats": daily_stats,
+        "category_performance": category_performance
+    }
+
+
 @router.get("/vendors")
 async def get_all_vendors(
     status: Optional[str] = None,

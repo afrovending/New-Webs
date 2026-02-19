@@ -265,6 +265,16 @@ async def stripe_webhook(request: Request):
             user = await db.users.find_one({"id": user_id}, {"_id": 0}) if user_id else None
             
             if order:
+                # Decrement stock for each item in the order
+                for item in order.get("items", []):
+                    product_id = item.get("product_id")
+                    quantity = item.get("quantity", 1)
+                    if product_id:
+                        await db.products.update_one(
+                            {"id": product_id},
+                            {"$inc": {"stock": -quantity}}
+                        )
+                
                 # Send push notification to customer
                 try:
                     from routes.notifications import notify_order_update

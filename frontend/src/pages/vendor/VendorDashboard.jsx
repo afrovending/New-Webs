@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Package, Calendar, DollarSign, Star, TrendingUp } from 'lucide-react';
+import { toast } from 'sonner';
 
 const VendorDashboard = () => {
   const { api, user } = useAuth();
@@ -11,8 +12,18 @@ const VendorDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const setupAndFetch = async () => {
       try {
+        // Auto-setup vendor profile if not exists
+        if (user?.role === 'vendor' && !user?.vendor_id) {
+          try {
+            await api.post('/vendors/setup');
+            toast.success('Vendor profile created! You can now add products.');
+          } catch (e) {
+            // Profile might already exist, that's fine
+          }
+        }
+        
         const [ordersRes, bookingsRes] = await Promise.all([
           api.get('/vendor/orders'),
           api.get('/vendor/bookings'),
@@ -35,8 +46,8 @@ const VendorDashboard = () => {
         setLoading(false);
       }
     };
-    fetchData();
-  }, []);
+    setupAndFetch();
+  }, [api, user]);
 
   return (
     <div className="space-y-6">

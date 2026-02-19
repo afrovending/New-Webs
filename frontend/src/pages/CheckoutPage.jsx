@@ -182,16 +182,24 @@ const CheckoutPage = () => {
                   />
                 </div>
                 
-                {/* Address Line 1 */}
+                {/* Address Line 1 with Google Autocomplete */}
                 <div className="space-y-2">
-                  <Label htmlFor="address">Street Address</Label>
-                  <Input
-                    id="address"
-                    placeholder="123 Main Street"
+                  <Label htmlFor="address" className="flex items-center gap-2">
+                    Street Address
+                    {addressVerified && (
+                      <span className="text-green-600 flex items-center gap-1 text-xs">
+                        <CheckCircle className="h-3 w-3" /> Verified
+                      </span>
+                    )}
+                  </Label>
+                  <GoogleAddressAutocomplete
                     value={formData.shipping_address}
-                    onChange={(e) => setFormData({ ...formData, shipping_address: e.target.value })}
-                    required
-                    data-testid="shipping-address-input"
+                    onChange={(value) => {
+                      setFormData({ ...formData, shipping_address: value });
+                      setAddressVerified(false);
+                    }}
+                    onAddressSelect={handleAddressSelect}
+                    placeholder="Start typing your address..."
                   />
                 </div>
                 

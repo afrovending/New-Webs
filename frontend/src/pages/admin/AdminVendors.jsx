@@ -412,7 +412,7 @@ const AdminVendors = () => {
       <Dialog open={deactivateDialog.open} onOpenChange={(open) => !open && setDeactivateDialog({ open: false, vendor: null })}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
               <AlertTriangle className="h-5 w-5" />
               Deactivate Vendor
             </DialogTitle>
@@ -442,7 +442,7 @@ const AdminVendors = () => {
             <Button 
               onClick={handleDeactivate}
               disabled={!deactivateReason.trim() || actionLoading === deactivateDialog.vendor?.id}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-amber-600 hover:bg-amber-700"
               data-testid="confirm-deactivate-btn"
             >
               {actionLoading === deactivateDialog.vendor?.id ? (
@@ -451,6 +451,45 @@ const AdminVendors = () => {
                 <Ban className="h-4 w-4 mr-1" />
               )}
               Deactivate Vendor
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={deleteDialog.open} onOpenChange={(open) => !open && setDeleteDialog({ open: false, vendor: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              Delete Vendor Permanently
+            </DialogTitle>
+            <DialogDescription>
+              You are about to <strong>permanently delete</strong> <strong>{deleteDialog.vendor?.store_name}</strong>. 
+              This action cannot be undone and will:
+              <ul className="list-disc ml-6 mt-2 text-sm">
+                <li>Delete all products and services</li>
+                <li>Remove the vendor profile</li>
+                <li>Convert user account to customer</li>
+              </ul>
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialog({ open: false, vendor: null })}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleDelete}
+              disabled={actionLoading === deleteDialog.vendor?.id}
+              variant="destructive"
+            >
+              {actionLoading === deleteDialog.vendor?.id ? (
+                <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-1" />
+              )}
+              Delete Permanently
             </Button>
           </DialogFooter>
         </DialogContent>

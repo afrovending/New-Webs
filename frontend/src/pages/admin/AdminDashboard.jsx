@@ -275,6 +275,65 @@ const AdminDashboard = () => {
                 <p>All caught up! No pending actions.</p>
               </div>
             )}
+
+            {/* Broken Images Check */}
+            <div className="border-t pt-3 mt-3">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <ImageOff className="h-5 w-5 text-gray-500" />
+                  <span className="font-medium text-gray-700">Product Images Health</span>
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={checkBrokenImages}
+                  disabled={loadingImages}
+                  data-testid="check-broken-images-btn"
+                >
+                  {loadingImages ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Check Now'
+                  )}
+                </Button>
+              </div>
+              
+              {brokenImages && (
+                <div className="mt-3 space-y-2">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="bg-green-50 p-2 rounded text-center">
+                      <p className="text-green-700 font-bold">{brokenImages.summary.products_with_cloudinary_images}</p>
+                      <p className="text-green-600 text-xs">Cloudinary (OK)</p>
+                    </div>
+                    <div className={`p-2 rounded text-center ${brokenImages.summary.total_needing_attention > 0 ? 'bg-red-50' : 'bg-gray-50'}`}>
+                      <p className={`font-bold ${brokenImages.summary.total_needing_attention > 0 ? 'text-red-700' : 'text-gray-700'}`}>
+                        {brokenImages.summary.total_needing_attention}
+                      </p>
+                      <p className={`text-xs ${brokenImages.summary.total_needing_attention > 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                        Need Attention
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {brokenImages.summary.total_needing_attention > 0 && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
+                      <p className="text-amber-800 font-medium mb-2">Affected Products:</p>
+                      <ul className="space-y-1 text-amber-700 max-h-32 overflow-y-auto">
+                        {[...brokenImages.broken_images, ...brokenImages.no_images].map((item, i) => (
+                          <li key={i} className="flex justify-between text-xs">
+                            <span className="truncate flex-1">{item.product_name}</span>
+                            <span className="text-amber-600 ml-2">{item.vendor_store}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-amber-600 text-xs mt-2 italic">
+                        Vendors need to re-upload images for these products.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

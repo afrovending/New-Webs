@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, FileText, Users, CreditCard, Scale, Lock, Gavel, ChevronRight } from 'lucide-react';
-import { Card, CardContent } from '../components/ui/card';
+import { Card, CardContent } from '../../components/ui/card';
 
 const LegalPages = () => {
   const legalDocs = [

@@ -368,6 +368,10 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
   - Secure `/api/admin/seed-database` endpoint for populating production database
   - Admin-only access with proper JWT authentication
   - Seeds: Categories, Countries, Admin account, Demo Vendor with Products/Services
+- [x] **Checkout/Payment Flow Fix** - DONE (Feb 19, 2026)
+  - Fixed "Method Not Allowed" error on billing page
+  - Checkout router properly integrated
+  - Frontend now uses POST /api/checkout/cart endpoint
 - [ ] **User action**: Save to GitHub and Redeploy on DigitalOcean, then call seed endpoint
 
 ### P1 (High Priority) - REFACTORING COMPLETE ✅

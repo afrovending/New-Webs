@@ -10,7 +10,7 @@ from typing import Optional, List
 from decimal import Decimal
 from datetime import datetime, timezone
 from database import get_db
-from auth import get_current_user, get_current_user_optional
+from auth import get_current_user
 
 router = APIRouter(prefix="/shipping", tags=["Shipping"])
 

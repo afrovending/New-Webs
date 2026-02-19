@@ -28,6 +28,7 @@ const AdminVendors = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [deactivateDialog, setDeactivateDialog] = useState({ open: false, vendor: null });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, vendor: null });
   const [deactivateReason, setDeactivateReason] = useState('');
   const [actionLoading, setActionLoading] = useState(null);
 

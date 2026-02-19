@@ -25,6 +25,12 @@ const ImageUploader = ({
       const sigResponse = await api.get(`/cloudinary/signature?folder=${folder}&resource_type=image`);
       const sig = sigResponse.data;
 
+      // Check if Cloudinary is configured
+      if (!sig.cloud_name || !sig.api_key) {
+        console.error('Cloudinary not configured');
+        throw new Error('Cloud storage not configured. Please contact support.');
+      }
+
       // Upload to Cloudinary
       const formData = new FormData();
       formData.append('file', file);
@@ -48,9 +54,9 @@ const ImageUploader = ({
 
       return result.secure_url;
     } catch (err) {
-      console.error('Cloudinary upload failed, trying local upload:', err);
-      // Fallback to local upload
-      return await uploadToLocal(file);
+      console.error('Cloudinary upload failed:', err);
+      setError(err.message || 'Upload failed. Please try again.');
+      throw err;
     }
   };
 

@@ -15,9 +15,9 @@ from auth import get_current_user
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
-# VAPID keys for push notifications
-VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
-VAPID_PUBLIC_KEY = os.environ.get('VAPID_PUBLIC_KEY', 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U')
+# VAPID keys for push notifications - Generated for AfroVending
+VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgbMiBykmLv5Hwml2M\nWjCDCpIOuIa/jVfdXVMsg8ItwZyhRANCAAT7WWTNLPm4LrfTTIGggAaS3bw/0Zl7\n/YN0R6PhRxYyO/bYgWRRpww2YfTLQKh/Gz1/PTsWAJwDdxbfIvbmUCUz\n-----END PRIVATE KEY-----\n')
+VAPID_PUBLIC_KEY = os.environ.get('VAPID_PUBLIC_KEY', 'BPtZZM0s-bgut9NMgaCABpLdvD_RmXv9g3RHo-FHFjI79tiBZFGnDDZh9MtAqH8bPX89OxYAnAN3Ft8i9uZQJTM')
 VAPID_CLAIMS = {"sub": "mailto:support@afrovending.com"}
 
 

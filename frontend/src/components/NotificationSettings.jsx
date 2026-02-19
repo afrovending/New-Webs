@@ -8,23 +8,25 @@ import pushService from '../services/pushNotificationService';
 import { toast } from 'sonner';
 
 const NotificationSettings = () => {
-  const { user } = useAuth();
+  const { user, api } = useAuth();
   const [loading, setLoading] = useState(true);
   const [permissionStatus, setPermissionStatus] = useState('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
+  const [savingPrefs, setSavingPrefs] = useState(false);
 
   // Notification preferences
   const [preferences, setPreferences] = useState({
-    orderUpdates: true,
+    order_updates: true,
     promotions: true,
-    priceAlerts: true,
-    newProducts: false,
-    vendorMessages: true
+    price_alerts: true,
+    new_products: false,
+    vendor_messages: true
   });
 
   useEffect(() => {
     initNotifications();
+    loadPreferences();
   }, []);
 
   const initNotifications = async () => {
@@ -42,6 +44,23 @@ const NotificationSettings = () => {
       console.error('Failed to init notifications:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPreferences = async () => {
+    try {
+      const response = await api.get('/notifications/preferences');
+      if (response.data) {
+        setPreferences({
+          order_updates: response.data.order_updates ?? true,
+          promotions: response.data.promotions ?? true,
+          price_alerts: response.data.price_alerts ?? true,
+          new_products: response.data.new_products ?? false,
+          vendor_messages: response.data.vendor_messages ?? true
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load preferences:', error);
     }
   };
 

@@ -10,7 +10,7 @@ from database import get_db
 from auth import get_current_user
 from models import ProductCreate, ProductResponse
 
-router = APIRouter(tags=["Products"])
+router = APIRouter(prefix="/products", tags=["Products"])
 # db initialized per-request
 
 

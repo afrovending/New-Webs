@@ -14,7 +14,7 @@ const AdminOrders = () => {
     const fetchOrders = async () => {
       try {
         const response = await api.get('/admin/orders?limit=100');
-        setOrders(response.data);
+        setOrders(response.data.orders || []);
       } catch (error) {
         console.error('Error fetching orders:', error);
       } finally {

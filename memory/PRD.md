@@ -22,6 +22,15 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
   - Real-time shipping rates via EasyPost API
   - Address verification support
   - Tracking number generation
+- **Order Tracking Page with Map Visualization**:
+  - Interactive Google Maps integration
+  - Visual timeline showing order progress (Placed → Processing → Shipped → In Transit → Delivered)
+  - Tracking number display with copy-to-clipboard
+  - Delivery address display
+  - Order items summary
+  - Share tracking link functionality
+  - Auto-refresh every 30 seconds
+  - Public access (no login required)
 - **Google Address Autocomplete**:
   - Powered by Google Places API
   - Auto-fills city, state, ZIP, country when address selected

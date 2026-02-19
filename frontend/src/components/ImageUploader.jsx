@@ -20,29 +20,37 @@ const ImageUploader = ({
   const fileInputRef = useRef(null);
 
   const uploadToCloudinary = async (file) => {
-    // Get signature from backend
-    const sigResponse = await api.get(`/cloudinary/signature?folder=${folder}&resource_type=image`);
-    const sig = sigResponse.data;
+    try {
+      // Get signature from backend
+      const sigResponse = await api.get(`/cloudinary/signature?folder=${folder}&resource_type=image`);
+      const sig = sigResponse.data;
 
-    // Upload to Cloudinary
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('api_key', sig.api_key);
-    formData.append('timestamp', sig.timestamp);
-    formData.append('signature', sig.signature);
-    formData.append('folder', sig.folder);
+      // Upload to Cloudinary
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', sig.api_key);
+      formData.append('timestamp', sig.timestamp);
+      formData.append('signature', sig.signature);
+      formData.append('folder', sig.folder);
 
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${sig.cloud_name}/image/upload`,
-      { method: 'POST', body: formData }
-    );
+      const cloudName = sig.cloud_name.toLowerCase(); // Cloudinary cloud names are lowercase
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        { method: 'POST', body: formData }
+      );
 
-    if (!response.ok) {
-      throw new Error('Upload failed');
+      const result = await response.json();
+      
+      if (!response.ok || result.error) {
+        console.error('Cloudinary error:', result);
+        throw new Error(result.error?.message || 'Upload failed');
+      }
+
+      return result.secure_url;
+    } catch (err) {
+      console.error('Upload error:', err);
+      throw err;
     }
-
-    const result = await response.json();
-    return result.secure_url;
   };
 
   const handleFileSelect = async (e) => {

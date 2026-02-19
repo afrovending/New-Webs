@@ -409,5 +409,86 @@ class EmailService:
         
         return self._send(to_email, "Your AfroVending Vendor Application is Approved!", html_content)
 
+    def send_broken_images_notification(self, to_email: str, vendor_name: str, products: list) -> bool:
+        """Send notification to vendor about products with broken images"""
+        products_html = ""
+        for product in products:
+            products_html += f"""
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{product.get('product_name', 'Unknown')}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; color: #dc2626;">{product.get('issue', 'Image needs re-upload')}</td>
+            </tr>
+            """
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                .content {{ background: #fff; padding: 30px; border: 1px solid #eee; }}
+                .footer {{ background: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #666; border-radius: 0 0 10px 10px; }}
+                .alert-box {{ background: #fef3c7; border: 1px solid #fcd34d; padding: 20px; border-radius: 10px; margin: 20px 0; }}
+                .btn {{ display: inline-block; background: #dc2626; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; }}
+                table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+                th {{ background: #f3f4f6; padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1 style="margin: 0;">Action Required: Product Images</h1>
+                </div>
+                <div class="content">
+                    <p>Dear {vendor_name},</p>
+                    
+                    <div class="alert-box">
+                        <h3 style="color: #92400e; margin: 0 0 10px 0;">⚠️ Some of your product images need attention</h3>
+                        <p style="margin: 0;">We noticed that {len(products)} of your products have missing or broken images. Products without images are less likely to sell!</p>
+                    </div>
+                    
+                    <h3>Affected Products</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Issue</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {products_html}
+                        </tbody>
+                    </table>
+                    
+                    <h3>How to Fix</h3>
+                    <ol>
+                        <li>Log in to your AfroVending vendor dashboard</li>
+                        <li>Go to "My Products"</li>
+                        <li>Click on each affected product</li>
+                        <li>Upload new images for your products</li>
+                        <li>Save your changes</li>
+                    </ol>
+                    
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="https://afrovending.com/vendor/products" class="btn" style="color: white;">Go to My Products</a>
+                    </div>
+                    
+                    <p style="color: #666; font-size: 14px;">
+                        <strong>Why did this happen?</strong> We recently upgraded our image storage system. Images uploaded before this upgrade need to be re-uploaded to ensure they display correctly.
+                    </p>
+                </div>
+                <div class="footer">
+                    <p>Need help? Contact us at support@afrovending.com</p>
+                    <p>AfroVending - Authentic African Products & Services</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return self._send(to_email, f"Action Required: {len(products)} Product Images Need Attention", html_content)
+
 # Singleton instance
 email_service = EmailService()

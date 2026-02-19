@@ -15,6 +15,34 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - **Admin Analytics Dashboard**: Comprehensive platform stats with growth indicators
 - **Vendor Deactivation**: Admin can deactivate/reactivate vendors for non-compliance
 
+### New Features (Feb 19, 2026)
+- **EasyPost Shipping Integration**:
+  - 66 worldwide countries with regional pricing
+  - Regional rates: Africa $15, North America $25, Europe $30, Asia $35, South America $40, Oceania $45
+  - Real-time shipping rates via EasyPost API
+  - Address verification support
+  - Tracking number generation
+- **Google Address Autocomplete**:
+  - Powered by Google Places API
+  - Auto-fills city, state, ZIP, country when address selected
+  - Visual verification indicator
+- **Auto-Detect Country by IP**:
+  - Uses ip-api.com for geolocation
+  - Pre-selects country in checkout based on visitor location
+- **Admin Notification Center**:
+  - Real-time alerts for new orders
+  - Low stock product alerts
+  - Vendor application notifications
+  - New user registration alerts
+  - Pending payout notifications
+  - Priority badges (high/medium/low)
+  - Mark as read functionality
+- **Admin Products Management**:
+  - Full product CRUD for admins
+  - Create products assigned to any vendor
+  - Toggle active/featured status
+  - Filter by vendor and status
+
 ### NEW Features (Feb 18, 2026)
 - **Multi-Currency Support**: 11 currencies with LIVE exchange rates from exchangerate-api.com
   - Auto-detect currency by visitor IP

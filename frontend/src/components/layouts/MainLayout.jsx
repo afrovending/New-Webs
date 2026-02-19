@@ -435,7 +435,7 @@ const MainLayout = () => {
       {/* Footer */}
       <footer className="bg-gray-900 text-amber-100 py-12 mt-16">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-5 gap-8">
             <div>
               <h3 className="text-xl font-bold text-white mb-4">AfroVending</h3>
               <p className="text-amber-200">

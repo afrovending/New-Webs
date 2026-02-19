@@ -103,6 +103,25 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 ### Bug Fixes (Feb 19, 2026 - Latest)
 - **P0 FIXED: "Product not found" error** - Root cause was frontend calling `GET /api/reviews?product_id=xxx` but backend only had `GET /api/reviews/product/{product_id}`. Fixed by adding query parameter endpoint in reviews.py.
 - **VAPID Keys Moved to Environment Variables** - Push notification keys now properly read from backend/.env and frontend/.env instead of being hardcoded.
+- **Admin Orders Page Blank** - Fixed: AdminOrders.jsx now correctly uses `response.data.orders` instead of `response.data`.
+
+### New Features (Feb 19, 2026)
+- **Admin Products Management** - New AdminProducts.jsx page with full product management:
+  - View all products with filters (vendor, status)
+  - Admin can create new products assigned to any vendor
+  - Toggle product active/inactive status
+  - Toggle featured status
+  - Delete products
+- **Comprehensive Admin Analytics** - New `/api/admin/analytics` endpoint with:
+  - Summary stats (users, vendors, products, services, orders, revenue)
+  - Growth rates (users, orders, revenue)
+  - Top vendors by revenue
+  - Top products by sales
+  - Most viewed products
+  - Daily stats for charts
+  - Category performance
+- **Push Notification Triggers** - Order status updates now trigger push notifications to users
+- **AfroVending Logo** - Logo now displays on all pages (login, admin dashboard, vendor dashboard, main layout)
 
 ### Completed
 - All E2E tests passed (26+ backend, 95%+ frontend)

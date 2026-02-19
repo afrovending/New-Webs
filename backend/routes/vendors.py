@@ -57,7 +57,64 @@ async def create_vendor(vendor_data: VendorCreate, user: dict = Depends(get_curr
     if existing:
         raise HTTPException(status_code=400, detail="Vendor profile already exists")
     
+    vendor_id = str(uuid.uuid4())
     vendor = {
+        "id": vendor_id,
+        "user_id": user["id"],
+        **vendor_data.model_dump(),
+        "is_approved": True,  # Auto-approve
+        "is_verified": False,
+        "subscription_plan": "free",
+        "commission_rate": 15,
+        "max_products": 10,
+        "product_count": 0,
+        "total_sales": 0,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.vendors.insert_one(vendor)
+    
+    # Update user with vendor_id
+    await db.users.update_one({"id": user["id"]}, {"$set": {"vendor_id": vendor_id, "role": "vendor"}})
+    
+    return VendorResponse(**{k: v for k, v in vendor.items() if k != "_id"})
+
+
+@router.post("/setup")
+async def setup_vendor_profile(user: dict = Depends(get_current_user)):
+    """Setup vendor profile for existing users who registered as vendor but don't have a profile"""
+    db = get_db()
+    
+    # Check if already has vendor profile
+    existing = await db.vendors.find_one({"user_id": user["id"]})
+    if existing:
+        return {"message": "Vendor profile already exists", "vendor_id": existing["id"]}
+    
+    # Create vendor profile
+    vendor_id = str(uuid.uuid4())
+    vendor = {
+        "id": vendor_id,
+        "user_id": user["id"],
+        "store_name": f"{user.get('first_name', 'My')}'s Store",
+        "description": "Welcome to my African marketplace store!",
+        "country": "Nigeria",
+        "country_code": "NG",
+        "is_approved": True,
+        "is_verified": False,
+        "subscription_plan": "free",
+        "commission_rate": 15,
+        "max_products": 10,
+        "product_count": 0,
+        "total_sales": 0,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.vendors.insert_one(vendor)
+    
+    # Update user with vendor_id and role
+    await db.users.update_one({"id": user["id"]}, {"$set": {"vendor_id": vendor_id, "role": "vendor"}})
+    
+    return {"message": "Vendor profile created successfully", "vendor_id": vendor_id}
         "id": str(uuid.uuid4()),
         "user_id": user["id"],
         **vendor_data.model_dump(),

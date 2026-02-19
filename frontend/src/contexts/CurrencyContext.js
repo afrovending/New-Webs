@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
@@ -27,11 +27,13 @@ const CURRENCY_DATA = {
 };
 
 export const CurrencyProvider = ({ children }) => {
-  const [currency, setCurrency] = useState(() => {
+  const [currency, setCurrencyState] = useState(() => {
     return localStorage.getItem('preferred_currency') || 'USD';
   });
   const [rates, setRates] = useState({});
   const [loading, setLoading] = useState(true);
+  // Version counter to force re-renders when currency changes
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     const fetchRates = async () => {
@@ -63,7 +65,7 @@ export const CurrencyProvider = ({ children }) => {
         const response = await axios.get(`${API_URL}/api/currency/detect`);
         const detected = response.data.currency;
         if (!localStorage.getItem('preferred_currency')) {
-          setCurrency(detected);
+          setCurrencyState(detected);
         }
       } catch (error) {
         console.error('Failed to detect currency:', error);
@@ -74,16 +76,19 @@ export const CurrencyProvider = ({ children }) => {
     detectCurrency();
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('preferred_currency', currency);
-  }, [currency]);
+  // Custom setCurrency that also increments version to force re-renders
+  const setCurrency = useCallback((newCurrency) => {
+    setCurrencyState(newCurrency);
+    localStorage.setItem('preferred_currency', newCurrency);
+    setVersion(v => v + 1);
+  }, []);
 
-  const convertPrice = (priceUSD, toCurrency = currency) => {
+  const convertPrice = useCallback((priceUSD, toCurrency = currency) => {
     if (!rates[toCurrency]) return priceUSD;
     return priceUSD * rates[toCurrency];
-  };
+  }, [currency, rates]);
 
-  const formatPrice = (priceUSD, showCurrency = true) => {
+  const formatPrice = useCallback((priceUSD, showCurrency = true) => {
     const converted = convertPrice(priceUSD);
     const currencyInfo = CURRENCY_DATA[currency] || CURRENCY_DATA.USD;
     
@@ -100,7 +105,10 @@ export const CurrencyProvider = ({ children }) => {
       return `${currencyInfo.symbol}${formatted}`;
     }
     return formatted;
-  };
+  }, [currency, convertPrice]);
+
+  // Get current symbol
+  const currentSymbol = CURRENCY_DATA[currency]?.symbol || '$';
 
   const value = {
     currency,
@@ -111,6 +119,8 @@ export const CurrencyProvider = ({ children }) => {
     formatPrice,
     currencies: Object.keys(CURRENCY_DATA),
     currencyData: CURRENCY_DATA,
+    currentSymbol,
+    version, // Expose version for components that need to force re-render
   };
 
   return (

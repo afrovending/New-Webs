@@ -18,6 +18,7 @@ import {
   CheckCircle,
   CreditCard,
   TrendingUp,
+  DollarSign,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 

@@ -138,6 +138,14 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
   - **APScheduler cron job** - Runs daily at 9 AM UTC to process payouts
   - **Email notifications** - Payout initiated, completed, failed, auto-enabled
   - **Stripe webhooks** - Handles payout.paid, payout.failed, account.updated events
+- **Legal & Policy Pages** - Complete legal framework (Feb 19, 2026)
+  - Terms of Service
+  - Vendor Agreement Framework
+  - Buyer Protection Policy
+  - Privacy Policy & Data Responsibility
+  - Liability Limitations
+  - Marketplace Enforcement Rights (includes chargeback defense)
+  - Footer updated with legal links
 
 ### Pending Deployment
 - User needs to **Save to GitHub** and **Redeploy on DigitalOcean**

@@ -565,3 +565,32 @@ async def seed_database_endpoint(user: dict = Depends(require_admin)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Seeding failed: {str(e)}")
 
+
+@router.get("/scheduler/status")
+async def get_scheduler_status_endpoint(user: dict = Depends(require_admin)):
+    """Get the current scheduler status"""
+    from scheduler import get_scheduler_status
+    return get_scheduler_status()
+
+
+@router.post("/scheduler/trigger-payouts")
+async def trigger_payouts_manually(user: dict = Depends(require_admin)):
+    """Manually trigger the payout processing job"""
+    from scheduler import process_scheduled_payouts
+    result = await process_scheduled_payouts()
+    return result
+
+
+@router.get("/scheduler/logs")
+async def get_scheduler_logs(
+    limit: int = 20,
+    user: dict = Depends(require_admin)
+):
+    """Get recent scheduler job logs"""
+    db = get_db()
+    logs = await db.scheduler_logs.find(
+        {},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    return {"logs": logs}
+

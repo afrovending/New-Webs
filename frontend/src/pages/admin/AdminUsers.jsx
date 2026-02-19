@@ -16,9 +16,10 @@ const AdminUsers = () => {
   const fetchUsers = async () => {
     try {
       const response = await api.get('/admin/users?limit=100');
-      setUsers(response.data);
+      setUsers(response.data.users || []);
     } catch (error) {
       console.error('Error fetching users:', error);
+      toast.error('Failed to load users');
     } finally {
       setLoading(false);
     }

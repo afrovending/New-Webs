@@ -465,6 +465,16 @@ const MainLayout = () => {
                 <li><Link to="/legal/privacy" className="hover:text-white transition">Privacy Policy</Link></li>
                 <li><Link to="/legal/buyer-protection" className="hover:text-white transition">Buyer Protection</Link></li>
                 <li><Link to="/legal/vendor-agreement" className="hover:text-white transition">Vendor Agreement</Link></li>
+                <li><Link to="/legal/return-policy" className="hover:text-white transition">Return Policy</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-white mb-4">Policies</h4>
+              <ul className="space-y-2">
+                <li><Link to="/legal/risk-shield" className="hover:text-white transition">Risk Shield</Link></li>
+                <li><Link to="/legal/chargeback-defense" className="hover:text-white transition">Chargeback Defense</Link></li>
+                <li><Link to="/legal/liability" className="hover:text-white transition">Liability Limits</Link></li>
+                <li><Link to="/legal/enforcement" className="hover:text-white transition">Marketplace Rules</Link></li>
               </ul>
             </div>
             <div>

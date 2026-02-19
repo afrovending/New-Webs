@@ -5,9 +5,9 @@
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
-// VAPID public key - this should be generated and stored securely
-// For production, generate your own key pair using web-push library
-const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+// VAPID public key - Generated for AfroVending production
+// To regenerate: Use py-vapid in backend or generate via web-push CLI
+const VAPID_PUBLIC_KEY = 'BPtZZM0s-bgut9NMgaCABpLdvD_RmXv9g3RHo-FHFjI79tiBZFGnDDZh9MtAqH8bPX89OxYAnAN3Ft8i9uZQJTM';
 
 class PushNotificationService {
   constructor() {

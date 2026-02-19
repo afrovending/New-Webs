@@ -173,6 +173,13 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
   - Color-coded urgency (red for critical, amber for low)
   - "Manage Inventory" button links to products page
   - Backend endpoint: `GET /api/vendors/me/low-stock?threshold=5`
+- **Out-of-Stock Auto-Hide Feature** - Automatic product management:
+  - Products automatically deactivated (hidden from store) when stock reaches 0
+  - Vendor receives email notification with list of hidden products
+  - Auto-deactivated products show "Hidden" badge with eye-off icon in dashboard
+  - "Reactivate" button available when vendor adds stock back
+  - Backend endpoint: `POST /api/vendors/me/products/{product_id}/reactivate`
+  - Prevents unfulfillable orders and protects seller rating
 
 ### New Features (Feb 19, 2026)
 - **Admin Products Management** - New AdminProducts.jsx page with full product management:

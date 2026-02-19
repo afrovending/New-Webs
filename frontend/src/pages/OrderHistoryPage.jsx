@@ -503,10 +503,20 @@ const OrderHistoryPage = () => {
                   
                   <div className="text-right">
                     <p className="text-lg font-bold text-red-600">{formatPrice(order.total)}</p>
-                    <Button variant="ghost" size="sm" className="mt-2">
-                      View Details
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
+                    <div className="flex gap-2 mt-2">
+                      {order.status !== 'cancelled' && order.status !== 'pending' && (
+                        <Link to={`/track/${order.id}`} onClick={(e) => e.stopPropagation()}>
+                          <Button variant="outline" size="sm" className="text-red-600 border-red-600">
+                            <Truck className="h-4 w-4 mr-1" />
+                            Track
+                          </Button>
+                        </Link>
+                      )}
+                      <Button variant="ghost" size="sm">
+                        View
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>

@@ -52,6 +52,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminVendors from './pages/admin/AdminVendors';
 import AdminOrders from './pages/admin/AdminOrders';
+import AdminProducts from './pages/admin/AdminProducts';
 
 // Legal Pages
 import LegalPages from './pages/legal/LegalPages';

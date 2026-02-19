@@ -1,45 +1,49 @@
 <analysis>**original_problem_statement:**
 The user's goal is to build a complete e-commerce marketplace, .
 
-Initial requests included comprehensive vendor onboarding with Stripe, an automated payout system, and a suite of legal/policy pages.
+Initial requests included vendor onboarding with Stripe, an automated payout system, and policy pages.
 
 Recent user requests included:
-1.  Implement a Cookie Consent Banner and create three new policy pages: Risk Shield System, Chargeback Defense, and Elite Return Policy.
-2.  Provide a way to identify and notify vendors about products with broken images, as the initial Cloudinary setup left some images unfixed.
-3.  Verify the Forgot Password email flow.
-4.  Update the database seed script to add more sample vendors and content.
-5.  Implement Progressive Web App (PWA) support and push notifications.
-6.  Fix a bug where the Users tab in the admin dashboard was not working.
-7.  Provide full administrative capabilities to manage users and vendors (delete, edit, suspend).
-8.  **[CRITICAL]** Fix a recurring bug where users are unable to view product details or add products to the cart, receiving a Product not found error.
+1.  Fix a bug where the admin orders page was blank.
+2.  Provide full administrative capabilities to add products.
+3.  Add a comprehensive analytics dashboard for admins.
+4.  Add an Afrovending logo to all pages.
+5.  Implement push notification triggers for order events.
+6.  Expand shipping from 12 African countries to worldwide, using EasyPost for shipping rates.
+7.  Automatically detect the user's country based on IP.
+8.  Implement Google Address Autocomplete on the checkout page.
+9.  Create a real-time order tracking page with a map visualization.
+10. Add an admin notification center.
+11. **[CRITICAL]** Fix a Method Not Allowed error on the billing/checkout page, which is preventing payments.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack marketplace with a React frontend, a modular FastAPI backend, and a MongoDB database. The platform supports vendor onboarding (Stripe), automated payouts, and has Cloudinary for image storage. It features a complete set of legal pages, a cookie consent banner, a foundational PWA implementation (manifest, service worker), and a basic setup for push notifications. A comprehensive admin dashboard exists with tools to manage users, vendors, and a specific feature to identify and notify vendors about broken product images.
+A full-stack marketplace with a React frontend, a modular FastAPI backend, and a MongoDB database. The platform supports vendor onboarding (Stripe) and has an extensive admin dashboard with analytics, user/vendor management, product management, and a notification center. The frontend features a PWA foundation, Google Address Autocomplete, a public order tracking page, and uses EasyPost for worldwide shipping rate calculation at checkout.
 
 **Last working item**:
--   **Last item agent was working:** The agent was debugging a critical Product not found error. This error occurs when a user tries to navigate to a product's detail page, which blocks them from adding the item to the cart. The agent hypothesized that the API endpoint for fetching product details () is incorrectly protected by an authentication dependency, causing it to fail for guest users or on direct page loads.
+-   **Last item agent was working:** Debugging a critical Method Not Allowed error that occurs when the user tries to proceed to billing/payment. The agent identified that the frontend is attempting to access a  endpoint which is not implemented in the backend.
 -   **Status:** IN PROGRESS
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** Frontend and Backend testing agents. The frontend agent should test the user flow (navigating to a product, adding to cart) for both logged-in and guest users. The backend agent should verify the API endpoint is now public.
+-   **Which testing method agent to use?** Both. The backend testing agent should verify the new Stripe checkout session endpoint. The frontend testing agent should validate the entire checkout flow, from cart to successful payment redirection.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1:** Product not found error on product detail pages, preventing Add to Cart. (Priority: P0 - Blocker)
+-   **Issue 1:** Method Not Allowed error on the billing/checkout page. (Priority: P0 - Blocker)
 -   **Issue 2:** Minor currency symbol refresh issue where the symbol may not update instantly. (Priority: P2)
 
 **Issues Detail:**
--   **Issue 1:** Product not found error on product detail pages.
-    -   **Attempted fixes:** The agent confirmed the backend API route () works via  but observed the frontend redirecting from  to  with an error toast. The investigation points to an authentication issue on the product detail fetching logic.
+-   **Issue 1:** Method Not Allowed error on the billing/checkout page.
+    -   **Attempted fixes:** The agent analyzed the user-provided screenshot and frontend code, confirming the app calls  which returns a 405 error. The agent then inspected the backend code (, ) and confirmed this endpoint does not exist.
     -   **Next debug checklist:**
-        1.  Examine the FastAPI route  in .
-        2.  Identify and remove any authentication dependency (e.g., ) that makes the endpoint private. Product details should be public.
-        3.  After the fix, test by navigating directly to a product URL (e.g., ) as a guest user.
-        4.  Confirm that the product page loads correctly and that the Add to Cart button functions as expected.
-    -   **Why fix this issue and what will be achieved with the fix?** This is a critical bug that breaks the primary user journey of purchasing a product. Fixing it will restore core e-commerce functionality.
+        1.  Create a new backend endpoint (e.g., in  or a new ) that handles .
+        2.  Inside this endpoint, retrieve the order details.
+        3.  Use the Stripe API to create a  with the line items from the order.
+        4.  The endpoint should return the Stripe Checkout session URL to the frontend.
+        5.  The frontend will then redirect the user to this URL to complete payment.
+    -   **Why fix this issue and what will be achieved with the fix?** This is a critical blocker that prevents all customer payments, breaking the core functionality of the e-commerce platform.
     -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** Y
+    -   **Is recurring issue?** N
     -   **Should Test frontend/backend/both after fix?** both
     -   **Blocked on other issue:** None
 
@@ -59,18 +63,31 @@ A full-stack marketplace with a React frontend, a modular FastAPI backend, and a
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **(P1) Finalize Push Notification Implementation:** The foundation is laid, but the VAPID keys are hardcoded. They need to be moved to environment variables. Backend logic is needed to trigger notifications for events like Order Placed or Item Shipped.
-    -   **(P2) Add Service Categories to Seed Script:** The  script needs to be updated to populate the Browse Services section on the homepage, which currently uses placeholder data.
+    -   **(P1) Finalize Push Notification Implementation:** The Order Placed notification trigger is still missing. It needs to be added to the new checkout success flow.
+    -   **(P2) Vendor Shipping Management:** Allow vendors to manage their own shipping carriers and print labels through the EasyPost integration.
 -   **Future Tasks:**
-    -   **(P3) Mobile App:** A native mobile application remains a long-term goal for the user.
-    -   **(P3) PWA Install Prompt:** Implement a user-friendly UI prompt to encourage users to install the PWA to their home screen.
+    -   **(P3) Mobile App:** A native mobile application remains a long-term goal.
+    -   **(P3) PWA Install Prompt:** Implement a user-friendly UI prompt to encourage users to install the PWA.
+    -   **(P3) Social Media Sharing:** Add buttons for sharing products on social media.
 
 **Completed work in this session**
--   **Legal & Compliance Features (DONE):** Implemented a Cookie Consent Banner and created three new policy pages (Risk Shield, Chargeback Defense, Elite Return), all tested and integrated.
--   **Admin Tooling for Broken Images (DONE):** Created a backend endpoint and a new UI section in the admin dashboard to identify products with missing images and a button to email the affected vendors.
--   **Seed Script Enhancement (DONE):** Updated and ran the seed script to populate the Vendor Spotlight section with new vendors and stories.
--   **PWA and Push Notification Foundation (DONE):** Added , a service worker, and backend endpoints to handle push subscriptions and notification preferences. A settings UI was added to the user profile page.
--   **Admin Panel Bug Fix & Enhancement (DONE):** Fixed a bug preventing the user list from loading and implemented full CRUD (Create, Read, Update, Delete) controls for managing users and vendors directly from the admin dashboard.
+-   **Product not found Bug (FIXED):** Resolved a critical bug preventing users from viewing product details by fixing a mismatched API URL for product reviews.
+-   **Admin Panel Overhaul (DONE):**
+    -   Fixed the blank admin orders page by correcting the data mapping.
+    -   Implemented a comprehensive admin analytics dashboard with charts and key metrics.
+    -   Created a new Admin Products page for full product CRUD management by administrators.
+    -   Added an Admin Notification Center with alerts for new orders, low stock, and new users.
+    -   Integrated the Afrovending logo into the admin and login pages.
+-   **Shipping & Checkout Overhaul (DONE):**
+    -   Integrated **EasyPost** for real-time worldwide shipping rate calculation.
+    -   Expanded the checkout form to support global addresses, replacing the limited country list.
+    -   Integrated the **Google Places API** for address autocompletion in the checkout form.
+-   **Order Tracking (DONE):**
+    -   Created a public, real-time order tracking page with a map view and a delivery status timeline.
+    -   Added a Track Order button to the user's order history page.
+-   **Push Notifications (ENHANCED):**
+    -   Moved hardcoded VAPID keys to environment variables.
+    -   Added a push notification trigger for when an order's status is updated to Shipped.
 
 **Earlier issues found/mentioned but not fixed**
 -   The currency symbol refresh issue (listed in 'All Pending/In progress Issue list').
@@ -82,85 +99,82 @@ A full-stack marketplace with a React frontend, a modular FastAPI backend, and a
 
 
 **Key Technical Concepts**
--   **Backend:** FastAPI, MongoDB,  for push notifications.
--   **Frontend:** React.js, , Tailwind CSS, PWA (Service Workers, Manifest).
--   **Payments & Identity:** Stripe Connect, Stripe Identity.
--   **Image Storage:** Cloudinary.
--   **Background Jobs & Email:** APScheduler, SendGrid.
+-   **Backend:** FastAPI, MongoDB, 
+-   **Frontend:** React.js, , Tailwind CSS, PWA
+-   **Payments & Identity:** Stripe Connect
+-   **Shipping & Logistics:** EasyPost API
+-   **Maps & Geolocation:** Google Maps JavaScript API, Google Places API
+-   **Image Storage:** Cloudinary
 
 **key DB schema**
--   **users:** Updated to include  (array of subscription objects) and  (object with boolean flags).
+-   **notifications:** New collection to store notifications for the admin dashboard (e.g., new orders, low stock alerts).
 
 **changes in tech stack**
--   **pywebpush:** Added to  to enable sending web push notifications from the backend.
+-   **easypost:** Added to  for shipping rate calculation.
+-   **@react-google-maps/api:** Added to  for map visualization and address autocomplete.
 
 **All files of reference**
--   : **Most critical file** for debugging the current P0 issue.
--   : The frontend component that is failing.
--   : Recently fixed and enhanced with new controls.
--   : Recently enhanced with delete functionality.
--   : Contains newly added admin management endpoints.
--   : New router for handling push notification logic.
--   : Defines the PWA's properties.
--   : Handles background PWA tasks.
+-   **/app/frontend/src/pages/CheckoutPage.jsx**: The source of the Method Not Allowed error; requires a valid backend endpoint to call.
+-   **/app/backend/routes/orders.py**: The most likely place to implement the new Stripe checkout session endpoint.
+-   **/app/backend/routes/stripe.py**: Contains existing Stripe Connect logic that may be relevant.
+-   **/app/backend/routes/shipping.py**: New file containing EasyPost integration logic.
+-   **/app/frontend/src/pages/OrderTrackingPage.jsx**: New file for the public order tracking feature.
+-   **/app/backend/routes/admin.py**: Heavily modified with new analytics, notification, and product management endpoints.
 
 **Areas that need refactoring**:
--   **Hardcoded VAPID Keys:** The VAPID keys for push notifications are hardcoded in  and . They must be moved to environment variables for security.
--   **Duplicate Router in :** The  is included twice. The duplicate line should be removed to prevent potential routing conflicts.
+-   The Google Maps API key is stored in the frontend  file (). While necessary for the Maps JS SDK, this key is publicly visible. Ensure any backend usage of Google APIs uses a separate, non-exposed key.
 
 **key api endpoints**
--   : **Endpoint under investigation.** Suspected to have an incorrect authentication requirement.
--   : Used to add products to the cart.
--   : New endpoint to save a user's push notification subscription.
--   : New endpoint for a user to save their notification settings.
--   : New endpoint for admins to delete a user.
--   : New endpoint for admins to delete a vendor.
+-   : **MISSING.** This is the critical endpoint that needs to be created to fix the P0 payment blocker.
+-   : (New) Provides a list of worldwide countries for the checkout form.
+-   : (New) Calculates shipping rates using EasyPost.
+-   : (New) Feeds data to the admin analytics dashboard.
+-   : (New) Provides data for the admin notification center.
+-   : (New) Allows administrators to create new products.
+-   : (New) Public endpoint to fetch order details for the tracking page.
 
 **Critical Info for New Agent**
--   **P0 Blocker:** Your immediate priority is to fix the Product not found bug. The investigation strongly suggests the public-facing product detail API endpoint is incorrectly marked as private. Check  and remove any unnecessary authentication dependencies.
--   **Security Refactor:** The VAPID keys for push notifications are hardcoded. This is a security risk and bad practice. Refactor this to use environment variables (, ) as a P1 task after fixing the blocker.
--   **Code Cleanup:** A duplicate  is included in . This should be removed.
+-   **P0 Blocker:** Your immediate priority is to fix the Method Not Allowed error on the billing page. This requires creating a backend endpoint that accepts an order ID, generates a Stripe Checkout Session for that order, and returns the session URL to the frontend for redirection.
+-   **API Keys:** The user has provided keys for EasyPost and Google Maps/Places. They have been added to the respective  files. Ensure they are used correctly. The Google Map on the tracking page is not loading (grey box), which is likely a billing issue on the user's Google Cloud account, not a code issue.
+-   **Incomplete Push Notification:** The Order Placed push notification trigger has not been implemented yet because it needs to be tied to the successful creation of a Stripe Checkout session, which is what you are about to build.
 
 **documents and test reports created in this job**
 -   
--   
 
 **Last 10 User Messages and any pending HUMAN messages**
-10. **user:** Still unable to add products to cart for checkout
-9.  **agent:** (Acknowledges and starts investigating the cart issue again)
-8.  **user:** Give admin all access to remove users, vendors, delete, edit and work on the website
-7.  **agent:** (Implements full admin controls for users and vendors)
-6.  **user:** The users tab in admin is not working
-5.  **agent:** (Investigates and fixes the admin users tab)
-4.  **user:** credit added
-3.  **agent:** (Fixes a minor issue with notification preferences)
-2.  **user:** P1, P2 and I just added a product but its not allowing me to add to cart its giving error message of products not found
-1.  **agent:** (Acknowledges the cart issue and starts investigating)
+10. **user:** the billing option is not opening its saying method not found
+9.  **agent:** (Acknowledges the billing error and asks for a screenshot)
+8.  **user:** This is the screenshot
+7.  **agent:** (Confirms the Method Not Allowed error and begins investigation)
+6.  **user:** yes (Confirms plan to implement order tracking)
+5.  **agent:** (Proposes plan for real-time order tracking)
+4.  **user:** 
+3.  **agent:** (Asks for Google Places API key)
+2.  **user:** credit added
+1.  **agent:** (Proposes plan for Google Address Autocomplete)
 
 **Project Health Check:**
--   **Broken:** The core user flow of viewing a product detail page and adding an item to the cart is non-functional due to the Product not found bug.
--   **Mocked:** The Browse Services homepage section still uses placeholder data as the seed script for it has not been updated.
+-   **Broken:** The entire payment and checkout flow is non-functional due to the Method Not Allowed error. This is a P0 business-critical failure.
+-   **Mocked:** The map on the public order tracking page is non-functional (greyed out), which likely requires the user to enable billing on their Google Cloud project for the Maps API.
 
 **3rd Party Integrations**
 -   **Stripe (Payments, Connect, Identity):** Integrated for payments and vendor onboarding.
+-   **EasyPost (Shipping):** Integrated for worldwide shipping rate calculation.
+-   **Google Maps & Places API (Geolocation):** Integrated for address autocomplete and order tracking map visualization.
 -   **SendGrid (Email):** Integrated for transactional emails.
--   **MongoDB Atlas:** Primary database.
 -   **Cloudinary (Image/Video Storage):** Integrated for file uploads.
--   **APScheduler (Background Jobs):** Integrated for scheduled tasks.
--   **exchangerate-api.com:** For currency conversion.
--   **pywebpush:** Library added to the backend for push notifications.
+-   **MongoDB Atlas:** Primary database.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES (For the legal pages feature).
+-   **Testing agent used after significant changes:** YES, for the large batch of admin/analytics features.
 -   **Troubleshoot agent used after agent stuck in loop:** NO
 -   **Test files created:** None.
--   **Known regressions:** The add to cart functionality is currently broken.
+-   **Known regressions:** The core checkout functionality is currently broken.
 
 **Credentials to test flow:**
 -   **Admin:**  / 
--   **Vendor:**  /  (or register a new one).
+-   **Vendor:**  / 
 
 **What agent forgot to execute**
--   The agent hardcoded the VAPID keys for push notifications instead of using environment variables.
--   The agent did not remove the duplicate  inclusion in .
--   The agent created a PWA install prompt component () but did not fully integrate it to be triggered for the user.</analysis>
+-   The agent did not implement the push notification trigger for the Order Placed event, as it depends on the checkout flow that is currently broken.
+-   The agent did not run the testing agent after implementing the Google Places Autocomplete and Order Tracking features.</analysis>

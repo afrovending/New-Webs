@@ -141,7 +141,7 @@ class TestStripeConnectAPIs:
             pytest.skip("No Stripe account exists - skipping onboarding link test")
         
         response = self.session.post(f"{BASE_URL}/api/stripe-connect/onboarding-link", json={
-            "origin_url": "https://vendor-hub-165.preview.emergentagent.com"
+            "origin_url": "https://checkout-session.preview.emergentagent.com"
         })
         assert response.status_code == 200
         
@@ -155,7 +155,7 @@ class TestStripeConnectAPIs:
     def test_identity_verification_session(self):
         """Test POST /api/stripe-connect/identity-verification"""
         response = self.session.post(f"{BASE_URL}/api/stripe-connect/identity-verification", json={
-            "origin_url": "https://vendor-hub-165.preview.emergentagent.com"
+            "origin_url": "https://checkout-session.preview.emergentagent.com"
         })
         assert response.status_code == 200
         

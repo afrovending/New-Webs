@@ -15,6 +15,8 @@ const AdminDashboard = () => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('30d');
+  const [brokenImages, setBrokenImages] = useState(null);
+  const [loadingImages, setLoadingImages] = useState(false);
 
   useEffect(() => {
     fetchAnalytics();
@@ -29,6 +31,18 @@ const AdminDashboard = () => {
       console.error('Error fetching analytics:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkBrokenImages = async () => {
+    setLoadingImages(true);
+    try {
+      const response = await api.get('/admin/products/broken-images');
+      setBrokenImages(response.data);
+    } catch (error) {
+      console.error('Error checking broken images:', error);
+    } finally {
+      setLoadingImages(false);
     }
   };
 

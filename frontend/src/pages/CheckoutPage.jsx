@@ -153,17 +153,44 @@ const CheckoutPage = () => {
                 <CardTitle>Shipping Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Full Name */}
                 <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    placeholder="Enter your full name"
+                    value={formData.shipping_name}
+                    onChange={(e) => setFormData({ ...formData, shipping_name: e.target.value })}
+                    required
+                    data-testid="shipping-name-input"
+                  />
+                </div>
+                
+                {/* Address Line 1 */}
+                <div className="space-y-2">
+                  <Label htmlFor="address">Street Address</Label>
                   <Input
                     id="address"
-                    placeholder="Enter your shipping address"
+                    placeholder="123 Main Street"
                     value={formData.shipping_address}
                     onChange={(e) => setFormData({ ...formData, shipping_address: e.target.value })}
                     required
                     data-testid="shipping-address-input"
                   />
                 </div>
+                
+                {/* Address Line 2 */}
+                <div className="space-y-2">
+                  <Label htmlFor="address2">Apartment, Suite, etc. (optional)</Label>
+                  <Input
+                    id="address2"
+                    placeholder="Apt 4B"
+                    value={formData.shipping_address2}
+                    onChange={(e) => setFormData({ ...formData, shipping_address2: e.target.value })}
+                  />
+                </div>
+                
+                {/* City and State */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="city">City</Label>
@@ -177,22 +204,94 @@ const CheckoutPage = () => {
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="state">State / Province</Label>
+                    <Input
+                      id="state"
+                      placeholder="State"
+                      value={formData.shipping_state}
+                      onChange={(e) => setFormData({ ...formData, shipping_state: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+                
+                {/* ZIP and Country */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="zip">ZIP / Postal Code</Label>
+                    <Input
+                      id="zip"
+                      placeholder="12345"
+                      value={formData.shipping_zip}
+                      onChange={(e) => setFormData({ ...formData, shipping_zip: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="country">Country</Label>
                     <Select
                       value={formData.shipping_country}
                       onValueChange={(value) => setFormData({ ...formData, shipping_country: value })}
                     >
                       <SelectTrigger data-testid="shipping-country-select">
-                        <SelectValue />
+                        <SelectValue placeholder="Select country" />
                       </SelectTrigger>
-                      <SelectContent>
-                        {countries.map((country) => (
-                          <SelectItem key={country} value={country}>{country}</SelectItem>
+                      <SelectContent className="max-h-[300px]">
+                        {Object.entries(countriesByRegion).map(([region, regionCountries]) => (
+                          <div key={region}>
+                            <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 bg-gray-50">
+                              {region}
+                            </div>
+                            {regionCountries.map((country) => (
+                              <SelectItem key={country.code} value={country.code}>
+                                <span className="flex items-center gap-2">
+                                  <span>{country.flag}</span>
+                                  <span>{country.name}</span>
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </div>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
+                
+                {/* Phone */}
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+1 (555) 123-4567"
+                    value={formData.shipping_phone}
+                    onChange={(e) => setFormData({ ...formData, shipping_phone: e.target.value })}
+                    required
+                  />
+                </div>
+                
+                {/* Shipping Estimate */}
+                {shippingEstimate && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                    <div className="flex items-center gap-2 text-blue-800 font-medium mb-2">
+                      <Truck className="h-4 w-4" />
+                      Estimated Shipping
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-sm text-blue-700">
+                          {shippingEstimate.country?.flag} {shippingEstimate.country?.name}
+                        </p>
+                        <p className="text-xs text-blue-600">
+                          Delivery: {shippingEstimate.delivery_days}
+                        </p>
+                      </div>
+                      <p className="text-lg font-bold text-blue-800">
+                        ${shippingEstimate.estimated_cost?.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="border-t pt-4 mt-6">
                   <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
@@ -202,7 +301,7 @@ const CheckoutPage = () => {
                   <Button
                     type="submit"
                     className="w-full bg-red-600 hover:bg-red-700 h-12"
-                    disabled={loading}
+                    disabled={loading || !formData.shipping_country}
                     data-testid="place-order-btn"
                   >
                     {loading ? (
@@ -210,7 +309,7 @@ const CheckoutPage = () => {
                     ) : (
                       <CreditCard className="h-4 w-4 mr-2" />
                     )}
-                    {loading ? 'Processing...' : `Pay $${cart.total?.toFixed(2)}`}
+                    {loading ? 'Processing...' : `Pay $${(cart.total + (shippingEstimate?.estimated_cost || 0))?.toFixed(2)}`}
                   </Button>
                 </div>
               </CardContent>

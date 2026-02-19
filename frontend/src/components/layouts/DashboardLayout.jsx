@@ -69,10 +69,8 @@ const DashboardLayout = ({ isVendor, isAdmin }) => {
         <div className="flex items-center justify-between h-16 px-4">
           <div className="flex items-center gap-4">
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-amber-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold">A</span>
-              </div>
-              <span className="text-lg font-bold text-amber-900">AfroVending</span>
+              <img src="/logo.png" alt="AfroVending" className="h-8 w-auto" />
+              <span className="text-lg font-bold text-red-600">AfroVending</span>
             </Link>
             <span className="text-gray-300">|</span>
             <span className="text-gray-600 font-medium">{title}</span>

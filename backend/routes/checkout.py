@@ -348,6 +348,24 @@ async def stripe_webhook(request: Request):
                         except Exception as ve:
                             print(f"Error notifying vendor {vendor_id}: {ve}")
                     
+                    # Notify vendors about auto-deactivated products
+                    for vendor_id, deactivated_products in out_of_stock_by_vendor.items():
+                        try:
+                            vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0})
+                            if vendor:
+                                vendor_user = await db.users.find_one({"id": vendor.get("user_id")}, {"_id": 0})
+                                if vendor_user and vendor_user.get("email"):
+                                    vendor_name = vendor.get("store_name") or vendor.get("business_name") or "Vendor"
+                                    email_service.send_product_auto_deactivated(
+                                        vendor_user["email"],
+                                        vendor_name,
+                                        deactivated_products,
+                                        frontend_url
+                                    )
+                                    print(f"Auto-deactivation notification sent to {vendor_user['email']} for {len(deactivated_products)} products")
+                        except Exception as ve:
+                            print(f"Error notifying vendor about auto-deactivation {vendor_id}: {ve}")
+                    
                     # Check for low stock and notify vendors
                     await check_and_notify_low_stock(db, order, email_service, frontend_url)
                             

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -23,10 +23,15 @@ import {
 import { format, formatDistanceToNow } from 'date-fns';
 
 const GOOGLE_MAPS_KEY = process.env.REACT_APP_GOOGLE_MAPS_KEY;
+const API_URL = process.env.REACT_APP_BACKEND_URL;
+
+// Create API instance for public tracking
+const trackingApi = axios.create({
+  baseURL: `${API_URL}/api`
+});
 
 const OrderTrackingPage = () => {
   const { orderId } = useParams();
-  const { api } = useAuth();
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const [order, setOrder] = useState(null);

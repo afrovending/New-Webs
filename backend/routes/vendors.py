@@ -209,27 +209,74 @@ async def get_my_low_stock_products(
     if not user.get("vendor_id"):
         raise HTTPException(status_code=404, detail="No vendor profile found")
     
-    # Get products with stock at or below threshold
+    # Get products with stock at or below threshold (includes active and auto-deactivated)
     products = await db.products.find(
         {
             "vendor_id": user["vendor_id"],
-            "stock": {"$lte": threshold}
+            "$or": [
+                {"stock": {"$lte": threshold}},
+                {"auto_deactivated": True}
+            ]
         },
         {"_id": 0}
     ).sort("stock", 1).to_list(50)
     
     # Categorize by urgency
-    out_of_stock = [p for p in products if p.get("stock", 0) == 0]
-    critical = [p for p in products if 0 < p.get("stock", 0) <= 3]
-    low = [p for p in products if 3 < p.get("stock", 0) <= threshold]
+    auto_deactivated = [p for p in products if p.get("auto_deactivated")]
+    out_of_stock = [p for p in products if p.get("stock", 0) == 0 and not p.get("auto_deactivated")]
+    critical = [p for p in products if 0 < p.get("stock", 0) <= 3 and not p.get("auto_deactivated")]
+    low = [p for p in products if 3 < p.get("stock", 0) <= threshold and not p.get("auto_deactivated")]
     
     return {
         "products": products,
         "summary": {
             "total": len(products),
+            "auto_deactivated": len(auto_deactivated),
             "out_of_stock": len(out_of_stock),
             "critical": len(critical),
             "low": len(low)
         },
         "threshold": threshold
     }
+
+
+@router.post("/me/products/{product_id}/reactivate")
+async def reactivate_product(
+    product_id: str,
+    user: dict = Depends(get_current_user)
+):
+    """Reactivate an auto-deactivated product (requires stock > 0)"""
+    db = get_db()
+    
+    if not user.get("vendor_id"):
+        raise HTTPException(status_code=404, detail="No vendor profile found")
+    
+    # Get the product
+    product = await db.products.find_one(
+        {"id": product_id, "vendor_id": user["vendor_id"]},
+        {"_id": 0}
+    )
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    if product.get("stock", 0) <= 0:
+        raise HTTPException(status_code=400, detail="Cannot reactivate product with zero stock. Please add inventory first.")
+    
+    # Reactivate the product
+    await db.products.update_one(
+        {"id": product_id},
+        {
+            "$set": {
+                "is_active": True,
+                "auto_deactivated": False,
+                "reactivated_at": datetime.now(timezone.utc).isoformat()
+            },
+            "$unset": {
+                "auto_deactivated_at": "",
+                "auto_deactivated_reason": ""
+            }
+        }
+    )
+    
+    return {"message": "Product reactivated successfully", "product_id": product_id}

@@ -28,12 +28,14 @@ const VendorDashboard = () => {
           }
         }
         
-        const [ordersRes, bookingsRes] = await Promise.all([
+        const [ordersRes, bookingsRes, lowStockRes] = await Promise.all([
           api.get('/vendor/orders'),
           api.get('/vendor/bookings'),
+          api.get('/vendors/me/low-stock').catch(() => ({ data: { products: [], summary: { total: 0, out_of_stock: 0, critical: 0, low: 0 } } })),
         ]);
         setRecentOrders(ordersRes.data.slice(0, 5));
         setRecentBookings(bookingsRes.data.slice(0, 5));
+        setLowStockData(lowStockRes.data);
         
         const totalRevenue = ordersRes.data.reduce((sum, o) => sum + (o.total || 0), 0) +
                            bookingsRes.data.filter(b => b.payment_status === 'released').reduce((sum, b) => sum + (b.price || 0), 0);

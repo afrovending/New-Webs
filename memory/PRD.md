@@ -129,6 +129,12 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
   - **Tax Information** - US (SSN/EIN) and International (VAT) support
   - Store Settings with 4 tabs (Profile, Payment, Identity, Tax)
   - Onboarding Wizard at `/vendor/onboarding` with 6-step flow
+- **Automatic Payout Scheduling** - Vendor earnings management (Feb 19, 2026)
+  - Configurable auto-payouts (weekly/bi-weekly/monthly)
+  - Threshold-based payouts (minimum $10, default $50)
+  - Manual payout requests
+  - Earnings summary dashboard
+  - Payout history tracking
 
 ### Pending Deployment
 - User needs to **Save to GitHub** and **Redeploy on DigitalOcean**

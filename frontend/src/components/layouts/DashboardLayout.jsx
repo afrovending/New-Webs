@@ -56,6 +56,7 @@ const DashboardLayout = ({ isVendor, isAdmin }) => {
     { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/admin/users', icon: Users, label: 'Users' },
     { to: '/admin/vendors', icon: Store, label: 'Vendors' },
+    { to: '/admin/products', icon: ShoppingBag, label: 'Products' },
     { to: '/admin/orders', icon: Package, label: 'Orders' },
   ];
 

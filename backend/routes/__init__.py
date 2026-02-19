@@ -13,6 +13,7 @@ from . import notifications
 from . import homepage
 from . import admin
 from . import currency
+from . import upload
 
 __all__ = [
     "auth",
@@ -28,5 +29,6 @@ __all__ = [
     "notifications",
     "homepage",
     "admin",
-    "currency"
+    "currency",
+    "upload"
 ]

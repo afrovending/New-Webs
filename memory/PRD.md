@@ -118,6 +118,11 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 
 ## API Endpoints
 
+### Database Seeding (NEW - Admin Only)
+- `POST /api/admin/seed-database` - Populate database with essential data (admin-only, JWT required)
+  - Seeds: Categories, Countries, Admin account, Demo Vendor with Products/Services
+  - Returns: Created counts, skipped items, and credentials
+
 ### Currency (Live Rates)
 - `GET /api/currency/live-rates` - Get live exchange rates (cached hourly)
 - `GET /api/currency/convert-live?amount=X&from_currency=USD&to_currency=NGN` - Live conversion

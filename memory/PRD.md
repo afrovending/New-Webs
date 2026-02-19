@@ -194,6 +194,14 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - `GET /api/stripe-connect/payout-history` - Get payout history with pagination
 - `GET /api/stripe-connect/earnings-summary` - Get comprehensive earnings overview
 
+### Stripe Webhooks (NEW)
+- `POST /api/webhooks/stripe` - Handle Stripe webhook events (payout.paid, payout.failed, account.updated)
+
+### Admin Scheduler (NEW)
+- `GET /api/admin/scheduler/status` - Get scheduler status and next run times
+- `POST /api/admin/scheduler/trigger-payouts` - Manually trigger payout processing
+- `GET /api/admin/scheduler/logs` - Get scheduler job execution logs
+
 ### Reviews
 - `POST /api/reviews/create` - Create review (requires purchase)
 - `GET /api/reviews/product/{product_id}` - Get product reviews

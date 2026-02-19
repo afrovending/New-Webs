@@ -893,5 +893,109 @@ class EmailService:
         
         return self._send(to_email, f"{subject_prefix} Low Stock Alert - {len(products)} products need attention", html_content)
 
+    def send_product_auto_deactivated(self, to_email: str, vendor_name: str, products: list, frontend_url: str = "https://afrovending.com") -> bool:
+        """Send notification when products are auto-deactivated due to zero stock"""
+        products_html = ""
+        
+        for product in products:
+            image_url = product.get('images', [None])[0] if product.get('images') else None
+            image_html = f'<img src="{image_url}" alt="" style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px;">' if image_url else '<div style="width: 50px; height: 50px; background: #f3f4f6; border-radius: 6px;"></div>'
+            
+            products_html += f"""
+            <tr>
+                <td style="padding: 12px; border-bottom: 1px solid #eee; width: 60px;">
+                    {image_html}
+                </td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee;">
+                    <strong>{product.get('name', 'Product')}</strong>
+                    <br><span style="color: #6b7280; font-size: 12px;">${float(product.get('price', 0)):.2f}</span>
+                </td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">
+                    <span style="background: #dc2626; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;">HIDDEN</span>
+                </td>
+            </tr>
+            """
+        
+        vendor_products_url = f"{frontend_url}/vendor/products"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f5f5f5; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 35px 30px; text-align: center; border-radius: 12px 12px 0 0; }}
+                .header h1 {{ margin: 0; font-size: 24px; }}
+                .content {{ background: #fff; padding: 30px; border: 1px solid #e5e7eb; }}
+                .footer {{ background: #1f2937; color: #9ca3af; padding: 25px; text-align: center; font-size: 12px; border-radius: 0 0 12px 12px; }}
+                .footer a {{ color: #dc2626; text-decoration: none; }}
+                .product-table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+                .product-table th {{ background: #fef2f2; padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; color: #991b1b; }}
+                .alert-box {{ background: #fef2f2; border: 2px solid #dc2626; padding: 20px; border-radius: 12px; margin: 20px 0; }}
+                .info-box {{ background: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; border-radius: 10px; margin: 20px 0; }}
+                .btn {{ display: inline-block; background: #dc2626; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>⚠️ Products Auto-Hidden</h1>
+                    <p style="margin: 10px 0 0 0; opacity: 0.9;">{len(products)} product(s) temporarily hidden from your store</p>
+                </div>
+                <div class="content">
+                    <p>Hi {vendor_name},</p>
+                    
+                    <div class="alert-box">
+                        <h3 style="color: #dc2626; margin: 0 0 10px 0;">Out of Stock - Auto-Hidden</h3>
+                        <p style="margin: 0; color: #7f1d1d;">
+                            The following products have been automatically hidden from your store because they ran out of stock. 
+                            This prevents customers from ordering items you can't fulfill.
+                        </p>
+                    </div>
+                    
+                    <h3 style="margin-bottom: 10px;">Hidden Products</h3>
+                    <table class="product-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Product</th>
+                                <th style="text-align: center;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {products_html}
+                        </tbody>
+                    </table>
+                    
+                    <div class="info-box">
+                        <h4 style="margin: 0 0 8px 0; color: #1e40af;">💡 How to Reactivate</h4>
+                        <ol style="margin: 0; padding-left: 20px; color: #1e3a8a; font-size: 14px;">
+                            <li>Go to your Products page</li>
+                            <li>Update the stock quantity for each product</li>
+                            <li>Toggle the product back to "Active"</li>
+                            <li>Your products will be visible again!</li>
+                        </ol>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="{vendor_products_url}" class="btn" style="color: white;">Manage Products</a>
+                    </div>
+                    
+                    <p style="color: #6b7280; font-size: 13px; text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                        Products are auto-hidden to protect your seller rating and prevent unfulfillable orders.
+                    </p>
+                </div>
+                <div class="footer">
+                    <p style="margin: 0 0 10px 0;"><strong style="color: white;">AfroVending Vendor Portal</strong></p>
+                    <p style="margin: 0;">Need help? Contact <a href="mailto:vendors@afrovending.com">vendors@afrovending.com</a></p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return self._send(to_email, f"⚠️ {len(products)} Product(s) Auto-Hidden - Out of Stock", html_content)
+
 # Singleton instance
 email_service = EmailService()

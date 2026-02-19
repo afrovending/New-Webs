@@ -321,6 +321,118 @@ async def seed_database():
             vendor_id = vendor["id"]
         print(f"  ⏭️  Vendor exists: {DEMO_VENDOR_EMAIL}")
     
+    # 5. Seed Additional Demo Vendors for Vendor Spotlight
+    print("\n🌟 Seeding Vendor Spotlight Vendors...")
+    SPOTLIGHT_VENDORS = [
+        {
+            "email": "amara.fashion@afrovending.com",
+            "password": "AmaraVendor2024!",
+            "first_name": "Amara",
+            "last_name": "Okonkwo",
+            "store_name": "Amara's Ankara Designs",
+            "description": "Authentic Nigerian fashion designs featuring vibrant Ankara prints. Custom tailoring available.",
+            "country": "Nigeria",
+            "country_code": "NG",
+            "story": "Growing up in Lagos, I watched my grandmother transform simple fabrics into stunning outfits. Her hands told stories through every stitch. Today, I carry on her legacy, bringing traditional Nigerian fashion to the world. Each piece I create honors the artisans who taught me that fashion is more than clothing—it's our history worn with pride.",
+            "total_sales": 15420.50,
+            "order_count": 156
+        },
+        {
+            "email": "kwame.crafts@afrovending.com",
+            "password": "KwameVendor2024!",
+            "first_name": "Kwame",
+            "last_name": "Asante",
+            "store_name": "Ashanti Heritage Crafts",
+            "description": "Handcrafted Ghanaian art and Kente cloth from master weavers in Bonwire village.",
+            "country": "Ghana",
+            "country_code": "GH",
+            "story": "I am a third-generation Kente weaver from Bonwire, the birthplace of Kente cloth. My father taught me that each pattern has meaning—some tell stories of royalty, others of wisdom. Now I share these treasures globally, ensuring our ancient craft thrives for generations to come.",
+            "total_sales": 28750.00,
+            "order_count": 89
+        },
+        {
+            "email": "fatima.beauty@afrovending.com",
+            "password": "FatimaVendor2024!",
+            "first_name": "Fatima",
+            "last_name": "Diallo",
+            "store_name": "Sahel Natural Beauty",
+            "description": "Pure shea butter and natural beauty products sourced directly from women's cooperatives in Senegal.",
+            "country": "Senegal",
+            "country_code": "SN",
+            "story": "In my village, women have been making shea butter for centuries. When I started AfroVending, I wanted to connect these hardworking women with customers who appreciate pure, natural products. Every jar of shea butter supports a family and preserves our traditions.",
+            "total_sales": 42300.75,
+            "order_count": 312
+        },
+        {
+            "email": "kofi.drums@afrovending.com",
+            "password": "KofiVendor2024!",
+            "first_name": "Kofi",
+            "last_name": "Mensah",
+            "store_name": "Rhythm of Africa",
+            "description": "Authentic djembe drums and traditional musical instruments handcrafted by master artisans.",
+            "country": "Ghana",
+            "country_code": "GH",
+            "story": "Music runs through my veins. My grandfather was a master djembe maker who carved drums for village ceremonies. Today, his rhythms echo worldwide through instruments I craft with the same love and precision. Each drum carries the heartbeat of Africa.",
+            "total_sales": 18900.00,
+            "order_count": 67
+        }
+    ]
+    
+    for vendor_data in SPOTLIGHT_VENDORS:
+        existing_user = await db.users.find_one({"email": vendor_data["email"]})
+        if not existing_user:
+            vendor_user_id = str(uuid.uuid4())
+            spotlight_vendor_id = str(uuid.uuid4())
+            hashed_password = bcrypt.hashpw(vendor_data["password"].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            
+            await db.users.insert_one({
+                "id": vendor_user_id,
+                "email": vendor_data["email"],
+                "hashed_password": hashed_password,
+                "first_name": vendor_data["first_name"],
+                "last_name": vendor_data["last_name"],
+                "role": "vendor",
+                "vendor_id": spotlight_vendor_id,
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            
+            await db.vendors.insert_one({
+                "id": spotlight_vendor_id,
+                "user_id": vendor_user_id,
+                "store_name": vendor_data["store_name"],
+                "description": vendor_data["description"],
+                "country": vendor_data["country"],
+                "country_code": vendor_data["country_code"],
+                "is_approved": True,
+                "is_verified": True,
+                "subscription_plan": "pro",
+                "commission_rate": 10,
+                "max_products": -1,
+                "story": vendor_data["story"],
+                "cultural_story": vendor_data["story"],
+                "total_sales": vendor_data["total_sales"],
+                "order_count": vendor_data["order_count"],
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            print(f"  ✅ Spotlight Vendor: {vendor_data['store_name']}")
+        else:
+            # Update existing vendor with story if missing
+            vendor = await db.vendors.find_one({"user_id": existing_user["id"]})
+            if vendor and not vendor.get("story"):
+                await db.vendors.update_one(
+                    {"id": vendor["id"]},
+                    {"$set": {
+                        "story": vendor_data["story"],
+                        "cultural_story": vendor_data["story"],
+                        "total_sales": vendor_data["total_sales"],
+                        "order_count": vendor_data["order_count"]
+                    }}
+                )
+                print(f"  🔄 Updated Spotlight Vendor: {vendor_data['store_name']}")
+            else:
+                print(f"  ⏭️  Spotlight Vendor exists: {vendor_data['store_name']}")
+    
     # 5. Seed Sample Products
     if vendor_id:
         print("\n📦 Seeding Sample Products...")

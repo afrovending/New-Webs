@@ -132,6 +132,7 @@ app.include_router(admin.router)
 app.include_router(currency.router)
 app.include_router(upload.router)
 app.include_router(cloudinary_routes.router)
+app.include_router(vendor_products_router)
 
 # Remove the duplicate DO routes - not needed
 

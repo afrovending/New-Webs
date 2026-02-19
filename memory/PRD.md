@@ -167,6 +167,12 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
   - Pro tip about maintaining inventory for search ranking
   - Rate-limited to 1 alert per vendor per day to avoid spam
   - Stock automatically decremented when payment is confirmed
+- **Vendor Dashboard Low Stock Widget** - Real-time inventory alerts:
+  - Shows at-a-glance summary: Out of Stock, Critical, Low counts
+  - Product list with images, prices, and stock badges
+  - Color-coded urgency (red for critical, amber for low)
+  - "Manage Inventory" button links to products page
+  - Backend endpoint: `GET /api/vendors/me/low-stock?threshold=5`
 
 ### New Features (Feb 19, 2026)
 - **Admin Products Management** - New AdminProducts.jsx page with full product management:

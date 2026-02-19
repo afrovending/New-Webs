@@ -17,6 +17,66 @@ router = APIRouter(prefix="/checkout", tags=["Checkout"])
 # Initialize Stripe
 stripe.api_key = os.environ.get("STRIPE_API_KEY")
 
+# Low stock threshold - products at or below this level trigger alerts
+LOW_STOCK_THRESHOLD = 5
+
+
+async def check_and_notify_low_stock(db, order: dict, email_service, frontend_url: str):
+    """Check stock levels after order and notify vendors if products are low"""
+    try:
+        # Group items by vendor
+        vendor_products_map = {}  # vendor_id -> list of product_ids
+        
+        for item in order.get("items", []):
+            vendor_id = item.get("vendor_id")
+            product_id = item.get("product_id")
+            if vendor_id and product_id:
+                if vendor_id not in vendor_products_map:
+                    vendor_products_map[vendor_id] = set()
+                vendor_products_map[vendor_id].add(product_id)
+        
+        # Check each vendor's products
+        for vendor_id, product_ids in vendor_products_map.items():
+            low_stock_products = []
+            
+            for product_id in product_ids:
+                product = await db.products.find_one({"id": product_id}, {"_id": 0})
+                if product and product.get("stock", 0) <= LOW_STOCK_THRESHOLD:
+                    low_stock_products.append(product)
+            
+            # Send alert if any products are low
+            if low_stock_products:
+                vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0})
+                if vendor:
+                    vendor_user = await db.users.find_one({"id": vendor.get("user_id")}, {"_id": 0})
+                    if vendor_user and vendor_user.get("email"):
+                        vendor_name = vendor.get("store_name") or vendor.get("business_name") or "Vendor"
+                        
+                        # Check if we already sent an alert recently (within 24 hours)
+                        recent_alert = await db.stock_alerts.find_one({
+                            "vendor_id": vendor_id,
+                            "created_at": {"$gte": (datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)).isoformat()}
+                        })
+                        
+                        if not recent_alert:
+                            email_service.send_low_stock_alert(
+                                vendor_user["email"],
+                                vendor_name,
+                                low_stock_products,
+                                frontend_url
+                            )
+                            
+                            # Record that we sent an alert
+                            await db.stock_alerts.insert_one({
+                                "vendor_id": vendor_id,
+                                "product_ids": [p["id"] for p in low_stock_products],
+                                "created_at": datetime.now(timezone.utc).isoformat()
+                            })
+                            
+                            print(f"Low stock alert sent to {vendor_user['email']} for {len(low_stock_products)} products")
+    except Exception as e:
+        print(f"Error checking low stock: {e}")
+
 
 @router.post("/order/{order_id}")
 async def create_checkout_session(

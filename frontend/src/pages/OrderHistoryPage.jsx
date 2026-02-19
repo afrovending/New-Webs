@@ -307,6 +307,18 @@ const OrderDetailPage = () => {
               <CardTitle>Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              {/* Track Order Button */}
+              {order.status !== 'cancelled' && order.status !== 'pending' && (
+                <Link to={`/track/${order.id}`}>
+                  <Button 
+                    className="w-full justify-start bg-red-600 hover:bg-red-700 text-white mb-2"
+                    data-testid="track-order-btn"
+                  >
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Track Order
+                  </Button>
+                </Link>
+              )}
               <Button 
                 variant="outline" 
                 className="w-full justify-start"

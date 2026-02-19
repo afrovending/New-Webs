@@ -85,10 +85,10 @@ async def health_check():
     }
 
 
-# Include all routers with /api prefix (for local development)
-# AND without prefix (for DigitalOcean which strips /api)
+# Include all routers with /api prefix
+# Note: Some routers have their own prefixes (e.g., /auth, /products) so final path is /api/auth, /api/products
 app.include_router(auth.router, prefix="/api")
-app.include_router(products.router, prefix="/api")
+app.include_router(products.router, prefix="/api/products")
 app.include_router(vendors.router, prefix="/api")
 app.include_router(services.router, prefix="/api")
 app.include_router(categories.router, prefix="/api")

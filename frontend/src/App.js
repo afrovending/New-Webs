@@ -216,6 +216,7 @@ const AppRouter = () => {
         <Route index element={<AdminDashboard />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="vendors" element={<AdminVendors />} />
+        <Route path="products" element={<AdminProducts />} />
         <Route path="orders" element={<AdminOrders />} />
       </Route>
 

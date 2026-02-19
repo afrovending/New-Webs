@@ -167,6 +167,15 @@ const AppRouter = () => {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
 
+      {/* Legal Pages */}
+      <Route path="/legal" element={<LegalPages />} />
+      <Route path="/legal/terms" element={<TermsOfService />} />
+      <Route path="/legal/vendor-agreement" element={<VendorAgreement />} />
+      <Route path="/legal/buyer-protection" element={<BuyerProtection />} />
+      <Route path="/legal/privacy" element={<PrivacyPolicy />} />
+      <Route path="/legal/liability" element={<LiabilityLimitations />} />
+      <Route path="/legal/enforcement" element={<MarketplaceEnforcement />} />
+
       {/* Customer Dashboard */}
       <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route index element={<DashboardPage />} />

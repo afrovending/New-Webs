@@ -85,21 +85,22 @@ async def health_check():
     }
 
 
-# Include all routers with /api prefix
-# Note: Some routers have their own prefixes (e.g., /auth, /products) so final path is /api/auth, /api/products
-app.include_router(auth.router, prefix="/api")
-app.include_router(products.router, prefix="/api/products")
-app.include_router(vendors.router, prefix="/api")
-app.include_router(services.router, prefix="/api")
-app.include_router(categories.router, prefix="/api")
-app.include_router(bookings.router, prefix="/api")
-app.include_router(orders.router, prefix="/api")
-app.include_router(reviews.router, prefix="/api")
-app.include_router(wishlist.router, prefix="/api")
-app.include_router(price_alerts.router, prefix="/api")
-app.include_router(notifications.router, prefix="/api")
-app.include_router(homepage.router, prefix="/api")
-app.include_router(admin.router, prefix="/api")
+# Include all routers
+# Note: DigitalOcean forwards /api/* to backend, keeping the /api prefix
+# So we should NOT add /api prefix here - the routes already handle the paths
+app.include_router(auth.router)  # Routes at /auth/*
+app.include_router(products.router)  # Routes at /products/*
+app.include_router(vendors.router)  # Routes at /vendors/*
+app.include_router(services.router)  # Routes at /services/*
+app.include_router(categories.router)  # Routes at /categories/*
+app.include_router(bookings.router)  # Routes at /bookings/*
+app.include_router(orders.router)  # Routes at /orders/*
+app.include_router(reviews.router)  # Routes at /reviews/*
+app.include_router(wishlist.router)  # Routes at /wishlist/*
+app.include_router(price_alerts.router)  # Routes at /price-alerts/*
+app.include_router(notifications.router)  # Routes at /notifications/*
+app.include_router(homepage.router)  # Routes at /stats/* and /homepage/*
+app.include_router(admin.router)  # Routes at /admin/*
 
 # Remove the duplicate DO routes - not needed
 

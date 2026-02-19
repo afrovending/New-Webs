@@ -135,6 +135,9 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
   - Manual payout requests
   - Earnings summary dashboard
   - Payout history tracking
+  - **APScheduler cron job** - Runs daily at 9 AM UTC to process payouts
+  - **Email notifications** - Payout initiated, completed, failed, auto-enabled
+  - **Stripe webhooks** - Handles payout.paid, payout.failed, account.updated events
 
 ### Pending Deployment
 - User needs to **Save to GitHub** and **Redeploy on DigitalOcean**

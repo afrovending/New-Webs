@@ -12,6 +12,30 @@ from models import ReviewCreate
 router = APIRouter(prefix="/reviews", tags=["Reviews"])
 
 
+@router.get("")
+async def get_reviews_by_query(product_id: str = None, skip: int = 0, limit: int = 20):
+    """Get reviews with query parameters - supports ?product_id=xxx"""
+    if not product_id:
+        return {"reviews": [], "total": 0, "distribution": {}}
+    
+    db = get_db()
+    reviews = await db.reviews.find(
+        {"product_id": product_id},
+        {"_id": 0}
+    ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    total = await db.reviews.count_documents({"product_id": product_id})
+    
+    pipeline = [
+        {"$match": {"product_id": product_id}},
+        {"$group": {"_id": "$rating", "count": {"$sum": 1}}}
+    ]
+    rating_dist = await db.reviews.aggregate(pipeline).to_list(10)
+    distribution = {str(r["_id"]): r["count"] for r in rating_dist}
+    
+    return {"reviews": reviews, "total": total, "distribution": distribution}
+
+
 @router.get("/product/{product_id}")
 async def get_product_reviews(product_id: str, skip: int = 0, limit: int = 20):
     """Get reviews for a product"""

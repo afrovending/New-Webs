@@ -48,9 +48,28 @@ const ImageUploader = ({
 
       return result.secure_url;
     } catch (err) {
-      console.error('Upload error:', err);
-      throw err;
+      console.error('Cloudinary upload failed, trying local upload:', err);
+      // Fallback to local upload
+      return await uploadToLocal(file);
     }
+  };
+
+  const uploadToLocal = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await api.post('/upload/image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+
+    if (response.data.success) {
+      // For local uploads, construct full URL
+      const imageUrl = response.data.url.startsWith('http') 
+        ? response.data.url 
+        : `${API_URL}${response.data.url}`;
+      return imageUrl;
+    }
+    throw new Error('Local upload failed');
   };
 
   const handleFileSelect = async (e) => {

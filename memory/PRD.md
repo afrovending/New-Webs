@@ -100,6 +100,10 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 
 ## Current Status (Updated Feb 19, 2026)
 
+### Bug Fixes (Feb 19, 2026 - Latest)
+- **P0 FIXED: "Product not found" error** - Root cause was frontend calling `GET /api/reviews?product_id=xxx` but backend only had `GET /api/reviews/product/{product_id}`. Fixed by adding query parameter endpoint in reviews.py.
+- **VAPID Keys Moved to Environment Variables** - Push notification keys now properly read from backend/.env and frontend/.env instead of being hardcoded.
+
 ### Completed
 - All E2E tests passed (26+ backend, 95%+ frontend)
 - Multi-currency with LIVE exchange rates

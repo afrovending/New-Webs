@@ -205,21 +205,51 @@ async def stripe_webhook(request: Request):
             user = await db.users.find_one({"id": user_id}, {"_id": 0}) if user_id else None
             
             if order:
-                # Send push notification
+                # Send push notification to customer
                 try:
                     from routes.notifications import notify_order_update
                     await notify_order_update(order["user_id"], order_id, "confirmed")
                 except Exception as e:
                     print(f"Push notification error: {e}")
                 
-                # Send "Purchase Complete" email
+                # Send "Purchase Complete" email to customer
                 try:
                     from email_service import email_service
                     user_email = session.get("customer_email") or (user.get("email") if user else None)
+                    frontend_url = os.environ.get("FRONTEND_URL", "https://afrovending.com")
+                    
                     if user_email:
-                        frontend_url = os.environ.get("FRONTEND_URL", "https://afrovending.com")
                         email_service.send_purchase_complete(user_email, order, frontend_url)
                         print(f"Purchase complete email sent to {user_email}")
+                    
+                    # Send "New Order" email to each vendor with items in this order
+                    vendor_items_map = {}  # vendor_id -> list of items
+                    for item in order.get("items", []):
+                        vendor_id = item.get("vendor_id")
+                        if vendor_id:
+                            if vendor_id not in vendor_items_map:
+                                vendor_items_map[vendor_id] = []
+                            vendor_items_map[vendor_id].append(item)
+                    
+                    # Notify each vendor
+                    for vendor_id, vendor_items in vendor_items_map.items():
+                        try:
+                            vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0})
+                            if vendor:
+                                vendor_user = await db.users.find_one({"id": vendor.get("user_id")}, {"_id": 0})
+                                if vendor_user and vendor_user.get("email"):
+                                    vendor_name = vendor.get("store_name") or vendor.get("business_name") or "Vendor"
+                                    email_service.send_vendor_new_order(
+                                        vendor_user["email"],
+                                        vendor_name,
+                                        order,
+                                        vendor_items,
+                                        frontend_url
+                                    )
+                                    print(f"Vendor notification sent to {vendor_user['email']} for order {order_id[:8]}")
+                        except Exception as ve:
+                            print(f"Error notifying vendor {vendor_id}: {ve}")
+                            
                 except Exception as e:
                     print(f"Email notification error: {e}")
     

@@ -123,6 +123,41 @@ async def get_orders(user: dict = Depends(get_current_user)):
     return orders
 
 
+@router.get("/orders/track/{order_id}")
+async def get_order_tracking(order_id: str):
+    """Public endpoint for order tracking - accessible without auth"""
+    db = get_db()
+    
+    order = await db.orders.find_one(
+        {"id": order_id},
+        {"_id": 0}
+    )
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Return limited info for public tracking
+    return {
+        "id": order.get("id"),
+        "status": order.get("status"),
+        "tracking_number": order.get("tracking_number"),
+        "shipping_carrier": order.get("shipping_carrier"),
+        "shipping_label_url": order.get("shipping_label_url"),
+        "shipping_name": order.get("shipping_name"),
+        "shipping_address": order.get("shipping_address"),
+        "shipping_address2": order.get("shipping_address2"),
+        "shipping_city": order.get("shipping_city"),
+        "shipping_state": order.get("shipping_state"),
+        "shipping_zip": order.get("shipping_zip"),
+        "shipping_country": order.get("shipping_country"),
+        "items": order.get("items", []),
+        "total": order.get("total"),
+        "estimated_delivery": order.get("estimated_delivery"),
+        "timeline": order.get("timeline", []),
+        "created_at": order.get("created_at")
+    }
+
+
 @router.get("/orders/history")
 async def get_order_history(
     status: str = None,

@@ -35,6 +35,17 @@ async def generate_signature(
     Generate a signed upload signature for Cloudinary.
     Frontend uses this to upload directly to Cloudinary.
     """
+    # Check if Cloudinary is configured
+    cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME")
+    api_key = os.getenv("CLOUDINARY_API_KEY")
+    api_secret = os.getenv("CLOUDINARY_API_SECRET")
+    
+    if not all([cloud_name, api_key, api_secret]):
+        raise HTTPException(
+            status_code=503, 
+            detail="Cloud storage is not configured. Please add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to your environment variables."
+        )
+    
     # Validate folder
     if not any(folder.startswith(f) for f in ALLOWED_FOLDERS):
         raise HTTPException(status_code=400, detail="Invalid folder path")
@@ -48,16 +59,13 @@ async def generate_signature(
     }
     
     # Generate signature
-    signature = cloudinary.utils.api_sign_request(
-        params,
-        os.getenv("CLOUDINARY_API_SECRET")
-    )
+    signature = cloudinary.utils.api_sign_request(params, api_secret)
     
     return {
         "signature": signature,
         "timestamp": timestamp,
-        "cloud_name": os.getenv("CLOUDINARY_CLOUD_NAME", "").lower(),  # Cloudinary uses lowercase
-        "api_key": os.getenv("CLOUDINARY_API_KEY"),
+        "cloud_name": cloud_name.lower(),  # Cloudinary uses lowercase
+        "api_key": api_key,
         "folder": f"afrovending/{folder}",
         "resource_type": resource_type
     }

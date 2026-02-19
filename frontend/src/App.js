@@ -61,6 +61,12 @@ import BuyerProtection from './pages/legal/BuyerProtection';
 import PrivacyPolicy from './pages/legal/PrivacyPolicy';
 import LiabilityLimitations from './pages/legal/LiabilityLimitations';
 import MarketplaceEnforcement from './pages/legal/MarketplaceEnforcement';
+import RiskShieldPage from './pages/legal/RiskShieldPage';
+import ChargebackDefensePage from './pages/legal/ChargebackDefensePage';
+import EliteReturnPolicyPage from './pages/legal/EliteReturnPolicyPage';
+
+// Components
+import CookieConsentBanner from './components/CookieConsentBanner';
 
 import './App.css';
 
@@ -175,6 +181,9 @@ const AppRouter = () => {
       <Route path="/legal/privacy" element={<PrivacyPolicy />} />
       <Route path="/legal/liability" element={<LiabilityLimitations />} />
       <Route path="/legal/enforcement" element={<MarketplaceEnforcement />} />
+      <Route path="/legal/risk-shield" element={<RiskShieldPage />} />
+      <Route path="/legal/chargeback-defense" element={<ChargebackDefensePage />} />
+      <Route path="/legal/return-policy" element={<EliteReturnPolicyPage />} />
 
       {/* Customer Dashboard */}
       <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
@@ -222,6 +231,7 @@ function App() {
           <CartProvider>
             <AppRouter />
             <Toaster position="top-right" />
+            <CookieConsentBanner />
           </CartProvider>
         </CurrencyProvider>
       </AuthProvider>

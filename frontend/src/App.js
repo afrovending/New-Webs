@@ -175,6 +175,7 @@ const AppRouter = () => {
         <Route path="bookings" element={<VendorBookings />} />
         <Route path="analytics" element={<VendorAnalytics />} />
         <Route path="subscription" element={<VendorSubscription />} />
+        <Route path="store-settings" element={<VendorStoreSettings />} />
       </Route>
 
       {/* Admin Dashboard */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
@@ -8,20 +8,95 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
-import { Loader2, CreditCard, Lock } from 'lucide-react';
+import { Loader2, CreditCard, Lock, MapPin, Truck, Globe } from 'lucide-react';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
   const { api } = useAuth();
   const { cart, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
+  const [countries, setCountries] = useState([]);
+  const [countriesByRegion, setCountriesByRegion] = useState({});
+  const [shippingEstimate, setShippingEstimate] = useState(null);
+  const [loadingShipping, setLoadingShipping] = useState(false);
   const [formData, setFormData] = useState({
+    shipping_name: '',
     shipping_address: '',
+    shipping_address2: '',
     shipping_city: '',
-    shipping_country: 'Nigeria',
+    shipping_state: '',
+    shipping_zip: '',
+    shipping_country: '',
+    shipping_phone: '',
   });
 
-  const countries = ['Nigeria', 'Ghana', 'Kenya', 'South Africa', 'Ethiopia', 'Tanzania', 'Uganda', 'Morocco', 'Egypt', 'Senegal'];
+  // Fetch countries and detect user location on mount
+  useEffect(() => {
+    fetchCountries();
+    detectUserCountry();
+  }, []);
+
+  // Update shipping estimate when country changes
+  useEffect(() => {
+    if (formData.shipping_country) {
+      estimateShipping();
+    }
+  }, [formData.shipping_country]);
+
+  const fetchCountries = async () => {
+    try {
+      const response = await api.get('/shipping/countries');
+      setCountries(response.data.countries || []);
+      setCountriesByRegion(response.data.by_region || {});
+    } catch (error) {
+      console.error('Error fetching countries:', error);
+      // Fallback countries
+      setCountries([
+        { code: 'US', name: 'United States', flag: '🇺🇸' },
+        { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' },
+        { code: 'NG', name: 'Nigeria', flag: '🇳🇬' },
+        { code: 'GH', name: 'Ghana', flag: '🇬🇭' },
+        { code: 'CA', name: 'Canada', flag: '🇨🇦' },
+      ]);
+    }
+  };
+
+  const detectUserCountry = async () => {
+    try {
+      const response = await api.get('/shipping/detect-country');
+      if (response.data.detected_country) {
+        setFormData(prev => ({
+          ...prev,
+          shipping_country: response.data.detected_country.code
+        }));
+      }
+    } catch (error) {
+      console.error('Error detecting country:', error);
+    }
+  };
+
+  const estimateShipping = async () => {
+    if (!formData.shipping_country) return;
+    
+    setLoadingShipping(true);
+    try {
+      // Calculate approximate weight from cart (assume 0.5kg per item)
+      const totalItems = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+      const estimatedWeight = Math.max(0.5, totalItems * 0.5);
+      
+      const response = await api.post('/shipping/estimate', null, {
+        params: {
+          country_code: formData.shipping_country,
+          weight_kg: estimatedWeight
+        }
+      });
+      setShippingEstimate(response.data);
+    } catch (error) {
+      console.error('Error estimating shipping:', error);
+    } finally {
+      setLoadingShipping(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();

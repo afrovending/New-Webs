@@ -117,6 +117,12 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - **Forgot Password Email** - Now sends secure reset link via SendGrid
 - **Currency Symbol Refresh** - Fixed with version counter for immediate updates
 - **Legacy server.py Deleted** - Codebase cleaned up
+- **Vendor Dashboard Redesign** - New Store Settings page and enhanced Products page (Feb 19, 2026)
+  - Store Settings page for vendor profile management (store name, description, story, branding)
+  - Enhanced Add Product form with category selector and fulfillment options (FBV/FBA)
+  - Fixed `/api/vendor/products` routing issue
+- **Recently Sold Fix** - Now shows product images instead of "No Image" (Feb 19, 2026)
+  - Fixed field name mismatch in RecentlySold.jsx (product_image vs image)
 
 ### Pending Deployment
 - User needs to **Save to GitHub** and **Redeploy on DigitalOcean**

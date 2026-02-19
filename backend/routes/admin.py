@@ -216,6 +216,493 @@ async def get_all_users(
     return {"users": users, "total": total}
 
 
+@router.get("/users/{user_id}")
+async def get_user_details(user_id: str, admin: dict = Depends(require_admin)):
+    """Get detailed user information"""
+    db = get_db()
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0, "hashed_password": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get additional info
+    if user.get("vendor_id"):
+        vendor = await db.vendors.find_one({"id": user["vendor_id"]}, {"_id": 0})
+        user["vendor_info"] = vendor
+    
+    # Get user's orders
+    orders_count = await db.orders.count_documents({"user_id": user_id})
+    user["orders_count"] = orders_count
+    
+    # Get user's reviews
+    reviews_count = await db.reviews.count_documents({"user_id": user_id})
+    user["reviews_count"] = reviews_count
+    
+    return user
+
+
+@router.put("/users/{user_id}")
+async def update_user(
+    user_id: str,
+    first_name: Optional[str] = None,
+    last_name: Optional[str] = None,
+    email: Optional[str] = None,
+    is_active: Optional[bool] = None,
+    admin: dict = Depends(require_admin)
+):
+    """Update user information"""
+    db = get_db()
+    
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    update_data = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    
+    if first_name is not None:
+        update_data["first_name"] = first_name
+    if last_name is not None:
+        update_data["last_name"] = last_name
+    if email is not None:
+        # Check if email is already taken
+        existing = await db.users.find_one({"email": email, "id": {"$ne": user_id}})
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already in use")
+        update_data["email"] = email
+    if is_active is not None:
+        update_data["is_active"] = is_active
+    
+    await db.users.update_one({"id": user_id}, {"$set": update_data})
+    
+    return {"message": "User updated successfully"}
+
+
+@router.put("/users/{user_id}/role")
+async def update_user_role(
+    user_id: str,
+    role: str,
+    admin: dict = Depends(require_admin)
+):
+    """Update user role"""
+    db = get_db()
+    
+    if role not in ["customer", "vendor", "admin"]:
+        raise HTTPException(status_code=400, detail="Invalid role")
+    
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # If changing to vendor, create vendor profile
+    if role == "vendor" and user.get("role") != "vendor":
+        vendor_id = str(uuid.uuid4())
+        await db.vendors.insert_one({
+            "id": vendor_id,
+            "user_id": user_id,
+            "store_name": f"{user.get('first_name', 'New')}'s Store",
+            "description": "",
+            "is_approved": False,
+            "is_verified": False,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        await db.users.update_one({"id": user_id}, {"$set": {"role": role, "vendor_id": vendor_id}})
+    else:
+        await db.users.update_one({"id": user_id}, {"$set": {"role": role}})
+    
+    return {"message": f"User role updated to {role}"}
+
+
+@router.delete("/users/{user_id}")
+async def delete_user(user_id: str, admin: dict = Depends(require_admin)):
+    """Delete a user and all associated data"""
+    db = get_db()
+    
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prevent deleting yourself
+    if user_id == admin["id"]:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    # If vendor, delete vendor data
+    if user.get("vendor_id"):
+        vendor_id = user["vendor_id"]
+        # Delete vendor's products
+        await db.products.delete_many({"vendor_id": vendor_id})
+        # Delete vendor's services
+        await db.services.delete_many({"vendor_id": vendor_id})
+        # Delete vendor profile
+        await db.vendors.delete_one({"id": vendor_id})
+    
+    # Delete user's cart
+    await db.carts.delete_many({"user_id": user_id})
+    # Delete user's wishlist
+    await db.wishlists.delete_many({"user_id": user_id})
+    # Delete user's notifications
+    await db.notifications.delete_many({"user_id": user_id})
+    # Delete user's price alerts
+    await db.price_alerts.delete_many({"user_id": user_id})
+    # Delete push subscriptions
+    await db.push_subscriptions.delete_many({"user_id": user_id})
+    
+    # Delete the user
+    await db.users.delete_one({"id": user_id})
+    
+    return {"message": "User and all associated data deleted"}
+
+
+@router.put("/users/{user_id}/suspend")
+async def suspend_user(
+    user_id: str,
+    reason: str = "Policy violation",
+    admin: dict = Depends(require_admin)
+):
+    """Suspend a user account"""
+    db = get_db()
+    
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user_id == admin["id"]:
+        raise HTTPException(status_code=400, detail="Cannot suspend your own account")
+    
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {
+            "is_active": False,
+            "suspended_at": datetime.now(timezone.utc).isoformat(),
+            "suspension_reason": reason
+        }}
+    )
+    
+    # If vendor, also deactivate their store
+    if user.get("vendor_id"):
+        await db.vendors.update_one(
+            {"id": user["vendor_id"]},
+            {"$set": {"is_active": False}}
+        )
+        await db.products.update_many({"vendor_id": user["vendor_id"]}, {"$set": {"is_active": False}})
+    
+    return {"message": "User suspended"}
+
+
+@router.put("/users/{user_id}/unsuspend")
+async def unsuspend_user(user_id: str, admin: dict = Depends(require_admin)):
+    """Unsuspend a user account"""
+    db = get_db()
+    
+    result = await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"is_active": True}, "$unset": {"suspended_at": "", "suspension_reason": ""}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"message": "User unsuspended"}
+
+
+# ============ VENDOR MANAGEMENT ============
+
+@router.get("/vendors/{vendor_id}")
+async def get_vendor_details(vendor_id: str, admin: dict = Depends(require_admin)):
+    """Get detailed vendor information"""
+    db = get_db()
+    
+    vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+    
+    # Get user info
+    user = await db.users.find_one({"id": vendor["user_id"]}, {"_id": 0, "password_hash": 0, "hashed_password": 0})
+    vendor["user"] = user
+    
+    # Get stats
+    vendor["products_count"] = await db.products.count_documents({"vendor_id": vendor_id})
+    vendor["services_count"] = await db.services.count_documents({"vendor_id": vendor_id})
+    vendor["orders_count"] = await db.orders.count_documents({"vendor_id": vendor_id})
+    
+    # Get reviews
+    pipeline = [
+        {"$match": {"vendor_id": vendor_id}},
+        {"$group": {"_id": None, "avg_rating": {"$avg": "$rating"}, "count": {"$sum": 1}}}
+    ]
+    reviews = await db.reviews.aggregate(pipeline).to_list(1)
+    vendor["reviews"] = reviews[0] if reviews else {"avg_rating": 0, "count": 0}
+    
+    return vendor
+
+
+@router.put("/vendors/{vendor_id}")
+async def update_vendor(
+    vendor_id: str,
+    store_name: Optional[str] = None,
+    description: Optional[str] = None,
+    commission_rate: Optional[float] = None,
+    max_products: Optional[int] = None,
+    subscription_plan: Optional[str] = None,
+    admin: dict = Depends(require_admin)
+):
+    """Update vendor information"""
+    db = get_db()
+    
+    vendor = await db.vendors.find_one({"id": vendor_id})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+    
+    update_data = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    
+    if store_name is not None:
+        update_data["store_name"] = store_name
+    if description is not None:
+        update_data["description"] = description
+    if commission_rate is not None:
+        update_data["commission_rate"] = commission_rate
+    if max_products is not None:
+        update_data["max_products"] = max_products
+    if subscription_plan is not None:
+        update_data["subscription_plan"] = subscription_plan
+    
+    await db.vendors.update_one({"id": vendor_id}, {"$set": update_data})
+    
+    return {"message": "Vendor updated successfully"}
+
+
+@router.delete("/vendors/{vendor_id}")
+async def delete_vendor(vendor_id: str, admin: dict = Depends(require_admin)):
+    """Delete a vendor and all their products/services"""
+    db = get_db()
+    
+    vendor = await db.vendors.find_one({"id": vendor_id})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+    
+    # Delete products
+    deleted_products = await db.products.delete_many({"vendor_id": vendor_id})
+    # Delete services
+    deleted_services = await db.services.delete_many({"vendor_id": vendor_id})
+    # Delete vendor
+    await db.vendors.delete_one({"id": vendor_id})
+    
+    # Update user to customer
+    await db.users.update_one(
+        {"id": vendor["user_id"]},
+        {"$set": {"role": "customer"}, "$unset": {"vendor_id": ""}}
+    )
+    
+    return {
+        "message": "Vendor deleted",
+        "deleted_products": deleted_products.deleted_count,
+        "deleted_services": deleted_services.deleted_count
+    }
+
+
+# ============ PRODUCT MANAGEMENT ============
+
+@router.get("/products")
+async def get_all_products_admin(
+    vendor_id: Optional[str] = None,
+    is_active: Optional[bool] = None,
+    skip: int = 0,
+    limit: int = 50,
+    admin: dict = Depends(require_admin)
+):
+    """Get all products for admin management"""
+    db = get_db()
+    
+    query = {}
+    if vendor_id:
+        query["vendor_id"] = vendor_id
+    if is_active is not None:
+        query["is_active"] = is_active
+    
+    products = await db.products.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+    total = await db.products.count_documents(query)
+    
+    # Add vendor info
+    for product in products:
+        vendor = await db.vendors.find_one({"id": product["vendor_id"]}, {"_id": 0, "store_name": 1})
+        product["vendor_name"] = vendor.get("store_name") if vendor else "Unknown"
+    
+    return {"products": products, "total": total}
+
+
+@router.put("/products/{product_id}")
+async def update_product_admin(
+    product_id: str,
+    name: Optional[str] = None,
+    price: Optional[float] = None,
+    stock: Optional[int] = None,
+    is_active: Optional[bool] = None,
+    is_featured: Optional[bool] = None,
+    admin: dict = Depends(require_admin)
+):
+    """Update product as admin"""
+    db = get_db()
+    
+    product = await db.products.find_one({"id": product_id})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    update_data = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    
+    if name is not None:
+        update_data["name"] = name
+    if price is not None:
+        update_data["price"] = price
+    if stock is not None:
+        update_data["stock"] = stock
+    if is_active is not None:
+        update_data["is_active"] = is_active
+    if is_featured is not None:
+        update_data["is_featured"] = is_featured
+    
+    await db.products.update_one({"id": product_id}, {"$set": update_data})
+    
+    return {"message": "Product updated"}
+
+
+@router.delete("/products/{product_id}")
+async def delete_product_admin(product_id: str, admin: dict = Depends(require_admin)):
+    """Delete a product"""
+    db = get_db()
+    
+    result = await db.products.delete_one({"id": product_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Also delete reviews for this product
+    await db.reviews.delete_many({"product_id": product_id})
+    # Delete price alerts
+    await db.price_alerts.delete_many({"product_id": product_id})
+    
+    return {"message": "Product deleted"}
+
+
+# ============ ORDER MANAGEMENT ============
+
+@router.get("/orders")
+async def get_all_orders_admin(
+    status: Optional[str] = None,
+    vendor_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 50,
+    admin: dict = Depends(require_admin)
+):
+    """Get all orders for admin management"""
+    db = get_db()
+    
+    query = {}
+    if status:
+        query["status"] = status
+    if vendor_id:
+        query["vendor_id"] = vendor_id
+    if user_id:
+        query["user_id"] = user_id
+    
+    orders = await db.orders.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    total = await db.orders.count_documents(query)
+    
+    return {"orders": orders, "total": total}
+
+
+@router.put("/orders/{order_id}/status")
+async def update_order_status_admin(
+    order_id: str,
+    status: str,
+    admin: dict = Depends(require_admin)
+):
+    """Update order status"""
+    db = get_db()
+    
+    valid_statuses = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "refunded"]
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
+    
+    result = await db.orders.update_one(
+        {"id": order_id},
+        {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    return {"message": f"Order status updated to {status}"}
+
+
+@router.post("/orders/{order_id}/refund")
+async def refund_order_admin(
+    order_id: str,
+    reason: str = "Admin initiated refund",
+    admin: dict = Depends(require_admin)
+):
+    """Refund an order"""
+    db = get_db()
+    
+    order = await db.orders.find_one({"id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    await db.orders.update_one(
+        {"id": order_id},
+        {"$set": {
+            "status": "refunded",
+            "refund_reason": reason,
+            "refunded_at": datetime.now(timezone.utc).isoformat(),
+            "refunded_by": admin["id"]
+        }}
+    )
+    
+    return {"message": "Order refunded", "amount": order.get("total", 0)}
+
+
+# ============ REVIEW MANAGEMENT ============
+
+@router.get("/reviews")
+async def get_all_reviews_admin(
+    product_id: Optional[str] = None,
+    vendor_id: Optional[str] = None,
+    min_rating: Optional[int] = None,
+    max_rating: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 50,
+    admin: dict = Depends(require_admin)
+):
+    """Get all reviews for moderation"""
+    db = get_db()
+    
+    query = {}
+    if product_id:
+        query["product_id"] = product_id
+    if vendor_id:
+        query["vendor_id"] = vendor_id
+    if min_rating:
+        query["rating"] = {"$gte": min_rating}
+    if max_rating:
+        query.setdefault("rating", {})["$lte"] = max_rating
+    
+    reviews = await db.reviews.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    total = await db.reviews.count_documents(query)
+    
+    return {"reviews": reviews, "total": total}
+
+
+@router.delete("/reviews/{review_id}")
+async def delete_review_admin(review_id: str, admin: dict = Depends(require_admin)):
+    """Delete a review (moderation)"""
+    db = get_db()
+    
+    result = await db.reviews.delete_one({"id": review_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Review not found")
+    
+    return {"message": "Review deleted"}
+
+
 @router.post("/check-price-alerts")
 async def trigger_price_alert_check(user: dict = Depends(require_admin)):
     """Manually trigger price alert checks"""

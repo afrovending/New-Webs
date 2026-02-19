@@ -334,7 +334,9 @@ async def notify_order_update(user_id: str, order_id: str, status: str):
     db = get_db()
     
     status_messages = {
-        "confirmed": "Your order has been confirmed!",
+        "placed": "Your order has been placed successfully! We'll notify you when it ships.",
+        "confirmed": "Your order has been confirmed and is being processed!",
+        "processing": "Your order is being prepared for shipment.",
         "shipped": "Your order is on the way!",
         "delivered": "Your order has been delivered!",
         "cancelled": "Your order has been cancelled"

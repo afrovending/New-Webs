@@ -146,6 +146,13 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - **VAPID Keys Moved to Environment Variables** - Push notification keys now properly read from backend/.env and frontend/.env instead of being hardcoded.
 - **Admin Orders Page Blank** - Fixed: AdminOrders.jsx now correctly uses `response.data.orders` instead of `response.data`.
 - **"Order Placed" Push Notification** - Added notification trigger when user initiates checkout (order placed status)
+- **"Purchase Complete" Email Notification** - Added professional email sent after Stripe webhook confirms payment, includes:
+  - Order summary with product images
+  - Total breakdown (subtotal, shipping, total)
+  - Estimated delivery date (7-14 business days)
+  - Shipping address
+  - "Track Your Order" and "View Order History" buttons
+  - Branded AfroVending design
 
 ### New Features (Feb 19, 2026)
 - **Admin Products Management** - New AdminProducts.jsx page with full product management:

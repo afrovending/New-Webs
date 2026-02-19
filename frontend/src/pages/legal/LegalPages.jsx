@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, FileText, Users, CreditCard, Scale, Lock, Gavel, ChevronRight } from 'lucide-react';
+import { Shield, FileText, Users, CreditCard, Scale, Lock, Gavel, ChevronRight, RotateCcw, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 
 const LegalPages = () => {
@@ -52,6 +52,30 @@ const LegalPages = () => {
       path: "/legal/enforcement",
       color: "text-indigo-600",
       bgColor: "bg-indigo-100"
+    },
+    {
+      title: "Risk Shield System",
+      description: "Our advanced framework for fraud prevention and dispute resolution",
+      icon: ShieldCheck,
+      path: "/legal/risk-shield",
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-100"
+    },
+    {
+      title: "Chargeback Defense Policy",
+      description: "How we handle payment disputes and protect all parties",
+      icon: CreditCard,
+      path: "/legal/chargeback-defense",
+      color: "text-cyan-600",
+      bgColor: "bg-cyan-100"
+    },
+    {
+      title: "Elite Return Policy",
+      description: "Our comprehensive return and refund guidelines",
+      icon: RotateCcw,
+      path: "/legal/return-policy",
+      color: "text-amber-600",
+      bgColor: "bg-amber-100"
     }
   ];
 

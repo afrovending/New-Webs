@@ -21,6 +21,15 @@ services:
       - key: STRIPE_API_KEY
         scope: RUN_TIME
         type: SECRET
+      - key: SENDGRID_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: SENDER_EMAIL
+        scope: RUN_TIME
+        value: noreply@afrovending.com
+      - key: FRONTEND_URL
+        scope: RUN_TIME
+        value: https://afrovending.com
       - key: CORS_ORIGINS
         scope: RUN_TIME
         value: "*"

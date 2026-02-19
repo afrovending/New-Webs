@@ -594,3 +594,113 @@ async def get_scheduler_logs(
     ).sort("created_at", -1).limit(limit).to_list(limit)
     return {"logs": logs}
 
+
+@router.get("/products/broken-images")
+async def get_products_with_broken_images(
+    user: dict = Depends(require_admin)
+):
+    """
+    Identify products with missing or potentially broken images.
+    Images are considered broken if:
+    - No images at all (empty array)
+    - Images stored locally (not Cloudinary URLs)
+    - Images with /uploads/ path (ephemeral local storage)
+    """
+    db = get_db()
+    
+    # Get all products
+    products = await db.products.find(
+        {},
+        {"_id": 0, "id": 1, "name": 1, "images": 1, "vendor_id": 1, "is_active": 1}
+    ).to_list(None)
+    
+    broken_images = []
+    no_images = []
+    cloudinary_images = []
+    
+    for product in products:
+        images = product.get("images", [])
+        
+        if not images or len(images) == 0:
+            # No images at all
+            no_images.append({
+                "product_id": product["id"],
+                "product_name": product["name"],
+                "vendor_id": product["vendor_id"],
+                "is_active": product.get("is_active", True),
+                "issue": "No images uploaded"
+            })
+        else:
+            # Check each image URL
+            has_broken = False
+            has_cloudinary = False
+            broken_urls = []
+            
+            for img in images:
+                img_url = img if isinstance(img, str) else img.get("url", "")
+                
+                if "cloudinary.com" in img_url or "res.cloudinary.com" in img_url:
+                    has_cloudinary = True
+                elif "/uploads/" in img_url or img_url.startswith("/uploads"):
+                    # Local ephemeral storage - will be lost on redeployment
+                    has_broken = True
+                    broken_urls.append(img_url)
+                elif img_url.startswith("http://localhost") or img_url.startswith("https://localhost"):
+                    has_broken = True
+                    broken_urls.append(img_url)
+                elif not img_url.startswith("http"):
+                    # Relative path - likely broken
+                    has_broken = True
+                    broken_urls.append(img_url)
+            
+            if has_broken:
+                broken_images.append({
+                    "product_id": product["id"],
+                    "product_name": product["name"],
+                    "vendor_id": product["vendor_id"],
+                    "is_active": product.get("is_active", True),
+                    "issue": "Local/ephemeral storage images",
+                    "broken_urls": broken_urls
+                })
+            elif has_cloudinary:
+                cloudinary_images.append({
+                    "product_id": product["id"],
+                    "product_name": product["name"]
+                })
+    
+    # Get vendor info for affected products
+    vendor_ids = set()
+    for item in broken_images + no_images:
+        vendor_ids.add(item["vendor_id"])
+    
+    vendors_info = {}
+    for vendor_id in vendor_ids:
+        vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0, "store_name": 1, "user_id": 1})
+        if vendor:
+            user_info = await db.users.find_one({"id": vendor["user_id"]}, {"_id": 0, "email": 1})
+            vendors_info[vendor_id] = {
+                "store_name": vendor.get("store_name", "Unknown"),
+                "email": user_info.get("email", "Unknown") if user_info else "Unknown"
+            }
+    
+    # Add vendor info to results
+    for item in broken_images + no_images:
+        vendor_info = vendors_info.get(item["vendor_id"], {})
+        item["vendor_store"] = vendor_info.get("store_name", "Unknown")
+        item["vendor_email"] = vendor_info.get("email", "Unknown")
+    
+    return {
+        "summary": {
+            "total_products": len(products),
+            "products_with_cloudinary_images": len(cloudinary_images),
+            "products_with_broken_images": len(broken_images),
+            "products_with_no_images": len(no_images),
+            "total_needing_attention": len(broken_images) + len(no_images)
+        },
+        "broken_images": broken_images,
+        "no_images": no_images,
+        "affected_vendors": list(vendors_info.values()),
+        "recommendation": "Vendors need to re-upload images for products listed above. New uploads will use Cloudinary and persist across deployments."
+    }
+
+

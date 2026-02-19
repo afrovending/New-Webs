@@ -44,7 +44,7 @@ const VendorProducts = () => {
         price: parseFloat(formData.price),
         compare_price: formData.compare_price ? parseFloat(formData.compare_price) : null,
         stock: parseInt(formData.stock) || 0,
-        images: formData.images ? formData.images.split(',').map(s => s.trim()) : [],
+        images: productImages,
         tags: formData.tags ? formData.tags.split(',').map(s => s.trim()) : [],
         fulfillment_option: formData.fulfillment_option || 'FBV',
       };
@@ -58,7 +58,8 @@ const VendorProducts = () => {
       }
       setDialogOpen(false);
       setEditingProduct(null);
-      setFormData({ name: '', description: '', price: '', compare_price: '', category_id: '', stock: '', images: '', tags: '', fulfillment_option: 'FBV' });
+      setProductImages([]);
+      setFormData({ name: '', description: '', price: '', compare_price: '', category_id: '', stock: '', tags: '', fulfillment_option: 'FBV' });
       fetchProducts();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to save product');

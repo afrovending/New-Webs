@@ -342,9 +342,30 @@ const AdminDashboard = () => {
                           </li>
                         ))}
                       </ul>
-                      <p className="text-amber-600 text-xs mt-2 italic">
-                        Vendors need to re-upload images for these products.
-                      </p>
+                      <div className="mt-3 pt-3 border-t border-amber-200">
+                        <Button
+                          size="sm"
+                          onClick={notifyVendors}
+                          disabled={notifyingVendors}
+                          className="w-full bg-amber-600 hover:bg-amber-700"
+                          data-testid="notify-vendors-btn"
+                        >
+                          {notifyingVendors ? (
+                            <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                          ) : null}
+                          Email Affected Vendors
+                        </Button>
+                      </div>
+                      {notificationResult && (
+                        <div className={`mt-2 p-2 rounded text-xs ${notificationResult.success ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {notificationResult.message}
+                          {notificationResult.vendors_notified && (
+                            <span className="block mt-1">
+                              Notified: {notificationResult.vendors_notified.map(v => v.store_name).join(', ')}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

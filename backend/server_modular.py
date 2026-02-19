@@ -113,6 +113,7 @@ app.include_router(admin.router, prefix="/api")
 app.include_router(currency.router, prefix="/api")
 app.include_router(upload.router, prefix="/api")
 app.include_router(cloudinary_routes.router, prefix="/api")
+app.include_router(vendor_products_router, prefix="/api")
 
 # Also mount without prefix for DigitalOcean production
 app.include_router(auth.router)

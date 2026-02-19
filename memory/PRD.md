@@ -157,6 +157,15 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
   - Elite Return Policy - Comprehensive return and refund guidelines
   - Legal Hub page updated with all 9 policy cards
   - Footer reorganized with "Legal" and "Policies" columns
+- **Admin Broken Images Tool** - Product image health checker (Feb 19, 2026)
+  - `/api/admin/products/broken-images` endpoint identifies products with missing/broken images
+  - Distinguishes Cloudinary-hosted vs local/ephemeral storage images
+  - Shows affected vendor info (store name, email)
+  - Integrated into Admin Dashboard "Action Required" section
+- **Vendor Spotlight Enhancement** - Updated seed script and API (Feb 19, 2026)
+  - Added 4 demo vendors with compelling stories in seed_production.py
+  - Updated `/api/homepage/vendor-success` to use vendor's custom story when available
+  - Fallback to generic testimonials for vendors without stories
 
 ### Pending Deployment
 - User needs to **Save to GitHub** and **Redeploy on DigitalOcean**

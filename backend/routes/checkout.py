@@ -249,6 +249,9 @@ async def stripe_webhook(request: Request):
                                     print(f"Vendor notification sent to {vendor_user['email']} for order {order_id[:8]}")
                         except Exception as ve:
                             print(f"Error notifying vendor {vendor_id}: {ve}")
+                    
+                    # Check for low stock and notify vendors
+                    await check_and_notify_low_stock(db, order, email_service, frontend_url)
                             
                 except Exception as e:
                     print(f"Email notification error: {e}")

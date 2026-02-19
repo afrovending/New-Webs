@@ -18,8 +18,9 @@ const VendorProducts = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [productImages, setProductImages] = useState([]);
   const [formData, setFormData] = useState({
-    name: '', description: '', price: '', compare_price: '', category_id: '', stock: '', images: '', tags: '', fulfillment_option: 'FBV'
+    name: '', description: '', price: '', compare_price: '', category_id: '', stock: '', tags: '', fulfillment_option: 'FBV'
   });
 
   const fetchProducts = async () => {

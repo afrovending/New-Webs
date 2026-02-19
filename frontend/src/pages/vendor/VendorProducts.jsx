@@ -50,7 +50,7 @@ const VendorProducts = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await api.get('/products?vendor_id=me&limit=100');
+      const response = await api.get('/vendor/products');
       setProducts(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching products:', error);

@@ -77,6 +77,22 @@ const VendorDashboard = () => {
     setupAndFetch();
   }, [api, user]);
 
+  const handleReactivateProduct = async (productId) => {
+    setReactivatingId(productId);
+    try {
+      await api.post(`/vendors/me/products/${productId}/reactivate`);
+      toast.success('Product reactivated successfully!');
+      
+      // Refresh low stock data
+      const lowStockRes = await api.get('/vendors/me/low-stock');
+      setLowStockData(lowStockRes.data);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to reactivate product. Make sure stock is greater than 0.');
+    } finally {
+      setReactivatingId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-lg p-6 text-white">

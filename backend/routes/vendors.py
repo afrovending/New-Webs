@@ -39,6 +39,53 @@ async def get_vendors(
     return vendors
 
 
+@router.get("/me")
+async def get_my_vendor_profile(user: dict = Depends(get_current_user)):
+    """Get current user's vendor profile"""
+    db = get_db()
+    
+    if not user.get("vendor_id"):
+        raise HTTPException(status_code=404, detail="No vendor profile found")
+    
+    vendor = await db.vendors.find_one({"id": user["vendor_id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+    
+    return vendor
+
+
+@router.put("/me")
+async def update_my_vendor_profile(update_data: dict, user: dict = Depends(get_current_user)):
+    """Update current user's vendor profile"""
+    db = get_db()
+    
+    if not user.get("vendor_id"):
+        raise HTTPException(status_code=404, detail="No vendor profile found")
+    
+    # Fields that can be updated
+    allowed_fields = [
+        "store_name", "description", "country", "country_code", "city", "address",
+        "phone", "email", "website", "cultural_story", "shipping_policy", "return_policy",
+        "logo_url", "banner_url"
+    ]
+    
+    # Filter only allowed fields
+    update_fields = {k: v for k, v in update_data.items() if k in allowed_fields}
+    update_fields["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    result = await db.vendors.update_one(
+        {"id": user["vendor_id"]},
+        {"$set": update_fields}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=400, detail="No changes made")
+    
+    # Return updated vendor
+    vendor = await db.vendors.find_one({"id": user["vendor_id"]}, {"_id": 0})
+    return vendor
+
+
 @router.get("/{vendor_id}")
 async def get_vendor(vendor_id: str):
     """Get single vendor by ID"""

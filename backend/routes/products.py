@@ -81,6 +81,23 @@ async def get_product(product_id: str):
     return product
 
 
+@router.get("/vendor/products")
+async def get_my_products(user: dict = Depends(get_current_user), skip: int = 0, limit: int = 100):
+    """Get current vendor's products"""
+    db = get_db()
+    
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=403, detail="No vendor profile found")
+    
+    products = await db.products.find(
+        {"vendor_id": vendor["id"]},
+        {"_id": 0}
+    ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    return products
+
+
 @router.post("", response_model=ProductResponse)
 async def create_product(product_data: ProductCreate, user: dict = Depends(get_current_user)):
     """Create a new product"""

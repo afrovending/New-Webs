@@ -188,11 +188,15 @@ const AppRouter = () => {
       <Route path="/legal/chargeback-defense" element={<ChargebackDefensePage />} />
       <Route path="/legal/return-policy" element={<EliteReturnPolicyPage />} />
 
+      {/* Order Tracking (public with order ID) */}
+      <Route path="/track/:orderId" element={<MainLayout><OrderTrackingPage /></MainLayout>} />
+
       {/* Customer Dashboard */}
       <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route index element={<DashboardPage />} />
         <Route path="orders" element={<OrderHistoryPage />} />
         <Route path="orders/:orderId" element={<OrderDetailPage />} />
+        <Route path="orders/:orderId/track" element={<OrderTrackingPage />} />
         <Route path="bookings" element={<BookingsPage />} />
         <Route path="messages" element={<MessagesPage />} />
         <Route path="profile" element={<ProfilePage />} />

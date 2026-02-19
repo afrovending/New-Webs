@@ -738,6 +738,63 @@ async def get_all_products_admin(
     return {"products": products, "total": total}
 
 
+@router.post("/products")
+async def create_product_admin(
+    name: str,
+    description: str,
+    price: float,
+    category_id: str,
+    vendor_id: str,
+    stock: int = 0,
+    compare_price: Optional[float] = None,
+    images: List[str] = [],
+    tags: List[str] = [],
+    fulfillment_option: str = "FBV",
+    is_active: bool = True,
+    is_featured: bool = False,
+    admin: dict = Depends(require_admin)
+):
+    """Create a product as admin (assign to any vendor)"""
+    db = get_db()
+    
+    # Verify vendor exists
+    vendor = await db.vendors.find_one({"id": vendor_id})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+    
+    # Verify category exists
+    category = await db.categories.find_one({"id": category_id})
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    
+    product = {
+        "id": str(uuid.uuid4()),
+        "vendor_id": vendor_id,
+        "name": name,
+        "description": description,
+        "price": price,
+        "compare_price": compare_price,
+        "category_id": category_id,
+        "images": images if images else [],
+        "stock": stock,
+        "tags": tags if tags else [],
+        "fulfillment_option": fulfillment_option,
+        "is_active": is_active,
+        "is_featured": is_featured,
+        "average_rating": 0,
+        "review_count": 0,
+        "sales_count": 0,
+        "view_count": 0,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by_admin": admin["id"]
+    }
+    
+    await db.products.insert_one(product)
+    await db.vendors.update_one({"id": vendor_id}, {"$inc": {"product_count": 1}})
+    
+    return {"message": "Product created", "product_id": product["id"]}
+
+
 @router.put("/products/{product_id}")
 async def update_product_admin(
     product_id: str,

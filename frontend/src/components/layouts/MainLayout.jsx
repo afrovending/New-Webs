@@ -459,6 +459,15 @@ const MainLayout = () => {
               </ul>
             </div>
             <div>
+              <h4 className="font-semibold text-white mb-4">Legal</h4>
+              <ul className="space-y-2">
+                <li><Link to="/legal/terms" className="hover:text-white transition">Terms of Service</Link></li>
+                <li><Link to="/legal/privacy" className="hover:text-white transition">Privacy Policy</Link></li>
+                <li><Link to="/legal/buyer-protection" className="hover:text-white transition">Buyer Protection</Link></li>
+                <li><Link to="/legal/vendor-agreement" className="hover:text-white transition">Vendor Agreement</Link></li>
+              </ul>
+            </div>
+            <div>
               <h4 className="font-semibold text-white mb-4">Become a Vendor</h4>
               <p className="text-amber-200 mb-4">Start selling your African products to customers worldwide.</p>
               <Link to="/register">
@@ -470,6 +479,11 @@ const MainLayout = () => {
           </div>
           <div className="border-t border-red-800 mt-8 pt-8 text-center text-amber-300">
             <p>&copy; {new Date().getFullYear()} AfroVending. All rights reserved.</p>
+            <div className="mt-2 flex justify-center gap-4 text-sm">
+              <Link to="/legal" className="hover:text-white transition">Legal & Policies</Link>
+              <span>•</span>
+              <Link to="/legal/enforcement" className="hover:text-white transition">Marketplace Guidelines</Link>
+            </div>
           </div>
         </div>
       </footer>

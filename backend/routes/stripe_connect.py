@@ -435,6 +435,14 @@ async def update_payout_settings(request: Request, user: dict = Depends(get_curr
         {"$set": update_fields}
     )
     
+    # Send email if auto-payout was just enabled
+    if update_fields["auto_payout_enabled"] and not vendor.get("auto_payout_enabled"):
+        try:
+            from payout_emails import send_auto_payout_enabled_email
+            await send_auto_payout_enabled_email(vendor, threshold, frequency)
+        except Exception as e:
+            logger.error(f"Failed to send auto-payout email: {e}")
+    
     return {"message": "Payout settings updated successfully", **update_fields}
 
 

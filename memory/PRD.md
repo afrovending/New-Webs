@@ -98,7 +98,7 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - **Deployment**: DigitalOcean App Platform
 - **API Prefix**: All routes under `/api` prefix
 
-## Current Status (Updated Feb 18, 2026)
+## Current Status (Updated Feb 19, 2026)
 
 ### Completed
 - All E2E tests passed (26+ backend, 95%+ frontend)
@@ -112,9 +112,15 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - Production database seeding script
 - Full Admin Analytics Dashboard
 - Vendor Management with deactivation controls
+- **Backend Modularization** - Migrated from monolithic to modular architecture
+- **Database Seeding API** - `/api/admin/seed-database` endpoint for production
+- **Forgot Password Email** - Now sends secure reset link via SendGrid
+- **Currency Symbol Refresh** - Fixed with version counter for immediate updates
+- **Legacy server.py Deleted** - Codebase cleaned up
 
 ### Pending Deployment
 - User needs to **Save to GitHub** and **Redeploy on DigitalOcean**
+- After deployment, call `/api/admin/seed-database` to populate production database
 
 ## API Endpoints
 

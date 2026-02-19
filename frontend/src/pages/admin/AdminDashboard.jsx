@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { 
   Users, Store, Package, DollarSign, TrendingUp, TrendingDown,
   ShoppingBag, Calendar, BadgeCheck, AlertTriangle, Activity,
-  ArrowUpRight, ArrowDownRight, Star
+  ArrowUpRight, ArrowDownRight, Star, ImageOff, RefreshCw
 } from 'lucide-react';
 
 const AdminDashboard = () => {

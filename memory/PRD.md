@@ -160,6 +160,13 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
   - Complete shipping address for fulfillment
   - Next steps checklist
   - Direct link to vendor order dashboard
+- **Low Stock Alert Email System** - Automated alerts when inventory runs low:
+  - Triggers after each successful order if product stock ≤ 5 units
+  - Shows critical (≤3) vs low stock status badges
+  - Vendor earnings stats and product list
+  - Pro tip about maintaining inventory for search ranking
+  - Rate-limited to 1 alert per vendor per day to avoid spam
+  - Stock automatically decremented when payment is confirmed
 
 ### New Features (Feb 19, 2026)
 - **Admin Products Management** - New AdminProducts.jsx page with full product management:

@@ -631,5 +631,134 @@ class EmailService:
         
         return self._send(to_email, f"✓ Payment Complete - Order #{order_short_id}", html_content)
 
+    def send_vendor_new_order(self, to_email: str, vendor_name: str, order_data: dict, vendor_items: list, frontend_url: str = "https://afrovending.com") -> bool:
+        """Send notification to vendor about a new order for their products"""
+        items_html = ""
+        vendor_total = 0
+        
+        for item in vendor_items:
+            item_total = float(item.get('price', 0)) * int(item.get('quantity', 1))
+            vendor_total += item_total
+            image_url = item.get('image') or item.get('product_image', '')
+            image_html = f'<img src="{image_url}" alt="" style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px;">' if image_url else '<div style="width: 50px; height: 50px; background: #f3f4f6; border-radius: 6px;"></div>'
+            items_html += f"""
+            <tr>
+                <td style="padding: 12px; border-bottom: 1px solid #eee; width: 60px;">
+                    {image_html}
+                </td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee;">
+                    <strong>{item.get('name', item.get('product_name', 'Product'))}</strong>
+                </td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">{item.get('quantity', 1)}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">${float(item.get('price', 0)):.2f}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; font-weight: 600;">${item_total:.2f}</td>
+            </tr>
+            """
+        
+        order_id = order_data.get('id', '')
+        order_short_id = order_id[:8] if order_id else 'N/A'
+        vendor_orders_url = f"{frontend_url}/vendor/orders"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f5f5f5; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 35px 30px; text-align: center; border-radius: 12px 12px 0 0; }}
+                .header h1 {{ margin: 0; font-size: 26px; }}
+                .content {{ background: #fff; padding: 30px; border: 1px solid #e5e7eb; }}
+                .footer {{ background: #1f2937; color: #9ca3af; padding: 25px; text-align: center; font-size: 12px; border-radius: 0 0 12px 12px; }}
+                .footer a {{ color: #dc2626; text-decoration: none; }}
+                .order-table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+                .order-table th {{ background: #fef2f2; padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; color: #991b1b; }}
+                .alert-box {{ background: #fef2f2; border: 2px solid #dc2626; padding: 20px; border-radius: 12px; margin: 20px 0; }}
+                .earnings-box {{ background: #f0fdf4; border: 2px solid #22c55e; padding: 20px; border-radius: 12px; margin: 20px 0; text-align: center; }}
+                .customer-box {{ background: #f9fafb; padding: 20px; border-radius: 10px; margin: 20px 0; }}
+                .btn {{ display: inline-block; background: #dc2626; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; }}
+                .urgent-badge {{ display: inline-block; background: #dc2626; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-left: 10px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>🛒 New Order Received!</h1>
+                    <p style="margin: 10px 0 0 0; opacity: 0.9;">Order #{order_short_id}</p>
+                </div>
+                <div class="content">
+                    <p>Hi {vendor_name},</p>
+                    
+                    <div class="alert-box">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <h3 style="color: #dc2626; margin: 0;">Action Required</h3>
+                                <p style="margin: 5px 0 0 0; color: #7f1d1d;">Please process this order as soon as possible</p>
+                            </div>
+                            <span class="urgent-badge">New</span>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-bottom: 10px;">Your Items in This Order</h3>
+                    <table class="order-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Product</th>
+                                <th style="text-align: center;">Qty</th>
+                                <th style="text-align: right;">Unit Price</th>
+                                <th style="text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {items_html}
+                        </tbody>
+                    </table>
+                    
+                    <div class="earnings-box">
+                        <p style="margin: 0; color: #166534; font-size: 14px;">Your Earnings from This Order</p>
+                        <p style="margin: 5px 0 0 0; font-size: 32px; font-weight: bold; color: #16a34a;">${vendor_total:.2f}</p>
+                        <p style="margin: 5px 0 0 0; color: #6b7280; font-size: 12px;">*Platform fees may apply</p>
+                    </div>
+                    
+                    <div class="customer-box">
+                        <h4 style="margin: 0 0 12px 0; color: #374151;">📍 Ship To</h4>
+                        <p style="margin: 0; font-weight: 600; font-size: 16px;">{order_data.get('shipping_name', 'Customer')}</p>
+                        <p style="margin: 8px 0 0 0; color: #6b7280;">
+                            {order_data.get('shipping_address', '')}<br>
+                            {f"{order_data.get('shipping_address2')}<br>" if order_data.get('shipping_address2') else ''}
+                            {order_data.get('shipping_city', '')}, {order_data.get('shipping_state', '')} {order_data.get('shipping_zip', '')}<br>
+                            <strong>{order_data.get('shipping_country', '')}</strong>
+                        </p>
+                        {f"<p style='margin: 10px 0 0 0;'><strong>Phone:</strong> {order_data.get('shipping_phone')}</p>" if order_data.get('shipping_phone') else ''}
+                    </div>
+                    
+                    <h4 style="margin: 25px 0 15px 0;">Next Steps:</h4>
+                    <ol style="color: #4b5563; padding-left: 20px;">
+                        <li style="margin-bottom: 8px;">Review the order in your vendor dashboard</li>
+                        <li style="margin-bottom: 8px;">Prepare the item(s) for shipping</li>
+                        <li style="margin-bottom: 8px;">Mark as shipped and add tracking number</li>
+                        <li style="margin-bottom: 8px;">Customer will be notified automatically</li>
+                    </ol>
+                    
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="{vendor_orders_url}" class="btn" style="color: white;">View Order Details</a>
+                    </div>
+                    
+                    <p style="color: #6b7280; font-size: 13px; text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                        Respond quickly to maintain your seller rating! Orders should be shipped within 2-3 business days.
+                    </p>
+                </div>
+                <div class="footer">
+                    <p style="margin: 0 0 10px 0;"><strong style="color: white;">AfroVending Vendor Portal</strong></p>
+                    <p style="margin: 0;">Need help? Contact <a href="mailto:vendors@afrovending.com">vendors@afrovending.com</a></p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return self._send(to_email, f"🛒 New Order #{order_short_id} - Action Required", html_content)
+
 # Singleton instance
 email_service = EmailService()

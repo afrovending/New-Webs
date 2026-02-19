@@ -1525,6 +1525,164 @@ async def notify_vendors_broken_images(
                     affected_products
                 )
                 
+
+
+@router.get("/notification-center")
+async def get_admin_notifications(
+    limit: int = 50,
+    user: dict = Depends(require_admin)
+):
+    """
+    Get admin notification center data with real-time alerts.
+    Includes new orders, vendor applications, low stock, and system alerts.
+    """
+    db = get_db()
+    now = datetime.now(timezone.utc)
+    
+    notifications = []
+    
+    # 1. New Orders (last 24 hours)
+    yesterday = (now - timedelta(days=1)).isoformat()
+    new_orders = await db.orders.find(
+        {"created_at": {"$gte": yesterday}},
+        {"_id": 0, "id": 1, "total": 1, "status": 1, "created_at": 1, "user_id": 1}
+    ).sort("created_at", -1).limit(10).to_list(10)
+    
+    for order in new_orders:
+        user_info = await db.users.find_one({"id": order["user_id"]}, {"_id": 0, "first_name": 1, "last_name": 1})
+        customer_name = f"{user_info.get('first_name', '')} {user_info.get('last_name', '')}".strip() if user_info else "Customer"
+        notifications.append({
+            "id": f"order_{order['id']}",
+            "type": "new_order",
+            "priority": "high",
+            "title": "New Order",
+            "message": f"Order #{order['id'][:8]} from {customer_name} - ${order['total']:.2f}",
+            "link": f"/admin/orders",
+            "created_at": order["created_at"],
+            "read": False
+        })
+    
+    # 2. Pending Vendor Applications
+    pending_vendors = await db.vendors.find(
+        {"is_approved": False},
+        {"_id": 0, "id": 1, "store_name": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    
+    for vendor in pending_vendors:
+        notifications.append({
+            "id": f"vendor_{vendor['id']}",
+            "type": "vendor_application",
+            "priority": "medium",
+            "title": "Vendor Application",
+            "message": f"New vendor application: {vendor['store_name']}",
+            "link": f"/admin/vendors",
+            "created_at": vendor.get("created_at", now.isoformat()),
+            "read": False
+        })
+    
+    # 3. Low Stock Alerts
+    low_stock_products = await db.products.find(
+        {"stock": {"$lt": 10, "$gt": 0}, "is_active": True},
+        {"_id": 0, "id": 1, "name": 1, "stock": 1}
+    ).limit(10).to_list(10)
+    
+    for product in low_stock_products:
+        notifications.append({
+            "id": f"stock_{product['id']}",
+            "type": "low_stock",
+            "priority": "medium",
+            "title": "Low Stock Alert",
+            "message": f"{product['name']} has only {product['stock']} items left",
+            "link": f"/admin/products",
+            "created_at": now.isoformat(),
+            "read": False
+        })
+    
+    # 4. Out of Stock Alerts
+    out_of_stock = await db.products.count_documents({"stock": 0, "is_active": True})
+    if out_of_stock > 0:
+        notifications.append({
+            "id": "out_of_stock_alert",
+            "type": "out_of_stock",
+            "priority": "high",
+            "title": "Out of Stock",
+            "message": f"{out_of_stock} products are out of stock",
+            "link": "/admin/products",
+            "created_at": now.isoformat(),
+            "read": False
+        })
+    
+    # 5. Recent User Registrations (last 24 hours)
+    new_users_count = await db.users.count_documents({"created_at": {"$gte": yesterday}})
+    if new_users_count > 0:
+        notifications.append({
+            "id": "new_users_alert",
+            "type": "new_users",
+            "priority": "low",
+            "title": "New Users",
+            "message": f"{new_users_count} new users registered in the last 24 hours",
+            "link": "/admin/users",
+            "created_at": now.isoformat(),
+            "read": False
+        })
+    
+    # 6. Pending Payouts
+    pending_payouts = await db.payouts.count_documents({"status": "pending"})
+    if pending_payouts > 0:
+        notifications.append({
+            "id": "pending_payouts",
+            "type": "payout",
+            "priority": "medium",
+            "title": "Pending Payouts",
+            "message": f"{pending_payouts} vendor payouts are pending",
+            "link": "/admin/vendors",
+            "created_at": now.isoformat(),
+            "read": False
+        })
+    
+    # Sort by priority and timestamp
+    priority_order = {"high": 0, "medium": 1, "low": 2}
+    notifications.sort(key=lambda x: (priority_order.get(x["priority"], 3), x["created_at"]), reverse=True)
+    
+    # Summary stats
+    summary = {
+        "total_notifications": len(notifications),
+        "high_priority": len([n for n in notifications if n["priority"] == "high"]),
+        "new_orders_24h": len(new_orders),
+        "pending_vendors": len(pending_vendors),
+        "low_stock_products": len(low_stock_products),
+        "out_of_stock_count": out_of_stock
+    }
+    
+    return {
+        "notifications": notifications[:limit],
+        "summary": summary,
+        "timestamp": now.isoformat()
+    }
+
+
+@router.post("/notification-center/mark-read")
+async def mark_notification_read(
+    notification_id: str,
+    user: dict = Depends(require_admin)
+):
+    """Mark a notification as read"""
+    db = get_db()
+    
+    # Store read status in admin_notifications collection
+    await db.admin_notifications.update_one(
+        {"notification_id": notification_id, "admin_id": user["id"]},
+        {
+            "$set": {
+                "read": True,
+                "read_at": datetime.now(timezone.utc).isoformat()
+            }
+        },
+        upsert=True
+    )
+    
+    return {"success": True, "notification_id": notification_id}
+
                 emails_sent += 1
                 vendors_notified.append({
                     "store_name": vendor_name,

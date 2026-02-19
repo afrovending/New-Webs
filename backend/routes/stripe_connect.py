@@ -494,6 +494,13 @@ async def request_manual_payout(request: Request, user: dict = Depends(get_curre
         }
         await db.payouts.insert_one(payout_record)
         
+        # Send email notification
+        try:
+            from payout_emails import send_payout_initiated_email
+            await send_payout_initiated_email(vendor, amount, payout.id, "manual")
+        except Exception as e:
+            logger.error(f"Failed to send payout email: {e}")
+        
         return {
             "payout_id": payout.id,
             "amount": amount,

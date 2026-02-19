@@ -252,7 +252,8 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 
 ### Reviews
 - `POST /api/reviews/create` - Create review (requires purchase)
-- `GET /api/reviews/product/{product_id}` - Get product reviews
+- `GET /api/reviews?product_id=xxx` - Get product reviews (query param - NEW)
+- `GET /api/reviews/product/{product_id}` - Get product reviews (path param)
 - `GET /api/reviews/service/{service_id}` - Get service reviews
 - `GET /api/reviews/vendor/{vendor_id}` - Get all vendor reviews
 - `POST /api/reviews/{review_id}/helpful` - Mark review helpful

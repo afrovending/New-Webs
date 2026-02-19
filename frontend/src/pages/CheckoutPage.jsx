@@ -123,18 +123,25 @@ const CheckoutPage = () => {
 
     setLoading(true);
     try {
-      // Create order
-      const orderResponse = await api.post('/orders', {
+      // Create order and checkout session in one call
+      const checkoutResponse = await api.post('/checkout/cart', {
         items: cart.items.map(item => ({ product_id: item.product_id, quantity: item.quantity })),
-        ...formData,
-      });
-
-      const orderId = orderResponse.data.id;
-
-      // Create checkout session
-      const checkoutResponse = await api.post(`/checkout/order/${orderId}`, {
+        shipping: {
+          name: formData.shipping_name,
+          address: formData.shipping_address,
+          address2: formData.shipping_address2,
+          city: formData.shipping_city,
+          state: formData.shipping_state,
+          zip: formData.shipping_zip,
+          country: formData.shipping_country,
+          phone: formData.shipping_phone,
+        },
+        shipping_cost: shippingEstimate?.estimated_cost || 0,
         origin_url: window.location.origin,
       });
+
+      // Clear cart before redirecting
+      clearCart();
 
       // Redirect to Stripe
       window.location.href = checkoutResponse.data.checkout_url;

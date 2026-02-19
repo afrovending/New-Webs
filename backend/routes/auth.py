@@ -1,15 +1,20 @@
 """
 AfroVending - Authentication Routes
 """
-from fastapi import APIRouter, HTTPException, Request, Response, Depends
+from fastapi import APIRouter, HTTPException, Request, Response, Depends, BackgroundTasks
 from fastapi.responses import JSONResponse
 from datetime import datetime, timezone, timedelta
 import uuid
 import httpx
+import os
 
 from database import get_db
 from auth import hash_password, verify_password, create_access_token, get_current_user
 from models import UserCreate, UserLogin, UserResponse, TokenResponse, ForgotPasswordRequest, ResetPasswordRequest
+from email_service import email_service
+
+# Frontend URL for password reset links
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://afrovending.com')
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 

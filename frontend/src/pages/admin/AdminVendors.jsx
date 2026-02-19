@@ -320,26 +320,48 @@ const AdminVendors = () => {
                   <div className="flex flex-col gap-2 min-w-[140px]">
                     {/* Deactivated vendor - show reactivate */}
                     {vendor.is_active === false ? (
-                      <Button 
-                        onClick={() => handleActivate(vendor.id)}
-                        disabled={actionLoading === vendor.id}
-                        className="bg-green-600 hover:bg-green-700"
-                        data-testid={`activate-btn-${vendor.id}`}
-                      >
-                        <RefreshCw className={`h-4 w-4 mr-1 ${actionLoading === vendor.id ? 'animate-spin' : ''}`} />
-                        Reactivate
-                      </Button>
+                      <>
+                        <Button 
+                          onClick={() => handleActivate(vendor.id)}
+                          disabled={actionLoading === vendor.id}
+                          className="bg-green-600 hover:bg-green-700"
+                          data-testid={`activate-btn-${vendor.id}`}
+                        >
+                          <RefreshCw className={`h-4 w-4 mr-1 ${actionLoading === vendor.id ? 'animate-spin' : ''}`} />
+                          Reactivate
+                        </Button>
+                        <Button 
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDeleteDialog({ open: true, vendor })}
+                          className="border-red-300 text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      </>
                     ) : !vendor.is_approved ? (
                       /* Pending vendor - show approve */
-                      <Button 
-                        onClick={() => approveVendor(vendor.id)}
-                        disabled={actionLoading === vendor.id}
-                        className="bg-green-600 hover:bg-green-700"
-                        data-testid={`approve-btn-${vendor.id}`}
-                      >
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Approve
-                      </Button>
+                      <>
+                        <Button 
+                          onClick={() => approveVendor(vendor.id)}
+                          disabled={actionLoading === vendor.id}
+                          className="bg-green-600 hover:bg-green-700"
+                          data-testid={`approve-btn-${vendor.id}`}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Approve
+                        </Button>
+                        <Button 
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDeleteDialog({ open: true, vendor })}
+                          className="border-red-300 text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      </>
                     ) : (
                       /* Active vendor - show verify/deactivate */
                       <>
@@ -361,11 +383,20 @@ const AdminVendors = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => setDeactivateDialog({ open: true, vendor })}
-                          className="border-red-300 text-red-600 hover:bg-red-50"
+                          className="border-amber-300 text-amber-600 hover:bg-amber-50"
                           data-testid={`deactivate-btn-${vendor.id}`}
                         >
                           <Ban className="h-4 w-4 mr-1" />
                           Deactivate
+                        </Button>
+                        <Button 
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDeleteDialog({ open: true, vendor })}
+                          className="border-red-300 text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
                         </Button>
                       </>
                     )}

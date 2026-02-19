@@ -66,7 +66,7 @@ async def update_my_vendor_profile(update_data: dict, user: dict = Depends(get_c
     allowed_fields = [
         "store_name", "description", "country", "country_code", "city", "address",
         "phone", "email", "website", "cultural_story", "shipping_policy", "return_policy",
-        "logo_url", "banner_url"
+        "logo_url", "banner_url", "story"
     ]
     
     # Filter only allowed fields
@@ -78,10 +78,7 @@ async def update_my_vendor_profile(update_data: dict, user: dict = Depends(get_c
         {"$set": update_fields}
     )
     
-    if result.modified_count == 0:
-        raise HTTPException(status_code=400, detail="No changes made")
-    
-    # Return updated vendor
+    # Return updated vendor even if no changes (might be same data)
     vendor = await db.vendors.find_one({"id": user["vendor_id"]}, {"_id": 0})
     return vendor
 

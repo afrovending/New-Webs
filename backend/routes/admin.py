@@ -563,3 +563,4 @@ async def seed_database_endpoint(user: dict = Depends(require_admin)):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Seeding failed: {str(e)}")
+

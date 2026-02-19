@@ -181,11 +181,11 @@ const VendorDashboard = () => {
 
       {/* Low Stock Alert Widget */}
       {lowStockData.summary.total > 0 && (
-        <Card className={`border-2 ${lowStockData.summary.out_of_stock > 0 || lowStockData.summary.critical > 0 ? 'border-red-300 bg-red-50' : 'border-amber-300 bg-amber-50'}`}>
+        <Card className={`border-2 ${lowStockData.summary.auto_deactivated > 0 || lowStockData.summary.out_of_stock > 0 || lowStockData.summary.critical > 0 ? 'border-red-300 bg-red-50' : 'border-amber-300 bg-amber-50'}`}>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
-                <AlertTriangle className={`h-5 w-5 ${lowStockData.summary.out_of_stock > 0 || lowStockData.summary.critical > 0 ? 'text-red-500' : 'text-amber-500'}`} />
+                <AlertTriangle className={`h-5 w-5 ${lowStockData.summary.auto_deactivated > 0 || lowStockData.summary.out_of_stock > 0 || lowStockData.summary.critical > 0 ? 'text-red-500' : 'text-amber-500'}`} />
                 Low Stock Alert
               </CardTitle>
               <Button 
@@ -201,7 +201,13 @@ const VendorDashboard = () => {
           </CardHeader>
           <CardContent>
             {/* Summary Stats */}
-            <div className="flex gap-4 mb-4">
+            <div className="flex flex-wrap gap-3 mb-4">
+              {lowStockData.summary.auto_deactivated > 0 && (
+                <div className="flex items-center gap-2 bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                  <EyeOff className="h-4 w-4" />
+                  {lowStockData.summary.auto_deactivated} Hidden
+                </div>
+              )}
               {lowStockData.summary.out_of_stock > 0 && (
                 <div className="flex items-center gap-2 bg-red-100 text-red-700 px-3 py-1.5 rounded-full text-sm font-medium">
                   <PackageX className="h-4 w-4" />
@@ -223,31 +229,68 @@ const VendorDashboard = () => {
             </div>
             
             {/* Product List */}
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {lowStockData.products.slice(0, 5).map((product) => (
+            <div className="space-y-2 max-h-72 overflow-y-auto">
+              {lowStockData.products.slice(0, 6).map((product) => (
                 <div 
                   key={product.id} 
-                  className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200"
+                  className={`flex items-center gap-3 p-3 rounded-lg border ${product.auto_deactivated ? 'bg-purple-50 border-purple-200' : 'bg-white border-gray-200'}`}
                   data-testid={`low-stock-item-${product.id}`}
                 >
-                  <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                  <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative">
                     {product.images?.[0] ? (
-                      <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
+                      <img src={product.images[0]} alt="" className={`w-full h-full object-cover ${product.auto_deactivated ? 'opacity-50' : ''}`} />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400">
                         <Package className="h-6 w-6" />
                       </div>
                     )}
+                    {product.auto_deactivated && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <EyeOff className="h-4 w-4 text-white" />
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{product.name}</p>
+                    <p className={`font-medium text-sm truncate ${product.auto_deactivated ? 'text-gray-500' : ''}`}>{product.name}</p>
                     <p className="text-xs text-gray-500">${product.price?.toFixed(2)}</p>
                   </div>
-                  <div className="text-right">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      product.stock === 0 
-                        ? 'bg-red-100 text-red-700' 
-                        : product.stock <= 3 
+                  <div className="flex items-center gap-2">
+                    {product.auto_deactivated ? (
+                      <>
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
+                          <EyeOff className="h-3 w-3" /> Hidden
+                        </span>
+                        {product.stock > 0 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs border-purple-300 text-purple-700 hover:bg-purple-100"
+                            onClick={() => handleReactivateProduct(product.id)}
+                            disabled={reactivatingId === product.id}
+                            data-testid={`reactivate-btn-${product.id}`}
+                          >
+                            {reactivatingId === product.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <><RotateCcw className="h-3 w-3 mr-1" /> Reactivate</>
+                            )}
+                          </Button>
+                        )}
+                      </>
+                    ) : (
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        product.stock === 0 
+                          ? 'bg-red-100 text-red-700' 
+                          : product.stock <= 3 
+                            ? 'bg-orange-100 text-orange-700' 
+                            : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {product.stock === 0 ? 'Out of Stock' : `${product.stock} left`}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))} 
                           ? 'bg-orange-100 text-orange-700' 
                           : 'bg-blue-100 text-blue-700'
                     }`}>

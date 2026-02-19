@@ -233,6 +233,7 @@ function App() {
             <AppRouter />
             <Toaster position="top-right" />
             <CookieConsentBanner />
+            <PWAInstallPrompt />
           </CartProvider>
         </CurrencyProvider>
       </AuthProvider>

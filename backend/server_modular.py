@@ -72,6 +72,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files for uploads
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
 
 # Health check - accessible at /health (DigitalOcean adds /api prefix)
 @app.get("/health")

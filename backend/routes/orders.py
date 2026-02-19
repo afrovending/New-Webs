@@ -229,6 +229,13 @@ async def update_order_status(
         }
     )
     
+    # Trigger push notification for order status updates
+    try:
+        from routes.notifications import notify_order_update
+        await notify_order_update(order["user_id"], order_id, status)
+    except Exception as e:
+        print(f"Push notification error: {e}")
+    
     return {"message": f"Order status updated to {status}"}
 
 

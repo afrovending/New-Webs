@@ -265,15 +265,43 @@ async def stripe_webhook(request: Request):
             user = await db.users.find_one({"id": user_id}, {"_id": 0}) if user_id else None
             
             if order:
-                # Decrement stock for each item in the order
+                # Decrement stock for each item and track products that hit zero
+                out_of_stock_by_vendor = {}  # vendor_id -> list of products that hit zero stock
+                
                 for item in order.get("items", []):
                     product_id = item.get("product_id")
                     quantity = item.get("quantity", 1)
+                    vendor_id = item.get("vendor_id")
+                    
                     if product_id:
+                        # Decrement stock
                         await db.products.update_one(
                             {"id": product_id},
                             {"$inc": {"stock": -quantity}}
                         )
+                        
+                        # Check if stock reached zero
+                        updated_product = await db.products.find_one({"id": product_id}, {"_id": 0})
+                        if updated_product and updated_product.get("stock", 0) <= 0:
+                            # Auto-deactivate the product
+                            await db.products.update_one(
+                                {"id": product_id},
+                                {
+                                    "$set": {
+                                        "is_active": False,
+                                        "auto_deactivated": True,
+                                        "auto_deactivated_at": datetime.now(timezone.utc).isoformat(),
+                                        "auto_deactivated_reason": "out_of_stock"
+                                    }
+                                }
+                            )
+                            print(f"Product {product_id} auto-deactivated due to zero stock")
+                            
+                            # Track for vendor notification
+                            if vendor_id:
+                                if vendor_id not in out_of_stock_by_vendor:
+                                    out_of_stock_by_vendor[vendor_id] = []
+                                out_of_stock_by_vendor[vendor_id].append(updated_product)
                 
                 # Send push notification to customer
                 try:

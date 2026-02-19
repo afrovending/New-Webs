@@ -133,6 +133,7 @@ app.include_router(cloudinary_routes.router, prefix="/api")
 app.include_router(vendor_products_router, prefix="/api")
 app.include_router(stripe_connect.router, prefix="/api")
 app.include_router(webhooks.router, prefix="/api")
+app.include_router(shipping.router, prefix="/api")
 
 # Also mount without prefix for DigitalOcean production
 app.include_router(auth.router)

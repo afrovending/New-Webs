@@ -101,20 +101,7 @@ app.include_router(notifications.router, prefix="/api")
 app.include_router(homepage.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
 
-# Also include without /api prefix for DigitalOcean routing
-app.include_router(auth.router, prefix="/auth", tags=["Auth-DO"])
-app.include_router(products.router, prefix="/products", tags=["Products-DO"])
-app.include_router(vendors.router, prefix="/vendors", tags=["Vendors-DO"])
-app.include_router(services.router, prefix="/services", tags=["Services-DO"])
-app.include_router(categories.router, tags=["Categories-DO"])
-app.include_router(bookings.router, prefix="/bookings", tags=["Bookings-DO"])
-app.include_router(orders.router, prefix="/orders", tags=["Orders-DO"])
-app.include_router(reviews.router, prefix="/reviews", tags=["Reviews-DO"])
-app.include_router(wishlist.router, prefix="/wishlist", tags=["Wishlist-DO"])
-app.include_router(price_alerts.router, prefix="/price-alerts", tags=["Alerts-DO"])
-app.include_router(notifications.router, prefix="/notifications", tags=["Notif-DO"])
-app.include_router(homepage.router, tags=["Homepage-DO"])
-app.include_router(admin.router, prefix="/admin", tags=["Admin-DO"])
+# Remove the duplicate DO routes - not needed
 
 
 # Global exception handler

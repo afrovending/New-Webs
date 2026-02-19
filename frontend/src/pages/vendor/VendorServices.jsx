@@ -41,13 +41,14 @@ const VendorServices = () => {
         ...formData,
         price: parseFloat(formData.price),
         duration_minutes: parseInt(formData.duration_minutes),
-        images: formData.images ? formData.images.split(',').map(s => s.trim()) : [],
+        images: serviceImages,
         tags: formData.tags ? formData.tags.split(',').map(s => s.trim()) : [],
       };
       await api.post('/services', data);
       toast.success('Service created');
       setDialogOpen(false);
-      setFormData({ name: '', description: '', price: '', price_type: 'fixed', duration_minutes: '60', location_type: 'both', category_id: '', images: '', tags: '' });
+      setServiceImages([]);
+      setFormData({ name: '', description: '', price: '', price_type: 'fixed', duration_minutes: '60', location_type: 'both', category_id: '', tags: '' });
       fetchServices();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to create service');

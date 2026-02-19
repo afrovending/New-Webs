@@ -53,10 +53,10 @@ const RecentlySold = () => {
             >
               <Card className="w-48 hover:shadow-lg transition-shadow">
                 <div className="h-32 bg-gray-100 rounded-t-lg overflow-hidden">
-                  {item.image ? (
+                  {item.product_image ? (
                     <img 
-                      src={item.image} 
-                      alt={item.name}
+                      src={item.product_image} 
+                      alt={item.product_name}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -66,7 +66,7 @@ const RecentlySold = () => {
                   )}
                 </div>
                 <CardContent className="p-3">
-                  <h4 className="font-medium text-sm line-clamp-1">{item.name}</h4>
+                  <h4 className="font-medium text-sm line-clamp-1">{item.product_name}</h4>
                   <p className="text-red-600 font-bold text-sm mt-1">{formatPrice(item.price)}</p>
                   <div className="flex items-center gap-1 text-xs text-gray-500 mt-2">
                     <MapPin className="h-3 w-3" />

@@ -123,6 +123,22 @@ const AdminVendors = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!deleteDialog.vendor) return;
+    
+    setActionLoading(deleteDialog.vendor.id);
+    try {
+      const response = await api.delete(`/admin/vendors/${deleteDialog.vendor.id}`);
+      toast.success(`Vendor deleted. ${response.data.deleted_products || 0} products removed.`);
+      setDeleteDialog({ open: false, vendor: null });
+      fetchVendors();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete vendor');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const filteredVendors = vendors.filter(vendor => {
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();

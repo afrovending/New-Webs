@@ -170,6 +170,16 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - `GET /api/homepage/recently-sold` - Get recently sold items
 - `GET /api/homepage/vendor-success` - Get vendor success stories
 
+### Stripe Connect - Vendor Onboarding (NEW)
+- `POST /api/stripe-connect/create-account` - Create Stripe Express account for vendor
+- `POST /api/stripe-connect/onboarding-link` - Get Stripe hosted onboarding URL
+- `GET /api/stripe-connect/account-status` - Get Stripe account and payout status
+- `POST /api/stripe-connect/identity-verification` - Start Stripe Identity verification
+- `GET /api/stripe-connect/identity-status` - Get identity verification status
+- `PUT /api/stripe-connect/tax-information` - Update vendor tax info (SSN, EIN, VAT)
+- `GET /api/stripe-connect/onboarding-status` - Get overall onboarding completion (6 steps)
+- `GET /api/stripe-connect/payout-balance` - Get vendor's payout balance
+
 ### Reviews
 - `POST /api/reviews/create` - Create review (requires purchase)
 - `GET /api/reviews/product/{product_id}` - Get product reviews

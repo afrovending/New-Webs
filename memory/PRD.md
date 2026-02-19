@@ -185,6 +185,11 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - `PUT /api/stripe-connect/tax-information` - Update vendor tax info (SSN, EIN, VAT)
 - `GET /api/stripe-connect/onboarding-status` - Get overall onboarding completion (6 steps)
 - `GET /api/stripe-connect/payout-balance` - Get vendor's payout balance
+- `GET /api/stripe-connect/payout-settings` - Get auto-payout settings
+- `PUT /api/stripe-connect/payout-settings` - Update auto-payout threshold, frequency
+- `POST /api/stripe-connect/request-payout` - Request manual payout
+- `GET /api/stripe-connect/payout-history` - Get payout history with pagination
+- `GET /api/stripe-connect/earnings-summary` - Get comprehensive earnings overview
 
 ### Reviews
 - `POST /api/reviews/create` - Create review (requires purchase)

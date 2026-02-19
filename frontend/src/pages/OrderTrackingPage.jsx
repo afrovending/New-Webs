@@ -75,8 +75,8 @@ const OrderTrackingPage = () => {
     else setRefreshing(true);
 
     try {
-      // Fetch order details
-      const orderRes = await api.get(`/orders/${orderId}`);
+      // Use public tracking endpoint
+      const orderRes = await api.get(`/orders/track/${orderId}`);
       setOrder(orderRes.data);
 
       // Fetch tracking info if tracking number exists

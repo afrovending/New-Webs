@@ -54,10 +54,10 @@ const ImageUploader = ({
         });
 
         if (response.data.success) {
-          // Use full URL for production
+          // Use full URL for production - the upload URL is relative to backend
           const imageUrl = response.data.url.startsWith('http') 
             ? response.data.url 
-            : `${API_URL}/api${response.data.url}`;
+            : `${API_URL}${response.data.url}`;
           
           newImages.push(imageUrl);
         }

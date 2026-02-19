@@ -44,6 +44,7 @@ import VendorBookings from './pages/vendor/VendorBookings';
 import VendorSubscription from './pages/vendor/VendorSubscription';
 import VendorAnalytics from './pages/vendor/VendorAnalytics';
 import VendorStoreSettings from './pages/vendor/VendorStoreSettings';
+import VendorOnboardingWizard from './pages/vendor/VendorOnboardingWizard';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';

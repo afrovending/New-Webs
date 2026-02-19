@@ -196,3 +196,40 @@ async def get_vendor_services(vendor_id: str, skip: int = 0, limit: int = 20):
         {"_id": 0}
     ).skip(skip).limit(limit).to_list(limit)
     return services
+
+
+@router.get("/me/low-stock")
+async def get_my_low_stock_products(
+    threshold: int = Query(default=5, ge=0, le=100),
+    user: dict = Depends(get_current_user)
+):
+    """Get low stock products for the current vendor"""
+    db = get_db()
+    
+    if not user.get("vendor_id"):
+        raise HTTPException(status_code=404, detail="No vendor profile found")
+    
+    # Get products with stock at or below threshold
+    products = await db.products.find(
+        {
+            "vendor_id": user["vendor_id"],
+            "stock": {"$lte": threshold}
+        },
+        {"_id": 0}
+    ).sort("stock", 1).to_list(50)
+    
+    # Categorize by urgency
+    out_of_stock = [p for p in products if p.get("stock", 0) == 0]
+    critical = [p for p in products if 0 < p.get("stock", 0) <= 3]
+    low = [p for p in products if 3 < p.get("stock", 0) <= threshold]
+    
+    return {
+        "products": products,
+        "summary": {
+            "total": len(products),
+            "out_of_stock": len(out_of_stock),
+            "critical": len(critical),
+            "low": len(low)
+        },
+        "threshold": threshold
+    }

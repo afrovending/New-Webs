@@ -1683,19 +1683,5 @@ async def mark_notification_read(
     
     return {"success": True, "notification_id": notification_id}
 
-                emails_sent += 1
-                vendors_notified.append({
-                    "store_name": vendor_name,
-                    "email": user_info["email"],
-                    "affected_products_count": len(affected_products)
-                })
-    
-    return {
-        "success": True,
-        "message": f"Notification emails queued for {emails_sent} vendors",
-        "vendors_notified": vendors_notified,
-        "total_affected_products": sum(len(p) for p in vendor_products.values())
-    }
-
 
 

@@ -166,6 +166,22 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
   - Added 4 demo vendors with compelling stories in seed_production.py
   - Updated `/api/homepage/vendor-success` to use vendor's custom story when available
   - Fallback to generic testimonials for vendors without stories
+- **Vendor Email Notifications** - Notify vendors about broken images (Feb 19, 2026)
+  - `/api/admin/products/notify-broken-images` endpoint sends email to affected vendors
+  - Professional email template with instructions for re-uploading images
+  - "Email Affected Vendors" button in Admin Dashboard
+- **Progressive Web App (PWA) Support** - Installable web app (Feb 19, 2026)
+  - Service worker with caching strategies (cache-first, network-first, stale-while-revalidate)
+  - Web app manifest with icons, shortcuts, and app metadata
+  - PWA install prompt for Android, iOS, and desktop
+  - Offline support for static assets
+  - Background sync support for cart and wishlist
+- **Push Notifications System** - Real-time user notifications (Feb 19, 2026)
+  - Push subscription management (`/api/notifications/subscribe`, `/api/notifications/unsubscribe`)
+  - User notification preferences on Profile page
+  - Order update notifications
+  - Price drop alerts for wishlist items
+  - Notification preferences (order updates, promotions, price alerts, new products, vendor messages)
 
 ### Pending Deployment
 - User needs to **Save to GitHub** and **Redeploy on DigitalOcean**

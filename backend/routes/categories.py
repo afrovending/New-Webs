@@ -17,7 +17,17 @@ router = APIRouter(tags=["Categories & Countries"])
 async def get_categories(type: Optional[str] = None):
     """Get all categories, optionally filtered by type"""
     db = get_db()
-    query = {} if not type else {"type": type}
+    
+    if type:
+        # If type is specified, find categories with that type OR without type field (legacy)
+        # For product type, include categories without type (they are product categories)
+        if type == "product":
+            query = {"$or": [{"type": "product"}, {"type": {"$exists": False}}]}
+        else:
+            query = {"type": type}
+    else:
+        query = {}
+    
     categories = await db.categories.find(query, {"_id": 0}).to_list(100)
     return categories
 

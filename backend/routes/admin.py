@@ -5,6 +5,8 @@ from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 import uuid
+import bcrypt
+import os
 
 from database import get_db
 from auth import get_current_user

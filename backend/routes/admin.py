@@ -10,6 +10,7 @@ import os
 
 from database import get_db
 from auth import get_current_user
+from email_service import email_service
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 

@@ -9,14 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Briefcase } from 'lucide-react';
+import ImageUploader from '../../components/ImageUploader';
 
 const VendorServices = () => {
   const { api } = useAuth();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [serviceImages, setServiceImages] = useState([]);
   const [formData, setFormData] = useState({
-    name: '', description: '', price: '', price_type: 'fixed', duration_minutes: '60', location_type: 'both', category_id: '', images: '', tags: ''
+    name: '', description: '', price: '', price_type: 'fixed', duration_minutes: '60', location_type: 'both', category_id: '', tags: ''
   });
 
   const fetchServices = async () => {

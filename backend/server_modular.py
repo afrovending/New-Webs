@@ -102,6 +102,7 @@ app.include_router(notifications.router)  # Routes at /notifications/*
 app.include_router(homepage.router)  # Routes at /stats/* and /homepage/*
 app.include_router(admin.router)  # Routes at /admin/*
 app.include_router(currency.router)  # Routes at /currency/*
+app.include_router(upload.router)  # Routes at /upload/*
 
 # Remove the duplicate DO routes - not needed
 

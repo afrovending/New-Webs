@@ -704,3 +704,84 @@ async def get_products_with_broken_images(
     }
 
 
+@router.post("/products/notify-broken-images")
+async def notify_vendors_broken_images(
+    background_tasks: BackgroundTasks,
+    user: dict = Depends(require_admin)
+):
+    """
+    Send email notifications to all vendors with broken/missing product images.
+    """
+    db = get_db()
+    
+    # Get broken images data
+    products = await db.products.find(
+        {},
+        {"_id": 0, "id": 1, "name": 1, "images": 1, "vendor_id": 1, "is_active": 1}
+    ).to_list(None)
+    
+    # Group affected products by vendor
+    vendor_products = {}
+    
+    for product in products:
+        images = product.get("images", [])
+        has_issue = False
+        issue = ""
+        
+        if not images or len(images) == 0:
+            has_issue = True
+            issue = "No images uploaded"
+        else:
+            for img in images:
+                img_url = img if isinstance(img, str) else img.get("url", "")
+                if not ("cloudinary.com" in img_url or "res.cloudinary.com" in img_url):
+                    if "/uploads/" in img_url or not img_url.startswith("http"):
+                        has_issue = True
+                        issue = "Image needs re-upload"
+                        break
+        
+        if has_issue:
+            vendor_id = product["vendor_id"]
+            if vendor_id not in vendor_products:
+                vendor_products[vendor_id] = []
+            vendor_products[vendor_id].append({
+                "product_id": product["id"],
+                "product_name": product["name"],
+                "issue": issue
+            })
+    
+    # Send emails to each affected vendor
+    emails_sent = 0
+    emails_failed = 0
+    vendors_notified = []
+    
+    for vendor_id, affected_products in vendor_products.items():
+        vendor = await db.vendors.find_one({"id": vendor_id}, {"_id": 0, "store_name": 1, "user_id": 1})
+        if vendor:
+            user_info = await db.users.find_one({"id": vendor["user_id"]}, {"_id": 0, "email": 1, "first_name": 1})
+            if user_info and user_info.get("email"):
+                vendor_name = vendor.get("store_name", user_info.get("first_name", "Vendor"))
+                
+                # Send email in background
+                background_tasks.add_task(
+                    email_service.send_broken_images_notification,
+                    user_info["email"],
+                    vendor_name,
+                    affected_products
+                )
+                
+                emails_sent += 1
+                vendors_notified.append({
+                    "store_name": vendor_name,
+                    "email": user_info["email"],
+                    "affected_products_count": len(affected_products)
+                })
+    
+    return {
+        "success": True,
+        "message": f"Notification emails queued for {emails_sent} vendors",
+        "vendors_notified": vendors_notified,
+        "total_affected_products": sum(len(p) for p in vendor_products.values())
+    }
+
+

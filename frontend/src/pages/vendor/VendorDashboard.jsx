@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
-import { Package, Calendar, DollarSign, TrendingUp, AlertTriangle, PackageX, ArrowRight } from 'lucide-react';
+import { Package, Calendar, DollarSign, TrendingUp, AlertTriangle, PackageX, ArrowRight, EyeOff, RotateCcw, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const VendorDashboard = () => {
@@ -12,8 +12,9 @@ const VendorDashboard = () => {
   const [stats, setStats] = useState({ orders: 0, bookings: 0, revenue: 0, products: 0 });
   const [recentOrders, setRecentOrders] = useState([]);
   const [recentBookings, setRecentBookings] = useState([]);
-  const [lowStockData, setLowStockData] = useState({ products: [], summary: { total: 0, out_of_stock: 0, critical: 0, low: 0 } });
+  const [lowStockData, setLowStockData] = useState({ products: [], summary: { total: 0, out_of_stock: 0, critical: 0, low: 0, auto_deactivated: 0 } });
   const [loading, setLoading] = useState(true);
+  const [reactivatingId, setReactivatingId] = useState(null);
 
   useEffect(() => {
     const setupAndFetch = async () => {

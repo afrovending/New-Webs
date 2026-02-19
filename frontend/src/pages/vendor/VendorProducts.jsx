@@ -130,10 +130,12 @@ const VendorProducts = () => {
                 <Label>Stock</Label>
                 <Input type="number" value={formData.stock} onChange={(e) => setFormData({ ...formData, stock: e.target.value })} />
               </div>
-              <div className="space-y-2">
-                <Label>Image URLs (comma-separated)</Label>
-                <Input value={formData.images} onChange={(e) => setFormData({ ...formData, images: e.target.value })} placeholder="https://..." />
-              </div>
+              <ImageUploader 
+                onImagesChange={setProductImages}
+                initialImages={productImages}
+                maxImages={5}
+                label="Product Images"
+              />
               <div className="space-y-2">
                 <Label>Tags (comma-separated)</Label>
                 <Input value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} placeholder="fashion, handmade" />

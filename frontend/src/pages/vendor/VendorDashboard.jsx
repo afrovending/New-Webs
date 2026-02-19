@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Package, Calendar, DollarSign, Star, TrendingUp } from 'lucide-react';
+import { Button } from '../../components/ui/button';
+import { Package, Calendar, DollarSign, TrendingUp, AlertTriangle, PackageX, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 const VendorDashboard = () => {
   const { api, user } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState({ orders: 0, bookings: 0, revenue: 0, products: 0 });
   const [recentOrders, setRecentOrders] = useState([]);
   const [recentBookings, setRecentBookings] = useState([]);
+  const [lowStockData, setLowStockData] = useState({ products: [], summary: { total: 0, out_of_stock: 0, critical: 0, low: 0 } });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

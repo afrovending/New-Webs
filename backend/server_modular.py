@@ -27,6 +27,7 @@ from database import get_db, client
 
 # Import routers
 from routes import auth, products, vendors, services, categories, bookings, orders, reviews, wishlist, price_alerts, notifications, homepage, admin, currency, upload, cloudinary_routes
+from routes.products import vendor_router as vendor_products_router
 
 db = get_db()
 

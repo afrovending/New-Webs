@@ -28,6 +28,29 @@ async def register(user_data: UserCreate):
         raise HTTPException(status_code=400, detail="Email already registered")
     
     user_id = str(uuid.uuid4())
+    vendor_id = None
+    
+    # If registering as vendor, create a vendor profile
+    if user_data.role == "vendor":
+        vendor_id = str(uuid.uuid4())
+        vendor_doc = {
+            "id": vendor_id,
+            "user_id": user_id,
+            "store_name": f"{user_data.first_name}'s Store",
+            "description": "Welcome to my African marketplace store!",
+            "country": "Nigeria",
+            "country_code": "NG",
+            "is_approved": True,  # Auto-approve for now
+            "is_verified": False,
+            "subscription_plan": "free",
+            "commission_rate": 15,
+            "max_products": 10,
+            "product_count": 0,
+            "total_sales": 0,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.vendors.insert_one(vendor_doc)
+    
     user_doc = {
         "id": user_id,
         "email": user_data.email,
@@ -36,7 +59,7 @@ async def register(user_data: UserCreate):
         "role": user_data.role,
         "password_hash": hash_password(user_data.password),
         "picture": None,
-        "vendor_id": None,
+        "vendor_id": vendor_id,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     

@@ -334,3 +334,8 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 - `/app/frontend/src/components/PriceAlertButton.jsx` - Price alert dialog
 - `/app/frontend/src/components/RecentlySold.jsx` - Social proof ticker
 - `/app/frontend/src/components/VendorSuccess.jsx` - Vendor success stories
+- `/app/frontend/src/components/CookieConsentBanner.jsx` - GDPR/CCPA cookie consent (NEW)
+- `/app/frontend/src/pages/legal/RiskShieldPage.jsx` - Risk Shield System policy (NEW)
+- `/app/frontend/src/pages/legal/ChargebackDefensePage.jsx` - Chargeback Defense policy (NEW)
+- `/app/frontend/src/pages/legal/EliteReturnPolicyPage.jsx` - Elite Return Policy (NEW)
+- `/app/frontend/src/pages/legal/LegalPages.jsx` - Legal hub with all 9 policies (UPDATED)

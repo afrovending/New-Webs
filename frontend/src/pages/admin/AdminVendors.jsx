@@ -18,7 +18,7 @@ import { toast } from 'sonner';
 import { 
   Store, CheckCircle, MapPin, BadgeCheck, XCircle, 
   AlertTriangle, Search, Filter, Ban, RefreshCw,
-  Mail, Package, DollarSign, Star
+  Mail, Package, DollarSign, Star, Trash2, Edit, Eye
 } from 'lucide-react';
 
 const AdminVendors = () => {

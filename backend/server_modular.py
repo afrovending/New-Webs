@@ -155,6 +155,7 @@ app.include_router(cloudinary_routes.router)
 app.include_router(vendor_products_router)
 app.include_router(stripe_connect.router)
 app.include_router(webhooks.router)
+app.include_router(shipping.router)
 
 # Remove the duplicate DO routes - not needed
 

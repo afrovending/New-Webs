@@ -12,6 +12,7 @@ from . import price_alerts
 from . import notifications
 from . import homepage
 from . import admin
+from . import currency
 
 __all__ = [
     "auth",
@@ -26,5 +27,6 @@ __all__ = [
     "price_alerts",
     "notifications",
     "homepage",
-    "admin"
+    "admin",
+    "currency"
 ]

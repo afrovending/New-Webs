@@ -6,6 +6,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
 import { User, Mail, Shield } from 'lucide-react';
+import NotificationSettings from '../components/NotificationSettings';
 
 const ProfilePage = () => {
   const { user } = useAuth();
@@ -54,6 +55,9 @@ const ProfilePage = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Push Notification Settings */}
+      <NotificationSettings />
 
       <Card>
         <CardHeader>

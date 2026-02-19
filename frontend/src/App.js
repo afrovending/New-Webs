@@ -67,6 +67,7 @@ import EliteReturnPolicyPage from './pages/legal/EliteReturnPolicyPage';
 
 // Components
 import CookieConsentBanner from './components/CookieConsentBanner';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 
 import './App.css';
 

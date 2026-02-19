@@ -233,11 +233,11 @@ const NotificationSettings = () => {
             
             <div className="space-y-3">
               {[
-                { key: 'orderUpdates', label: 'Order Updates', desc: 'Shipping and delivery notifications' },
+                { key: 'order_updates', label: 'Order Updates', desc: 'Shipping and delivery notifications' },
                 { key: 'promotions', label: 'Promotions & Deals', desc: 'Sales and special offers' },
-                { key: 'priceAlerts', label: 'Price Alerts', desc: 'When items on your wishlist drop in price' },
-                { key: 'newProducts', label: 'New Products', desc: 'New arrivals from vendors you follow' },
-                { key: 'vendorMessages', label: 'Vendor Messages', desc: 'Direct messages from sellers' }
+                { key: 'price_alerts', label: 'Price Alerts', desc: 'When items on your wishlist drop in price' },
+                { key: 'new_products', label: 'New Products', desc: 'New arrivals from vendors you follow' },
+                { key: 'vendor_messages', label: 'Vendor Messages', desc: 'Direct messages from sellers' }
               ].map(({ key, label, desc }) => (
                 <div key={key} className="flex items-center justify-between py-2">
                   <div>
@@ -247,6 +247,7 @@ const NotificationSettings = () => {
                   <Switch
                     checked={preferences[key]}
                     onCheckedChange={() => togglePreference(key)}
+                    disabled={savingPrefs}
                   />
                 </div>
               ))}

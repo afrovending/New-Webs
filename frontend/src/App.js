@@ -177,6 +177,7 @@ const AppRouter = () => {
         <Route path="analytics" element={<VendorAnalytics />} />
         <Route path="subscription" element={<VendorSubscription />} />
         <Route path="store-settings" element={<VendorStoreSettings />} />
+        <Route path="onboarding" element={<VendorOnboardingWizard />} />
       </Route>
 
       {/* Admin Dashboard */}

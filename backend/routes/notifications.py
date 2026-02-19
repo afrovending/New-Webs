@@ -1,14 +1,47 @@
 """
 AfroVending - Notification Routes
+Includes both in-app notifications and push notifications
 """
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 import uuid
+import json
+import os
 
 from database import get_db
 from auth import get_current_user
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
+
+# VAPID keys for push notifications
+VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
+VAPID_PUBLIC_KEY = os.environ.get('VAPID_PUBLIC_KEY', 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U')
+VAPID_CLAIMS = {"sub": "mailto:support@afrovending.com"}
+
+
+# ============ PYDANTIC MODELS ============
+class PushSubscription(BaseModel):
+    user_id: str
+    subscription: Dict[str, Any]
+
+
+class UnsubscribeRequest(BaseModel):
+    endpoint: str
+
+
+class NotificationPayload(BaseModel):
+    title: str
+    body: str
+    icon: Optional[str] = "/icons/icon-192x192.png"
+    badge: Optional[str] = "/icons/icon-72x72.png"
+    tag: Optional[str] = "afrovending"
+    url: Optional[str] = "/"
+    user_ids: Optional[List[str]] = None
+
+
+# ============ IN-APP NOTIFICATIONS ============
 
 
 @router.get("")

@@ -138,9 +138,14 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
 ## Current Status (Updated Feb 19, 2026)
 
 ### Bug Fixes (Feb 19, 2026 - Latest)
+- **P0 FIXED: Checkout/Billing "Method Not Allowed" error** - Root cause was:
+  1. `checkout.py` router was not imported in `server_modular.py`
+  2. Frontend called `POST /api/orders` (non-existent) then `POST /api/checkout/order/{orderId}`
+  - Fixed by: Adding checkout router to server_modular.py and updating frontend to use `POST /api/checkout/cart` which creates order + Stripe session in one call
 - **P0 FIXED: "Product not found" error** - Root cause was frontend calling `GET /api/reviews?product_id=xxx` but backend only had `GET /api/reviews/product/{product_id}`. Fixed by adding query parameter endpoint in reviews.py.
 - **VAPID Keys Moved to Environment Variables** - Push notification keys now properly read from backend/.env and frontend/.env instead of being hardcoded.
 - **Admin Orders Page Blank** - Fixed: AdminOrders.jsx now correctly uses `response.data.orders` instead of `response.data`.
+- **"Order Placed" Push Notification** - Added notification trigger when user initiates checkout (order placed status)
 
 ### New Features (Feb 19, 2026)
 - **Admin Products Management** - New AdminProducts.jsx page with full product management:

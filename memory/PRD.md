@@ -123,6 +123,12 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
   - Fixed `/api/vendor/products` routing issue
 - **Recently Sold Fix** - Now shows product images instead of "No Image" (Feb 19, 2026)
   - Fixed field name mismatch in RecentlySold.jsx (product_image vs image)
+- **Vendor Onboarding System** - Complete vendor verification flow (Feb 19, 2026)
+  - **Stripe Connect** - Bank account linking for payouts
+  - **Stripe Identity** - Government ID verification with selfie matching
+  - **Tax Information** - US (SSN/EIN) and International (VAT) support
+  - Store Settings with 4 tabs (Profile, Payment, Identity, Tax)
+  - Onboarding Wizard at `/vendor/onboarding` with 6-step flow
 
 ### Pending Deployment
 - User needs to **Save to GitHub** and **Redeploy on DigitalOcean**

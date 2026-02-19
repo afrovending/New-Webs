@@ -331,17 +331,10 @@ async def create_cart_checkout(
             {"$set": {"stripe_checkout_session_id": checkout_session.id}}
         )
         
-        # Send "Order Placed" notification
+        # Send "Order Placed" notification to user
         try:
-            from routes.notifications import notify_order_update, create_admin_notification
+            from routes.notifications import notify_order_update
             await notify_order_update(user["id"], order_id, "placed")
-            # Also notify admins about new order
-            await create_admin_notification(
-                notification_type="new_order",
-                title="New Order Placed",
-                message=f"Order #{order_id[:8]} for ${total:.2f} is awaiting payment",
-                link=f"/admin/orders/{order_id}"
-            )
         except Exception as e:
             print(f"Order placed notification error: {e}")
         

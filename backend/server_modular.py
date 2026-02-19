@@ -47,7 +47,21 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"MongoDB connection failed: {e}")
     
+    # Start the scheduler for background jobs
+    try:
+        start_scheduler()
+        logger.info("Payout scheduler started")
+    except Exception as e:
+        logger.error(f"Failed to start scheduler: {e}")
+    
     yield
+    
+    # Stop the scheduler
+    try:
+        stop_scheduler()
+        logger.info("Payout scheduler stopped")
+    except Exception as e:
+        logger.error(f"Error stopping scheduler: {e}")
     
     logger.info("Shutting down AfroVending API...")
 

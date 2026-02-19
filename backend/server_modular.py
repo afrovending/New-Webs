@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 from database import get_db, client
 
 # Import routers
-from routes import auth, products, vendors, services, categories, bookings, orders, reviews, wishlist, price_alerts, notifications, homepage, admin
+from routes import auth, products, vendors, services, categories, bookings, orders, reviews, wishlist, price_alerts, notifications, homepage, admin, currency
 
 db = get_db()
 

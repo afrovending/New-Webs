@@ -178,6 +178,7 @@ async def stripe_webhook(request: Request):
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
         order_id = session.get("metadata", {}).get("order_id")
+        user_id = session.get("metadata", {}).get("user_id")
         
         if order_id and session["payment_status"] == "paid":
             await db.orders.update_one(
@@ -188,18 +189,39 @@ async def stripe_webhook(request: Request):
                         "status": "confirmed",
                         "stripe_payment_intent": session.get("payment_intent"),
                         "paid_at": datetime.now(timezone.utc).isoformat()
+                    },
+                    "$push": {
+                        "timeline": {
+                            "status": "confirmed",
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "note": "Payment received - order confirmed"
+                        }
                     }
                 }
             )
             
-            # Trigger notification
-            try:
-                from routes.notifications import notify_order_update
-                order = await db.orders.find_one({"id": order_id}, {"_id": 0})
-                if order:
+            # Get order and user details for email
+            order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+            user = await db.users.find_one({"id": user_id}, {"_id": 0}) if user_id else None
+            
+            if order:
+                # Send push notification
+                try:
+                    from routes.notifications import notify_order_update
                     await notify_order_update(order["user_id"], order_id, "confirmed")
-            except Exception as e:
-                print(f"Notification error: {e}")
+                except Exception as e:
+                    print(f"Push notification error: {e}")
+                
+                # Send "Purchase Complete" email
+                try:
+                    from email_service import email_service
+                    user_email = session.get("customer_email") or (user.get("email") if user else None)
+                    if user_email:
+                        frontend_url = os.environ.get("FRONTEND_URL", "https://afrovending.com")
+                        email_service.send_purchase_complete(user_email, order, frontend_url)
+                        print(f"Purchase complete email sent to {user_email}")
+                except Exception as e:
+                    print(f"Email notification error: {e}")
     
     elif event["type"] == "payment_intent.payment_failed":
         payment_intent = event["data"]["object"]

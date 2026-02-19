@@ -56,7 +56,7 @@ async def generate_signature(
     return {
         "signature": signature,
         "timestamp": timestamp,
-        "cloud_name": os.getenv("CLOUDINARY_CLOUD_NAME"),
+        "cloud_name": os.getenv("CLOUDINARY_CLOUD_NAME", "").lower(),  # Cloudinary uses lowercase
         "api_key": os.getenv("CLOUDINARY_API_KEY"),
         "folder": f"afrovending/{folder}",
         "resource_type": resource_type

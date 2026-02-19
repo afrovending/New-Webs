@@ -490,5 +490,146 @@ class EmailService:
         
         return self._send(to_email, f"Action Required: {len(products)} Product Images Need Attention", html_content)
 
+    def send_purchase_complete(self, to_email: str, order_data: dict, frontend_url: str = "https://afrovending.com") -> bool:
+        """Send purchase complete email after successful Stripe payment"""
+        items_html = ""
+        for item in order_data.get("items", []):
+            image_url = item.get('image') or item.get('product_image', '')
+            image_html = f'<img src="{image_url}" alt="" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">' if image_url else '<div style="width: 60px; height: 60px; background: #f3f4f6; border-radius: 8px;"></div>'
+            items_html += f"""
+            <tr>
+                <td style="padding: 12px; border-bottom: 1px solid #eee; width: 70px;">
+                    {image_html}
+                </td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee;">
+                    <strong>{item.get('name', item.get('product_name', 'Product'))}</strong>
+                </td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">{item.get('quantity', 1)}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">${float(item.get('price', 0)):.2f}</td>
+            </tr>
+            """
+        
+        order_id = order_data.get('id', '')
+        order_short_id = order_id[:8] if order_id else 'N/A'
+        tracking_url = f"{frontend_url}/track/{order_id}"
+        orders_url = f"{frontend_url}/orders"
+        
+        # Calculate estimated delivery (7-14 business days)
+        from datetime import datetime, timedelta
+        estimated_delivery_start = (datetime.now() + timedelta(days=7)).strftime('%B %d')
+        estimated_delivery_end = (datetime.now() + timedelta(days=14)).strftime('%B %d, %Y')
+        estimated_delivery = f"{estimated_delivery_start} - {estimated_delivery_end}"
+        
+        subtotal = order_data.get('subtotal', order_data.get('total', 0))
+        shipping_cost = order_data.get('shipping_cost', 0)
+        total = order_data.get('total', subtotal + shipping_cost)
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f5f5f5; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, #16a34a, #15803d); color: white; padding: 40px 30px; text-align: center; border-radius: 12px 12px 0 0; }}
+                .header h1 {{ margin: 0; font-size: 28px; }}
+                .header .checkmark {{ font-size: 48px; margin-bottom: 15px; }}
+                .content {{ background: #fff; padding: 30px; border: 1px solid #e5e7eb; }}
+                .footer {{ background: #1f2937; color: #9ca3af; padding: 25px; text-align: center; font-size: 12px; border-radius: 0 0 12px 12px; }}
+                .footer a {{ color: #dc2626; text-decoration: none; }}
+                .order-table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+                .order-table th {{ background: #f9fafb; padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; color: #6b7280; }}
+                .summary-box {{ background: #f0fdf4; border: 2px solid #22c55e; padding: 20px; border-radius: 12px; margin: 25px 0; }}
+                .delivery-box {{ background: #eff6ff; border: 1px solid #3b82f6; padding: 20px; border-radius: 12px; margin: 25px 0; }}
+                .address-box {{ background: #f9fafb; padding: 20px; border-radius: 10px; margin: 20px 0; }}
+                .btn {{ display: inline-block; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; }}
+                .btn-primary {{ background: #dc2626; color: white; }}
+                .btn-secondary {{ background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }}
+                .total-row {{ font-size: 20px; color: #16a34a; font-weight: bold; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <div class="checkmark">✓</div>
+                    <h1>Payment Successful!</h1>
+                    <p style="margin: 10px 0 0 0; opacity: 0.9;">Order #{order_short_id}</p>
+                </div>
+                <div class="content">
+                    <p style="font-size: 16px;">Thank you for your purchase! Your payment has been processed successfully and your order is being prepared.</p>
+                    
+                    <div class="summary-box">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h3 style="color: #16a34a; margin: 0 0 5px 0;">Order Confirmed</h3>
+                                <p style="margin: 0; color: #166534;">We'll email you when your order ships</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="margin: 0; font-size: 24px; font-weight: bold; color: #16a34a;">${float(total):.2f}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-bottom: 10px;">Order Items</h3>
+                    <table class="order-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Product</th>
+                                <th style="text-align: center;">Qty</th>
+                                <th style="text-align: right;">Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {items_html}
+                        </tbody>
+                    </table>
+                    
+                    <div style="text-align: right; border-top: 2px solid #e5e7eb; padding-top: 15px; margin-top: 10px;">
+                        <p style="margin: 5px 0; color: #6b7280;">Subtotal: <span style="color: #111827; font-weight: 500;">${float(subtotal):.2f}</span></p>
+                        <p style="margin: 5px 0; color: #6b7280;">Shipping: <span style="color: #111827; font-weight: 500;">${float(shipping_cost):.2f}</span></p>
+                        <p class="total-row" style="margin: 10px 0 0 0;">Total: ${float(total):.2f}</p>
+                    </div>
+                    
+                    <div class="delivery-box">
+                        <h3 style="color: #1d4ed8; margin: 0 0 10px 0;">📦 Estimated Delivery</h3>
+                        <p style="font-size: 18px; font-weight: 600; margin: 0;">{estimated_delivery}</p>
+                        <p style="margin: 10px 0 0 0; color: #6b7280; font-size: 14px;">You'll receive tracking information once your order ships.</p>
+                    </div>
+                    
+                    <div class="address-box">
+                        <h4 style="margin: 0 0 10px 0; color: #374151;">Shipping To</h4>
+                        <p style="margin: 0; font-weight: 500;">{order_data.get('shipping_name', '')}</p>
+                        <p style="margin: 5px 0 0 0; color: #6b7280;">
+                            {order_data.get('shipping_address', '')}<br>
+                            {order_data.get('shipping_city', '')}, {order_data.get('shipping_state', '')} {order_data.get('shipping_zip', '')}<br>
+                            {order_data.get('shipping_country', '')}
+                        </p>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="{tracking_url}" class="btn btn-primary" style="color: white; margin-right: 10px;">Track Your Order</a>
+                        <a href="{orders_url}" class="btn btn-secondary">View Order History</a>
+                    </div>
+                    
+                    <p style="color: #6b7280; font-size: 14px; text-align: center;">
+                        Questions about your order? Contact us at <a href="mailto:support@afrovending.com" style="color: #dc2626;">support@afrovending.com</a>
+                    </p>
+                </div>
+                <div class="footer">
+                    <p style="margin: 0 0 10px 0;"><strong style="color: white;">AfroVending</strong></p>
+                    <p style="margin: 0;">Authentic African Products & Services</p>
+                    <p style="margin: 15px 0 0 0;">
+                        <a href="{frontend_url}/legal/privacy">Privacy Policy</a> · 
+                        <a href="{frontend_url}/legal/terms">Terms of Service</a>
+                    </p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return self._send(to_email, f"✓ Payment Complete - Order #{order_short_id}", html_content)
+
 # Singleton instance
 email_service = EmailService()

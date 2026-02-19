@@ -81,13 +81,13 @@ const OrderTrackingPage = () => {
 
     try {
       // Use public tracking endpoint
-      const orderRes = await api.get(`/orders/track/${orderId}`);
+      const orderRes = await trackingApi.get(`/orders/track/${orderId}`);
       setOrder(orderRes.data);
 
       // Fetch tracking info if tracking number exists
       if (orderRes.data.tracking_number) {
         try {
-          const trackingRes = await api.get(`/shipping/track/${orderRes.data.tracking_number}`);
+          const trackingRes = await trackingApi.get(`/shipping/track/${orderRes.data.tracking_number}`);
           setTracking(trackingRes.data);
         } catch (e) {
           console.log('Tracking not available yet');

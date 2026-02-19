@@ -132,6 +132,7 @@ app.include_router(upload.router, prefix="/api")
 app.include_router(cloudinary_routes.router, prefix="/api")
 app.include_router(vendor_products_router, prefix="/api")
 app.include_router(stripe_connect.router, prefix="/api")
+app.include_router(webhooks.router, prefix="/api")
 
 # Also mount without prefix for DigitalOcean production
 app.include_router(auth.router)
@@ -152,6 +153,7 @@ app.include_router(upload.router)
 app.include_router(cloudinary_routes.router)
 app.include_router(vendor_products_router)
 app.include_router(stripe_connect.router)
+app.include_router(webhooks.router)
 
 # Remove the duplicate DO routes - not needed
 

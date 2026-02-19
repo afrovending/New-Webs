@@ -127,9 +127,9 @@ class TestAuthenticatedCartFlow:
         if login_response.status_code != 200:
             pytest.skip(f"Login failed: {login_response.status_code} - {login_response.text}")
             
-        token = login_response.json().get("token")
+        token = login_response.json().get("access_token")
         if not token:
-            pytest.skip("No token in login response")
+            pytest.skip("No access_token in login response")
             
         return {"Authorization": f"Bearer {token}"}
         

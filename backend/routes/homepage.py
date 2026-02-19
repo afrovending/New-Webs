@@ -10,6 +10,9 @@ from database import get_db
 
 router = APIRouter(tags=["Homepage"])
 
+# Separate router for homepage-prefixed routes
+homepage_router = APIRouter(prefix="/homepage", tags=["Homepage"])
+
 
 @router.get("/stats/platform")
 async def get_platform_stats():
@@ -33,7 +36,7 @@ async def get_platform_stats():
     }
 
 
-@router.get("/recently-sold")
+@homepage_router.get("/recently-sold")
 async def get_recently_sold():
     """Get recently sold items for social proof"""
     db = get_db()
@@ -86,12 +89,12 @@ async def get_recently_sold():
     return {"items": items[:5]}
 
 
-@router.get("/vendor-success")
+@homepage_router.get("/vendor-success")
 async def get_vendor_success_stories():
     """Get vendor success stories for social proof"""
     db = get_db()
     vendors = await db.vendors.find(
-        {"is_approved": True, "is_active": True},
+        {"is_approved": True},
         {"_id": 0}
     ).sort("total_sales", -1).limit(5).to_list(5)
     
@@ -115,11 +118,11 @@ async def get_vendor_success_stories():
     return stories
 
 
-@router.get("/stats")
+@homepage_router.get("/stats")
 async def get_homepage_stats():
     """Get platform statistics for homepage"""
     db = get_db()
-    vendor_count = await db.vendors.count_documents({"is_approved": True, "is_active": True})
+    vendor_count = await db.vendors.count_documents({"is_approved": True})
     product_count = await db.products.count_documents({"is_active": True})
     service_count = await db.services.count_documents({"is_active": True})
     
@@ -132,3 +135,7 @@ async def get_homepage_stats():
         "countries": len(countries),
         "customers": 50000
     }
+
+
+# Include homepage_router into main router
+router.include_router(homepage_router)

@@ -112,10 +112,12 @@ const VendorServices = () => {
                   </Select>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>Image URLs (comma-separated)</Label>
-                <Input value={formData.images} onChange={(e) => setFormData({ ...formData, images: e.target.value })} />
-              </div>
+              <ImageUploader 
+                onImagesChange={setServiceImages}
+                initialImages={serviceImages}
+                maxImages={5}
+                label="Service Images"
+              />
               <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">Create Service</Button>
             </form>
           </DialogContent>

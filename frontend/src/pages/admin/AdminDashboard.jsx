@@ -17,6 +17,8 @@ const AdminDashboard = () => {
   const [period, setPeriod] = useState('30d');
   const [brokenImages, setBrokenImages] = useState(null);
   const [loadingImages, setLoadingImages] = useState(false);
+  const [notifyingVendors, setNotifyingVendors] = useState(false);
+  const [notificationResult, setNotificationResult] = useState(null);
 
   useEffect(() => {
     fetchAnalytics();
@@ -36,6 +38,7 @@ const AdminDashboard = () => {
 
   const checkBrokenImages = async () => {
     setLoadingImages(true);
+    setNotificationResult(null);
     try {
       const response = await api.get('/admin/products/broken-images');
       setBrokenImages(response.data);
@@ -43,6 +46,19 @@ const AdminDashboard = () => {
       console.error('Error checking broken images:', error);
     } finally {
       setLoadingImages(false);
+    }
+  };
+
+  const notifyVendors = async () => {
+    setNotifyingVendors(true);
+    try {
+      const response = await api.post('/admin/products/notify-broken-images');
+      setNotificationResult(response.data);
+    } catch (error) {
+      console.error('Error notifying vendors:', error);
+      setNotificationResult({ success: false, message: 'Failed to send notifications' });
+    } finally {
+      setNotifyingVendors(false);
     }
   };
 

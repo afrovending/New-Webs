@@ -79,6 +79,7 @@ const VendorProducts = () => {
 
   const openEdit = (product) => {
     setEditingProduct(product);
+    setProductImages(product.images || []);
     setFormData({
       name: product.name,
       description: product.description,
@@ -86,7 +87,6 @@ const VendorProducts = () => {
       compare_price: product.compare_price?.toString() || '',
       category_id: product.category_id || '',
       stock: product.stock.toString(),
-      images: product.images?.join(', ') || '',
       tags: product.tags?.join(', ') || '',
       fulfillment_option: product.fulfillment_option || 'FBV',
     });

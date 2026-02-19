@@ -8,7 +8,29 @@ import random
 
 from database import get_db
 
-router = APIRouter(prefix="/homepage", tags=["Homepage"])
+router = APIRouter(tags=["Homepage"])
+
+
+@router.get("/stats/platform")
+async def get_platform_stats():
+    """Get platform statistics for homepage display"""
+    db = get_db()
+    total_vendors = await db.vendors.count_documents({"is_approved": True})
+    total_products = await db.products.count_documents({"is_active": True})
+    total_services = await db.services.count_documents({"is_active": True})
+    
+    # Get unique countries from vendors
+    countries = await db.vendors.distinct("country_code", {"is_approved": True})
+    countries_served = len([c for c in countries if c])
+    if countries_served == 0:
+        countries_served = await db.countries.count_documents({})
+    
+    return {
+        "total_vendors": total_vendors,
+        "total_products": total_products,
+        "total_services": total_services,
+        "countries_served": countries_served
+    }
 
 
 @router.get("/recently-sold")

@@ -115,22 +115,6 @@ async def setup_vendor_profile(user: dict = Depends(get_current_user)):
     await db.users.update_one({"id": user["id"]}, {"$set": {"vendor_id": vendor_id, "role": "vendor"}})
     
     return {"message": "Vendor profile created successfully", "vendor_id": vendor_id}
-        "id": str(uuid.uuid4()),
-        "user_id": user["id"],
-        **vendor_data.model_dump(),
-        "is_approved": False,
-        "is_verified": False,
-        "is_active": True,
-        "total_sales": 0,
-        "product_count": 0,
-        "average_rating": 0,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    
-    await db.vendors.insert_one(vendor)
-    await db.users.update_one({"id": user["id"]}, {"$set": {"role": "vendor", "vendor_id": vendor["id"]}})
-    
-    return VendorResponse(**{k: v for k, v in vendor.items() if k != "_id"})
 
 
 @router.put("/{vendor_id}")

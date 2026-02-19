@@ -373,3 +373,297 @@ async def get_onboarding_status(user: dict = Depends(get_current_user)):
         "completion_percentage": int((completed_steps / total_steps) * 100),
         "is_fully_verified": all(s.get("completed") for s in steps.values())
     }
+
+
+# ==================== PAYOUT SCHEDULING ====================
+
+@router.get("/payout-settings")
+async def get_payout_settings(user: dict = Depends(get_current_user)):
+    """Get vendor's payout settings"""
+    db = get_db()
+    
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    return {
+        "auto_payout_enabled": vendor.get("auto_payout_enabled", False),
+        "payout_threshold": vendor.get("payout_threshold", 50.0),
+        "payout_frequency": vendor.get("payout_frequency", "weekly"),  # weekly, biweekly, monthly
+        "payout_day": vendor.get("payout_day", "monday"),  # day of week for weekly
+        "minimum_payout": 10.0,  # Platform minimum
+        "currency": "usd"
+    }
+
+
+@router.put("/payout-settings")
+async def update_payout_settings(request: Request, user: dict = Depends(get_current_user)):
+    """Update vendor's payout settings"""
+    db = get_db()
+    data = await request.json()
+    
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    # Validate vendor is verified for payouts
+    if not vendor.get("stripe_payouts_enabled"):
+        raise HTTPException(status_code=400, detail="Please complete Stripe setup first")
+    
+    # Validate threshold (minimum $10)
+    threshold = float(data.get("payout_threshold", 50.0))
+    if threshold < 10.0:
+        raise HTTPException(status_code=400, detail="Minimum payout threshold is $10")
+    
+    # Validate frequency
+    frequency = data.get("payout_frequency", "weekly")
+    if frequency not in ["weekly", "biweekly", "monthly"]:
+        raise HTTPException(status_code=400, detail="Invalid payout frequency")
+    
+    update_fields = {
+        "auto_payout_enabled": bool(data.get("auto_payout_enabled", False)),
+        "payout_threshold": threshold,
+        "payout_frequency": frequency,
+        "payout_day": data.get("payout_day", "monday"),
+        "payout_settings_updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.vendors.update_one(
+        {"id": vendor["id"]},
+        {"$set": update_fields}
+    )
+    
+    return {"message": "Payout settings updated successfully", **update_fields}
+
+
+@router.post("/request-payout")
+async def request_manual_payout(request: Request, user: dict = Depends(get_current_user)):
+    """Request a manual payout"""
+    db = get_db()
+    data = await request.json()
+    
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    stripe_account_id = vendor.get("stripe_account_id")
+    if not stripe_account_id:
+        raise HTTPException(status_code=400, detail="Stripe account not set up")
+    
+    if not vendor.get("stripe_payouts_enabled"):
+        raise HTTPException(status_code=400, detail="Payouts not enabled on your account")
+    
+    try:
+        # Get available balance
+        balance = stripe.Balance.retrieve(stripe_account=stripe_account_id)
+        available_amount = sum(b.amount for b in balance.available) / 100  # Convert from cents
+        
+        # Get requested amount or use full balance
+        amount = float(data.get("amount", available_amount))
+        
+        if amount < 10.0:
+            raise HTTPException(status_code=400, detail="Minimum payout amount is $10")
+        
+        if amount > available_amount:
+            raise HTTPException(status_code=400, detail=f"Insufficient balance. Available: ${available_amount:.2f}")
+        
+        # Create payout
+        payout = stripe.Payout.create(
+            amount=int(amount * 100),  # Convert to cents
+            currency="usd",
+            stripe_account=stripe_account_id,
+            metadata={
+                "vendor_id": vendor["id"],
+                "type": "manual"
+            }
+        )
+        
+        # Record payout in database
+        payout_record = {
+            "id": payout.id,
+            "vendor_id": vendor["id"],
+            "stripe_account_id": stripe_account_id,
+            "amount": amount,
+            "currency": "usd",
+            "status": payout.status,
+            "type": "manual",
+            "arrival_date": payout.arrival_date,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.payouts.insert_one(payout_record)
+        
+        return {
+            "payout_id": payout.id,
+            "amount": amount,
+            "status": payout.status,
+            "estimated_arrival": payout.arrival_date,
+            "message": f"Payout of ${amount:.2f} initiated successfully"
+        }
+        
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/payout-history")
+async def get_payout_history(
+    user: dict = Depends(get_current_user),
+    limit: int = 20,
+    skip: int = 0
+):
+    """Get vendor's payout history"""
+    db = get_db()
+    
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    # Get payouts from database
+    payouts = await db.payouts.find(
+        {"vendor_id": vendor["id"]},
+        {"_id": 0}
+    ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    # Get total count
+    total = await db.payouts.count_documents({"vendor_id": vendor["id"]})
+    
+    # Calculate totals
+    total_paid = await db.payouts.aggregate([
+        {"$match": {"vendor_id": vendor["id"], "status": {"$in": ["paid", "in_transit"]}}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]).to_list(1)
+    
+    return {
+        "payouts": payouts,
+        "total_count": total,
+        "total_paid": total_paid[0]["total"] if total_paid else 0,
+        "has_more": (skip + limit) < total
+    }
+
+
+@router.get("/earnings-summary")
+async def get_earnings_summary(user: dict = Depends(get_current_user)):
+    """Get vendor's earnings summary"""
+    db = get_db()
+    
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    stripe_account_id = vendor.get("stripe_account_id")
+    
+    # Get balance from Stripe
+    available_balance = 0
+    pending_balance = 0
+    
+    if stripe_account_id:
+        try:
+            balance = stripe.Balance.retrieve(stripe_account=stripe_account_id)
+            available_balance = sum(b.amount for b in balance.available) / 100
+            pending_balance = sum(b.amount for b in balance.pending) / 100
+        except stripe.error.StripeError:
+            pass
+    
+    # Get total paid out from database
+    total_paid_result = await db.payouts.aggregate([
+        {"$match": {"vendor_id": vendor["id"], "status": {"$in": ["paid", "in_transit"]}}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]).to_list(1)
+    total_paid = total_paid_result[0]["total"] if total_paid_result else 0
+    
+    # Get total sales from orders
+    total_sales_result = await db.orders.aggregate([
+        {"$match": {"vendor_id": vendor["id"], "status": {"$in": ["completed", "delivered"]}}},
+        {"$group": {"_id": None, "total": {"$sum": "$total"}}}
+    ]).to_list(1)
+    total_sales = total_sales_result[0]["total"] if total_sales_result else vendor.get("total_sales", 0)
+    
+    # Get pending orders revenue
+    pending_orders_result = await db.orders.aggregate([
+        {"$match": {"vendor_id": vendor["id"], "status": {"$in": ["pending", "confirmed", "processing", "shipped"]}}},
+        {"$group": {"_id": None, "total": {"$sum": "$total"}}}
+    ]).to_list(1)
+    pending_orders = pending_orders_result[0]["total"] if pending_orders_result else 0
+    
+    # Platform commission rate
+    commission_rate = vendor.get("commission_rate", 15)
+    
+    return {
+        "available_balance": available_balance,
+        "pending_balance": pending_balance,
+        "total_paid_out": total_paid,
+        "total_sales": total_sales,
+        "pending_orders_revenue": pending_orders,
+        "commission_rate": commission_rate,
+        "net_earnings": total_sales * (1 - commission_rate / 100),
+        "currency": "usd",
+        "auto_payout_enabled": vendor.get("auto_payout_enabled", False),
+        "payout_threshold": vendor.get("payout_threshold", 50.0),
+        "payout_frequency": vendor.get("payout_frequency", "weekly"),
+        "next_payout_eligible": available_balance >= vendor.get("payout_threshold", 50.0)
+    }
+
+
+# Background job function (to be called by scheduler)
+async def process_scheduled_payouts():
+    """Process automatic payouts for eligible vendors"""
+    db = get_db()
+    
+    # Find vendors with auto-payout enabled and sufficient balance
+    vendors = await db.vendors.find({
+        "auto_payout_enabled": True,
+        "stripe_payouts_enabled": True,
+        "stripe_account_id": {"$exists": True}
+    }, {"_id": 0}).to_list(None)
+    
+    processed = []
+    errors = []
+    
+    for vendor in vendors:
+        stripe_account_id = vendor["stripe_account_id"]
+        threshold = vendor.get("payout_threshold", 50.0)
+        
+        try:
+            # Check balance
+            balance = stripe.Balance.retrieve(stripe_account=stripe_account_id)
+            available_amount = sum(b.amount for b in balance.available) / 100
+            
+            if available_amount >= threshold:
+                # Create payout
+                payout = stripe.Payout.create(
+                    amount=int(available_amount * 100),
+                    currency="usd",
+                    stripe_account=stripe_account_id,
+                    metadata={
+                        "vendor_id": vendor["id"],
+                        "type": "automatic"
+                    }
+                )
+                
+                # Record in database
+                payout_record = {
+                    "id": payout.id,
+                    "vendor_id": vendor["id"],
+                    "stripe_account_id": stripe_account_id,
+                    "amount": available_amount,
+                    "currency": "usd",
+                    "status": payout.status,
+                    "type": "automatic",
+                    "arrival_date": payout.arrival_date,
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                }
+                await db.payouts.insert_one(payout_record)
+                
+                processed.append({
+                    "vendor_id": vendor["id"],
+                    "amount": available_amount,
+                    "payout_id": payout.id
+                })
+                
+        except stripe.error.StripeError as e:
+            errors.append({
+                "vendor_id": vendor["id"],
+                "error": str(e)
+            })
+    
+    return {"processed": processed, "errors": errors}
+

@@ -377,7 +377,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Top Performers */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-3 gap-6">
         {/* Top Vendors */}
         <Card>
           <CardHeader>

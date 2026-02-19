@@ -28,21 +28,42 @@ const VendorDashboard = () => {
           }
         }
         
-        const [ordersRes, bookingsRes, lowStockRes] = await Promise.all([
-          api.get('/vendor/orders'),
-          api.get('/vendor/bookings'),
-          api.get('/vendors/me/low-stock').catch(() => ({ data: { products: [], summary: { total: 0, out_of_stock: 0, critical: 0, low: 0 } } })),
-        ]);
-        setRecentOrders(ordersRes.data.slice(0, 5));
-        setRecentBookings(bookingsRes.data.slice(0, 5));
-        setLowStockData(lowStockRes.data);
+        // Fetch data with individual error handling
+        let ordersData = [];
+        let bookingsData = [];
+        let lowStockResult = { products: [], summary: { total: 0, out_of_stock: 0, critical: 0, low: 0 } };
         
-        const totalRevenue = ordersRes.data.reduce((sum, o) => sum + (o.total || 0), 0) +
-                           bookingsRes.data.filter(b => b.payment_status === 'released').reduce((sum, b) => sum + (b.price || 0), 0);
+        try {
+          const ordersRes = await api.get('/vendor/orders');
+          ordersData = ordersRes.data || [];
+        } catch (e) {
+          console.log('No orders data available');
+        }
+        
+        try {
+          const bookingsRes = await api.get('/vendor/bookings');
+          bookingsData = bookingsRes.data || [];
+        } catch (e) {
+          console.log('No bookings data available');
+        }
+        
+        try {
+          const lowStockRes = await api.get('/vendors/me/low-stock');
+          lowStockResult = lowStockRes.data;
+        } catch (e) {
+          console.log('No low stock data available');
+        }
+        
+        setRecentOrders(ordersData.slice(0, 5));
+        setRecentBookings(bookingsData.slice(0, 5));
+        setLowStockData(lowStockResult);
+        
+        const totalRevenue = ordersData.reduce((sum, o) => sum + (o.total || 0), 0) +
+                           bookingsData.filter(b => b.payment_status === 'released').reduce((sum, b) => sum + (b.price || 0), 0);
         
         setStats({
-          orders: ordersRes.data.length,
-          bookings: bookingsRes.data.length,
+          orders: ordersData.length,
+          bookings: bookingsData.length,
           revenue: totalRevenue,
           products: 0,
         });

@@ -99,5 +99,5 @@ async def get_cloudinary_config():
     Used by frontend to construct URLs.
     """
     return {
-        "cloud_name": os.getenv("CLOUDINARY_CLOUD_NAME")
+        "cloud_name": os.getenv("CLOUDINARY_CLOUD_NAME", "").lower()
     }

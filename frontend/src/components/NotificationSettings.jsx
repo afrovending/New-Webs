@@ -116,13 +116,26 @@ const NotificationSettings = () => {
     }
   };
 
-  const togglePreference = (key) => {
-    setPreferences(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-    // In production, save to backend
-    toast.success('Preference updated');
+  const togglePreference = async (key) => {
+    const newValue = !preferences[key];
+    const newPreferences = {
+      ...preferences,
+      [key]: newValue
+    };
+    setPreferences(newPreferences);
+    
+    // Save to backend
+    setSavingPrefs(true);
+    try {
+      await api.put('/notifications/preferences', newPreferences);
+      toast.success('Preference saved');
+    } catch (error) {
+      // Revert on error
+      setPreferences(preferences);
+      toast.error('Failed to save preference');
+    } finally {
+      setSavingPrefs(false);
+    }
   };
 
   if (loading) {

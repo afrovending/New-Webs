@@ -32,7 +32,7 @@ async def get_products(
     
     if category_id:
         query["category_id"] = category_id
-    if vendor_id:
+    if vendor_id and vendor_id != "me":
         query["vendor_id"] = vendor_id
     if search:
         query["$or"] = [

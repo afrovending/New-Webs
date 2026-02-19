@@ -153,6 +153,13 @@ Build a full-featured African marketplace platform (AfroVending) connecting vend
   - Shipping address
   - "Track Your Order" and "View Order History" buttons
   - Branded AfroVending design
+- **"Vendor New Order" Email Notification** - Vendors receive email when customer orders their products:
+  - "Action Required" alert with urgency indicator
+  - List of only their items from the order
+  - Vendor earnings calculation for this order
+  - Complete shipping address for fulfillment
+  - Next steps checklist
+  - Direct link to vendor order dashboard
 
 ### New Features (Feb 19, 2026)
 - **Admin Products Management** - New AdminProducts.jsx page with full product management:

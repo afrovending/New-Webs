@@ -100,6 +100,20 @@ const CheckoutPage = () => {
     }
   };
 
+  // Handle Google Address autocomplete selection
+  const handleAddressSelect = (addressData) => {
+    setFormData(prev => ({
+      ...prev,
+      shipping_address: addressData.street1 || addressData.formatted_address,
+      shipping_city: addressData.city || prev.shipping_city,
+      shipping_state: addressData.state || prev.shipping_state,
+      shipping_zip: addressData.postal_code || prev.shipping_zip,
+      shipping_country: addressData.country_code || prev.shipping_country
+    }));
+    setAddressVerified(true);
+    toast.success('Address verified successfully!');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (cart.items.length === 0) {

@@ -75,13 +75,20 @@ async def login(credentials: UserLogin):
 
 
 @router.post("/forgot-password")
-async def forgot_password(request: ForgotPasswordRequest):
-    """Request password reset"""
+async def forgot_password(request: ForgotPasswordRequest, background_tasks: BackgroundTasks):
+    """Request password reset - sends email with reset link"""
     db = get_db()
     user = await db.users.find_one({"email": request.email}, {"_id": 0})
     
+    # Always return same message to prevent email enumeration
+    response_msg = "If this email exists, a password reset link has been sent"
+    
     if not user:
-        return {"message": "If this email exists, a reset link has been sent"}
+        return {"message": response_msg}
+    
+    # Check if user has a password (not Google-only account)
+    if not user.get("password_hash") and not user.get("hashed_password"):
+        return {"message": response_msg}
     
     reset_token = str(uuid.uuid4())
     expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
@@ -95,10 +102,16 @@ async def forgot_password(request: ForgotPasswordRequest):
         "created_at": datetime.now(timezone.utc).isoformat()
     })
     
-    return {
-        "message": "If this email exists, a reset link has been sent",
-        "reset_token": reset_token
-    }
+    # Send password reset email in background
+    reset_url = f"{FRONTEND_URL}/reset-password"
+    background_tasks.add_task(
+        email_service.send_password_reset,
+        request.email,
+        reset_token,
+        reset_url
+    )
+    
+    return {"message": response_msg}
 
 
 @router.post("/reset-password")

@@ -9,6 +9,7 @@ import {
   ShoppingBag, Calendar, BadgeCheck, AlertTriangle, Activity,
   ArrowUpRight, ArrowDownRight, Star, ImageOff, RefreshCw
 } from 'lucide-react';
+import AdminNotificationCenter from '../../components/admin/AdminNotificationCenter';
 
 const AdminDashboard = () => {
   const { api } = useAuth();

@@ -68,8 +68,8 @@ app.add_middleware(
 )
 
 
-# Health check
-@app.get("/api/health")
+# Health check - accessible at /health (DigitalOcean adds /api prefix)
+@app.get("/health")
 async def health_check():
     """Health check endpoint"""
     try:

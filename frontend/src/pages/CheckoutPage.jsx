@@ -8,7 +8,8 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
-import { Loader2, CreditCard, Lock, MapPin, Truck, Globe } from 'lucide-react';
+import { Loader2, CreditCard, Lock, MapPin, Truck, Globe, CheckCircle } from 'lucide-react';
+import GoogleAddressAutocomplete from '../components/GoogleAddressAutocomplete';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const CheckoutPage = () => {
   const [countries, setCountries] = useState([]);
   const [countriesByRegion, setCountriesByRegion] = useState({});
   const [shippingEstimate, setShippingEstimate] = useState(null);
+  const [addressVerified, setAddressVerified] = useState(false);
   const [loadingShipping, setLoadingShipping] = useState(false);
   const [formData, setFormData] = useState({
     shipping_name: '',

@@ -26,7 +26,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 from database import get_db, client
 
 # Import routers
-from routes import auth, products, vendors, services, categories, bookings, orders, reviews, wishlist, price_alerts, notifications, homepage, admin, currency, upload, cloudinary_routes, stripe_connect, webhooks, shipping
+from routes import auth, products, vendors, services, categories, bookings, orders, reviews, wishlist, price_alerts, notifications, homepage, admin, currency, upload, cloudinary_routes, stripe_connect, webhooks, shipping, checkout
 from routes.products import vendor_router as vendor_products_router
 
 # Import scheduler

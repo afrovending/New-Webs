@@ -41,6 +41,67 @@ class NotificationPayload(BaseModel):
     user_ids: Optional[List[str]] = None
 
 
+class NotificationPreferences(BaseModel):
+    order_updates: bool = True
+    promotions: bool = True
+    price_alerts: bool = True
+    new_products: bool = False
+    vendor_messages: bool = True
+
+
+# ============ NOTIFICATION PREFERENCES ============
+
+@router.get("/preferences")
+async def get_notification_preferences(user: dict = Depends(get_current_user)):
+    """Get user's notification preferences"""
+    db = get_db()
+    
+    prefs = await db.notification_preferences.find_one(
+        {"user_id": user["id"]},
+        {"_id": 0}
+    )
+    
+    if not prefs:
+        # Return defaults
+        return {
+            "user_id": user["id"],
+            "order_updates": True,
+            "promotions": True,
+            "price_alerts": True,
+            "new_products": False,
+            "vendor_messages": True
+        }
+    
+    return prefs
+
+
+@router.put("/preferences")
+async def update_notification_preferences(
+    preferences: NotificationPreferences,
+    user: dict = Depends(get_current_user)
+):
+    """Update user's notification preferences"""
+    db = get_db()
+    
+    prefs_data = {
+        "user_id": user["id"],
+        "order_updates": preferences.order_updates,
+        "promotions": preferences.promotions,
+        "price_alerts": preferences.price_alerts,
+        "new_products": preferences.new_products,
+        "vendor_messages": preferences.vendor_messages,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.notification_preferences.update_one(
+        {"user_id": user["id"]},
+        {"$set": prefs_data},
+        upsert=True
+    )
+    
+    return {"success": True, "preferences": prefs_data}
+
+
 # ============ IN-APP NOTIFICATIONS ============
 
 

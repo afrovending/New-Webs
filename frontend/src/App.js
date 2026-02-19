@@ -34,6 +34,7 @@ import BookingsPage from './pages/BookingsPage';
 import MessagesPage from './pages/MessagesPage';
 import ProfilePage from './pages/ProfilePage';
 import { OrderHistoryPage, OrderDetailPage } from './pages/OrderHistoryPage';
+import OrderTrackingPage from './pages/OrderTrackingPage';
 
 // Vendor Pages
 import VendorDashboard from './pages/vendor/VendorDashboard';

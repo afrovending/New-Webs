@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from '../../components/ui/badge';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Package, Warehouse, Store } from 'lucide-react';
+import ImageUploader from '../../components/ImageUploader';
 
 const VendorProducts = () => {
   const { api } = useAuth();

@@ -140,6 +140,94 @@ const VendorDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Low Stock Alert Widget */}
+      {lowStockData.summary.total > 0 && (
+        <Card className={`border-2 ${lowStockData.summary.out_of_stock > 0 || lowStockData.summary.critical > 0 ? 'border-red-300 bg-red-50' : 'border-amber-300 bg-amber-50'}`}>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <AlertTriangle className={`h-5 w-5 ${lowStockData.summary.out_of_stock > 0 || lowStockData.summary.critical > 0 ? 'text-red-500' : 'text-amber-500'}`} />
+                Low Stock Alert
+              </CardTitle>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate('/vendor/products')}
+                className="text-xs"
+                data-testid="view-all-inventory-btn"
+              >
+                Manage Inventory <ArrowRight className="h-3 w-3 ml-1" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {/* Summary Stats */}
+            <div className="flex gap-4 mb-4">
+              {lowStockData.summary.out_of_stock > 0 && (
+                <div className="flex items-center gap-2 bg-red-100 text-red-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                  <PackageX className="h-4 w-4" />
+                  {lowStockData.summary.out_of_stock} Out of Stock
+                </div>
+              )}
+              {lowStockData.summary.critical > 0 && (
+                <div className="flex items-center gap-2 bg-orange-100 text-orange-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                  <AlertTriangle className="h-4 w-4" />
+                  {lowStockData.summary.critical} Critical
+                </div>
+              )}
+              {lowStockData.summary.low > 0 && (
+                <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                  <Package className="h-4 w-4" />
+                  {lowStockData.summary.low} Low
+                </div>
+              )}
+            </div>
+            
+            {/* Product List */}
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {lowStockData.products.slice(0, 5).map((product) => (
+                <div 
+                  key={product.id} 
+                  className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200"
+                  data-testid={`low-stock-item-${product.id}`}
+                >
+                  <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                    {product.images?.[0] ? (
+                      <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <Package className="h-6 w-6" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{product.name}</p>
+                    <p className="text-xs text-gray-500">${product.price?.toFixed(2)}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      product.stock === 0 
+                        ? 'bg-red-100 text-red-700' 
+                        : product.stock <= 3 
+                          ? 'bg-orange-100 text-orange-700' 
+                          : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {product.stock === 0 ? 'Out of Stock' : `${product.stock} left`}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {lowStockData.products.length > 5 && (
+              <p className="text-center text-sm text-gray-500 mt-3">
+                +{lowStockData.products.length - 5} more products need attention
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

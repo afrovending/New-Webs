@@ -189,7 +189,7 @@ const AppRouter = () => {
       <Route path="/legal/return-policy" element={<EliteReturnPolicyPage />} />
 
       {/* Order Tracking (public with order ID) */}
-      <Route path="/track/:orderId" element={<MainLayout><OrderTrackingPage /></MainLayout>} />
+      <Route path="/track/:orderId" element={<OrderTrackingPage />} />
 
       {/* Customer Dashboard */}
       <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>

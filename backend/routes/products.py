@@ -81,7 +81,7 @@ async def get_product(product_id: str):
     return product
 
 
-@router.get("/vendor/products")
+@vendor_router.get("/products")
 async def get_my_products(user: dict = Depends(get_current_user), skip: int = 0, limit: int = 100):
     """Get current vendor's products"""
     db = get_db()

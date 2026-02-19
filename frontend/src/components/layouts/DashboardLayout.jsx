@@ -46,6 +46,7 @@ const DashboardLayout = ({ isVendor, isAdmin }) => {
     { to: '/vendor/services', icon: Briefcase, label: 'Services' },
     { to: '/vendor/orders', icon: Package, label: 'Orders' },
     { to: '/vendor/bookings', icon: Calendar, label: 'Bookings' },
+    { to: '/vendor/store-settings', icon: Store, label: 'Store Settings' },
     { to: '/vendor/subscription', icon: CreditCard, label: 'Subscription' },
   ];
 

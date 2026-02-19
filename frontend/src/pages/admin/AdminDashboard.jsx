@@ -444,6 +444,9 @@ const AdminDashboard = () => {
             )}
           </CardContent>
         </Card>
+        
+        {/* Notification Center */}
+        <AdminNotificationCenter />
       </div>
     </div>
   );

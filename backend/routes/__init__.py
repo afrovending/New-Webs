@@ -14,6 +14,7 @@ from . import homepage
 from . import admin
 from . import currency
 from . import upload
+from . import cloudinary_routes
 
 __all__ = [
     "auth",
@@ -30,5 +31,6 @@ __all__ = [
     "homepage",
     "admin",
     "currency",
-    "upload"
+    "upload",
+    "cloudinary_routes"
 ]

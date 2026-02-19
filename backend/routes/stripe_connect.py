@@ -1,0 +1,375 @@
+"""
+AfroVending - Stripe Connect Routes
+Vendor onboarding, identity verification, and payout management
+"""
+from fastapi import APIRouter, HTTPException, Depends, Request
+from datetime import datetime, timezone
+from typing import Optional
+import stripe
+import os
+
+from database import get_db
+from auth import get_current_user
+
+router = APIRouter(prefix="/stripe-connect", tags=["Stripe Connect"])
+
+# Initialize Stripe
+stripe.api_key = os.environ.get("STRIPE_API_KEY")
+
+
+@router.post("/create-account")
+async def create_connected_account(request: Request, user: dict = Depends(get_current_user)):
+    """Create a Stripe Connect Express account for a vendor"""
+    db = get_db()
+    
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    # Check if vendor already has a Stripe account
+    if vendor.get("stripe_account_id"):
+        return {"stripe_account_id": vendor["stripe_account_id"], "already_exists": True}
+    
+    try:
+        # Create Express connected account
+        account = stripe.Account.create(
+            type="express",
+            country=vendor.get("country_code", "US"),
+            email=user.get("email"),
+            capabilities={
+                "card_payments": {"requested": True},
+                "transfers": {"requested": True},
+            },
+            business_type="individual",
+            metadata={
+                "vendor_id": vendor["id"],
+                "user_id": user["id"],
+                "platform": "afrovending"
+            }
+        )
+        
+        # Save Stripe account ID to vendor profile
+        await db.vendors.update_one(
+            {"id": vendor["id"]},
+            {
+                "$set": {
+                    "stripe_account_id": account.id,
+                    "stripe_account_status": "pending",
+                    "stripe_created_at": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        )
+        
+        return {
+            "stripe_account_id": account.id,
+            "message": "Stripe account created successfully"
+        }
+        
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/onboarding-link")
+async def create_onboarding_link(request: Request, user: dict = Depends(get_current_user)):
+    """Generate Stripe Connect onboarding link for vendor"""
+    db = get_db()
+    body = await request.json()
+    
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    stripe_account_id = vendor.get("stripe_account_id")
+    if not stripe_account_id:
+        raise HTTPException(status_code=400, detail="Please create a Stripe account first")
+    
+    # Get frontend origin from request
+    origin_url = body.get("origin_url", os.environ.get("FRONTEND_URL", "https://afrovending.com"))
+    
+    try:
+        account_link = stripe.AccountLink.create(
+            account=stripe_account_id,
+            refresh_url=f"{origin_url}/vendor/store-settings?stripe_refresh=true",
+            return_url=f"{origin_url}/vendor/store-settings?stripe_complete=true",
+            type="account_onboarding",
+        )
+        
+        return {
+            "url": account_link.url,
+            "expires_at": account_link.expires_at
+        }
+        
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/account-status")
+async def get_account_status(user: dict = Depends(get_current_user)):
+    """Get the current Stripe Connect account status"""
+    db = get_db()
+    
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    stripe_account_id = vendor.get("stripe_account_id")
+    if not stripe_account_id:
+        return {
+            "has_account": False,
+            "status": "not_created",
+            "payouts_enabled": False,
+            "charges_enabled": False
+        }
+    
+    try:
+        account = stripe.Account.retrieve(stripe_account_id)
+        
+        # Update vendor record with current status
+        status = "complete" if account.details_submitted else "incomplete"
+        await db.vendors.update_one(
+            {"id": vendor["id"]},
+            {
+                "$set": {
+                    "stripe_account_status": status,
+                    "stripe_payouts_enabled": account.payouts_enabled,
+                    "stripe_charges_enabled": account.charges_enabled,
+                    "stripe_details_submitted": account.details_submitted
+                }
+            }
+        )
+        
+        return {
+            "has_account": True,
+            "account_id": stripe_account_id,
+            "status": status,
+            "details_submitted": account.details_submitted,
+            "payouts_enabled": account.payouts_enabled,
+            "charges_enabled": account.charges_enabled,
+            "requirements": {
+                "currently_due": account.requirements.currently_due if account.requirements else [],
+                "eventually_due": account.requirements.eventually_due if account.requirements else [],
+                "pending_verification": account.requirements.pending_verification if account.requirements else []
+            }
+        }
+        
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/identity-verification")
+async def create_identity_verification(request: Request, user: dict = Depends(get_current_user)):
+    """Create a Stripe Identity verification session"""
+    db = get_db()
+    body = await request.json()
+    
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    origin_url = body.get("origin_url", os.environ.get("FRONTEND_URL", "https://afrovending.com"))
+    
+    try:
+        # Create Identity verification session
+        verification_session = stripe.identity.VerificationSession.create(
+            type="document",
+            options={
+                "document": {
+                    "allowed_types": ["passport", "driving_license", "id_card"],
+                    "require_matching_selfie": True
+                }
+            },
+            metadata={
+                "vendor_id": vendor["id"],
+                "user_id": user["id"]
+            },
+            return_url=f"{origin_url}/vendor/store-settings?identity_complete=true"
+        )
+        
+        # Save verification session ID
+        await db.vendors.update_one(
+            {"id": vendor["id"]},
+            {
+                "$set": {
+                    "identity_verification_id": verification_session.id,
+                    "identity_verification_status": verification_session.status,
+                    "identity_verification_started": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        )
+        
+        return {
+            "verification_session_id": verification_session.id,
+            "url": verification_session.url,
+            "status": verification_session.status
+        }
+        
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/identity-status")
+async def get_identity_status(user: dict = Depends(get_current_user)):
+    """Get the current identity verification status"""
+    db = get_db()
+    
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    verification_id = vendor.get("identity_verification_id")
+    if not verification_id:
+        return {
+            "has_verification": False,
+            "status": "not_started"
+        }
+    
+    try:
+        verification = stripe.identity.VerificationSession.retrieve(verification_id)
+        
+        # Update vendor record
+        await db.vendors.update_one(
+            {"id": vendor["id"]},
+            {
+                "$set": {
+                    "identity_verification_status": verification.status,
+                    "identity_verified": verification.status == "verified"
+                }
+            }
+        )
+        
+        return {
+            "has_verification": True,
+            "verification_id": verification_id,
+            "status": verification.status,
+            "verified": verification.status == "verified"
+        }
+        
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.put("/tax-information")
+async def update_tax_information(request: Request, user: dict = Depends(get_current_user)):
+    """Update vendor tax information"""
+    db = get_db()
+    data = await request.json()
+    
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    # Tax fields that can be updated
+    tax_fields = {
+        "tax_id_type": data.get("tax_id_type"),  # ssn, ein, vat, business_registration
+        "tax_id_last4": data.get("tax_id")[-4:] if data.get("tax_id") else None,  # Store only last 4 digits
+        "business_name": data.get("business_name"),
+        "business_type": data.get("business_type"),  # individual, company, non_profit
+        "vat_number": data.get("vat_number"),
+        "tax_country": data.get("tax_country"),
+        "tax_info_submitted": True,
+        "tax_info_updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Filter out None values
+    tax_fields = {k: v for k, v in tax_fields.items() if v is not None}
+    
+    await db.vendors.update_one(
+        {"id": vendor["id"]},
+        {"$set": tax_fields}
+    )
+    
+    # If vendor has Stripe account, update it there too
+    stripe_account_id = vendor.get("stripe_account_id")
+    if stripe_account_id and data.get("tax_id"):
+        try:
+            # Update tax ID on Stripe (for US vendors)
+            if data.get("tax_id_type") in ["ssn", "ein"]:
+                stripe.Account.modify(
+                    stripe_account_id,
+                    individual={
+                        "ssn_last_4": data.get("tax_id")[-4:]
+                    } if data.get("tax_id_type") == "ssn" else None
+                )
+        except stripe.error.StripeError:
+            pass  # Non-critical, continue
+    
+    return {"message": "Tax information updated successfully"}
+
+
+@router.get("/payout-balance")
+async def get_payout_balance(user: dict = Depends(get_current_user)):
+    """Get vendor's available payout balance"""
+    db = get_db()
+    
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    stripe_account_id = vendor.get("stripe_account_id")
+    if not stripe_account_id:
+        return {"available": 0, "pending": 0, "currency": "usd"}
+    
+    try:
+        balance = stripe.Balance.retrieve(stripe_account=stripe_account_id)
+        
+        available = sum(b.amount for b in balance.available) / 100  # Convert from cents
+        pending = sum(b.amount for b in balance.pending) / 100
+        
+        return {
+            "available": available,
+            "pending": pending,
+            "currency": balance.available[0].currency if balance.available else "usd"
+        }
+        
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/onboarding-status")
+async def get_onboarding_status(user: dict = Depends(get_current_user)):
+    """Get comprehensive vendor onboarding status"""
+    db = get_db()
+    
+    vendor = await db.vendors.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor profile not found")
+    
+    # Calculate completion status for each step
+    steps = {
+        "profile": {
+            "completed": bool(vendor.get("store_name") and vendor.get("description")),
+            "fields": ["store_name", "description", "country"]
+        },
+        "contact": {
+            "completed": bool(vendor.get("phone") or vendor.get("email")),
+            "fields": ["phone", "email", "city", "address"]
+        },
+        "branding": {
+            "completed": bool(vendor.get("logo_url")),
+            "fields": ["logo_url", "banner_url"]
+        },
+        "payment": {
+            "completed": vendor.get("stripe_details_submitted", False),
+            "stripe_account_id": vendor.get("stripe_account_id"),
+            "payouts_enabled": vendor.get("stripe_payouts_enabled", False)
+        },
+        "identity": {
+            "completed": vendor.get("identity_verified", False),
+            "status": vendor.get("identity_verification_status", "not_started")
+        },
+        "tax": {
+            "completed": vendor.get("tax_info_submitted", False),
+            "fields": ["tax_id_type", "business_type"]
+        }
+    }
+    
+    completed_steps = sum(1 for s in steps.values() if s.get("completed"))
+    total_steps = len(steps)
+    
+    return {
+        "steps": steps,
+        "completed_steps": completed_steps,
+        "total_steps": total_steps,
+        "completion_percentage": int((completed_steps / total_steps) * 100),
+        "is_fully_verified": all(s.get("completed") for s in steps.values())
+    }
